@@ -10,13 +10,13 @@
 | مورد | مقدار |
 |---|---|
 | فایل نصب (نسخهٔ امضاشدهٔ اصلی) | `VizitorDirect-1.0.0.apk` — **۷٬۶۲۳٬۴۱۵ بایت** (۷٫۳ مگابایت) |
-| SHA-256 | `8a17ea650ab1883de359db18fc7ea04681623d1f87f62468ea5e3a9cdcf1051d` |
+| SHA-256 | `44019a2ea9bc539e131f9a6bfbff2c2db521e544a356e86a8bc25a96638d11ea` |
 | امضا | `apksigner verify` → **Verifies** • طرح امضای **v2** • گواهی `CN=Vizitor Direct, OU=Meelano Studio Design, O=Meelano, L=Tehran, C=IR` |
 | اثر انگشت گواهی (SHA-256) | `1b47b00dc3f393a3cfe7814c65b99ed8539ab05d017887482179b0a1ba67f84a` |
 | کمینه/هدف اندروید | `minSdk 24` (اندروید ۷ و بالاتر) • `targetSdk 34` |
 | بستهٔ برنامه | `ir.atiran.vizitor.direct` (نسخهٔ debug: `…direct.debug` — در کنار نسخهٔ اصلی نصب می‌شود) |
-| تاریخ ساخت / کامیت | 2026-09-22 05:01:38 UTC • `6aae9e0` |
-| ورک‌فلوی موفق | `Build Vizitor Direct APK` — اجرای `35688860623` (۳ دقیقه، موفق) |
+| تاریخ ساخت / کامیت | 2026-09-22 05:07:01 UTC • `d00f5a9` |
+| ورک‌فلوی موفق | `Build Vizitor Direct APK` — اجرای `35689176742` (۴ دقیقه و ۲۲ ثانیه، موفق) |
 
 **دانلود فایل نصب (۲ راه):**
 1. صفحهٔ ریلیز: <https://github.com/Companymeelano/Vizitor-Android/releases/tag/vizitor-direct-v1.0.0>
@@ -33,14 +33,14 @@
 | مسیر | خطوط/حجم | نقش |
 |---|---|---|
 | `android-app/` | ۱۶ فایل Kotlin — **۳٬۶۶۷ خط** | برنامهٔ کامل اندروید «ویزیتور مستقیم» (Gradle + Android Studio) |
-| `api/` | **۲٬۵۴۰ خط** پایتون | سرور API فقط با کتابخانهٔ استاندارد: `server.py` (۷۶۸)، `sql_admin_tools.py` (۵۴۵)، `check_connection_contract.py` (۳۸۲)، `provision_android_sql.py` (۳۲۷)، `android_connect.py` (۲۷۴)، `db.py` (۲۴۵)، `provision_sqlserver.py` (۱۵۹)، `seed.py` (۶۹) + `vendor/segno` (ساخت QR) |
+| `api/` | **۲٬۷۶۹ خط** پایتون | سرور API فقط با کتابخانهٔ استاندارد: `server.py` (۷۶۸)، `sql_admin_tools.py` (۵۴۵)، `check_connection_contract.py` (۳۸۲)، `provision_android_sql.py` (۳۲۷)، `android_connect.py` (۲۷۴)، `db.py` (۲۴۵)، `provision_sqlserver.py` (۱۵۹)، `seed.py` (۶۹) + `vendor/segno` (ساخت QR) |
 | `database/` | ۳ فایل SQL | اسکیمای SQLite / MySQL-MariaDB / Microsoft SQL Server |
 | `panel/` | HTML + فونت وزیرمتن | پنل مدیریت فارسی (سرو می‌شود از خودِ سرویس روی پورت ۹۵۹۵، بدون IIS) |
 | `install.sh` / `install.ps1` | ۳۸ / ۸۶ کیلوبایت | نصب‌کنندهٔ هوشمند لینوکس/ویندوز: تشخیص خودکار سرور، پرسش اطلاعات، نصب، بازرسی و تعمیر خودکار |
 | `android-sql-direct/` | ۸۲۴ کیلوبایت | ممیزی و مستندسازی لایهٔ SQL (اسکیمای استخراج‌شدهٔ ATIRAN، گزارش‌های audit، پیش‌فاکتور) |
 | `.github/workflows/` | ۴ ورک‌فلو | ساخت APK • ساخت اپ کامل (`vizitor-app`) • بررسی/ساخت نصب‌کنندهٔ ویندوز • **آزمون واقعی اتصال با SQL Server زنده** |
 | `.toolchain/nsis` | ۵ مگابایت | ابزار NSIS برای ساخت نصب‌کنندهٔ ویندوز |
-| مستندات | ۱۲ فایل md | `README`, `INSTALL`, `CONNECTION-FIX-FINAL`, `DIRECT-SQL-FIX-REPORT`, `UI-REDESIGN-2.13.6`, `VISIT-REGISTRATION-2.14.0`, `ANDROID-DIRECT-HANDOVER`, … |
+| مستندات | ۱۳ فایل md | `README`, `INSTALL`, `CONNECTION-FIX-FINAL`, `DIRECT-SQL-FIX-REPORT`, `UI-REDESIGN-2.13.6`, `VISIT-REGISTRATION-2.14.0`, `ANDROID-DIRECT-HANDOVER`, … |
 
 ---
 
@@ -101,15 +101,15 @@
 
 ```
 ورک‌فلو : .github/workflows/build-android-direct.yml  (Build Vizitor Direct APK)
-اجرا    : 35688860623 — موفق در ۳ دقیقه، ورودی: کامیت 6aae9e0
+اجرا    : 35689176742 — موفق در ۴ دقیقه و ۲۲ ثانیه، ورودی: کامیت d00f5a9
 گام‌ها   : بررسی کد → JDK 17 → کلید پایدار → gradlew assembleDebug assembleRelease
           → آماده‌سازی dist/ → گزارش apk-report.txt → ثبت APK در مخزن → artifact → ریلیز
 ```
 
 | فایل | حجم | SHA-256 |
 |---|---|---|
-| `VizitorDirect-1.0.0.apk` (اصلی) | 7,623,415 بایت | `8a17ea650ab1883de359db18fc7ea04681623d1f87f62468ea5e3a9cdcf1051d` |
-| `VizitorDirect-1.0.0-debug.apk` (آزمون) | 10,714,350 بایت | `c0c2b82b6e1c7ee6dfef5ac2c79b1df3ed6c317d5cdba6dc7c41b2459f83bfd9` |
+| `VizitorDirect-1.0.0.apk` (اصلی) | 7,623,415 بایت | `44019a2ea9bc539e131f9a6bfbff2c2db521e544a356e86a8bc25a96638d11ea` |
+| `VizitorDirect-1.0.0-debug.apk` (آزمون) | 10,714,358 بایت | `3336b5060de31c6e7bca32f554c15bdae76968129773b5d8ff216a979ce39dbb` |
 
 **بازرسی داخل APK (توسط `apksigner` و `unzip` روی رانر):** تأیید امضا ✅ • ۲ فایل dex • وجود
 `com/microsoft/sqlserver/jdbc/SQLServerDriver`، `net/sourceforge/jtds/jdbc/Driver`،
@@ -159,7 +159,10 @@
 
 ## ۱۰) ساخت مجدد و ادامهٔ کار
 
-* هر تغییر در `android-app/**` روی شاخه‌های `main` یا `arena/**` **خودکار APK می‌سازد** و در صورت موفقیت، ریلیز `vizitor-direct-v1.0.0` و فایل `android-app/dist/` را به‌روز می‌کند.
+* هر تغییر در کد/پیکربندی `android-app/vizitor-direct/**` (یا فایل‌های Gradle) روی شاخه‌های `main` یا `arena/**` **خودکار APK می‌سازد** و در صورت موفقیت، ریلیز `vizitor-direct-v1.0.0` و فایل `android-app/dist/` را به‌روز می‌کند.
+* نکتهٔ مهم دربارهٔ هش فایل: هر بیلد، کامیت خودش را داخل APK ثبت می‌کند
+  (`META-INF/version-control-info.textproto`) و بیلد اندروید بیت‌به‌بیت تکرارپذیر نیست؛ پس **SHA-256 هر بیلد عوض می‌شود ولی گواهی/امضا ثابت می‌ماند**
+  (اثر انگشت گواهی کلید پایدار: `1b47b00d…`). همیشه تازه‌ترین فایلِ صفحهٔ ریلیز یا `android-app/dist/` معتبر است.
 * برای نسخهٔ بعدی: در `android-app/vizitor-direct/build.gradle.kts` مقدارهای `versionCode` و `versionName` را بالا ببرید؛ با **همان کلید پایدار** به‌روزرسانی روی نسخهٔ نصب‌شده انجام می‌شود (بدون حذف برنامه).
 * برای امضای اختصاصی خودتان: یک کلید بسازید و `android-app/keystore.properties` را کنار پروژه بگذارید (روش کامل در `android-app/README.md`).
 
@@ -171,9 +174,10 @@
 2. **اصلاح ورک‌فلوی ساخت:** بیلد فقط روی شاخهٔ یک جلسهٔ قدیمی (`arena/01a0a7c6-vizitor`) اجرا می‌شد؛ حالا روی `main` و `arena/**` اجرا می‌شود.
 3. **تشخیص خودکار `apksigner`** از نسخهٔ build-tools موجود روی رانر (مسیر ثابت `34.0.0` روی رانرهای تازه وجود ندارد و مرحلهٔ بازرسی بی‌صدا رد می‌شد).
 4. **کلید امضای پایدار** (`android-app/vizitor-ci.jks`) به‌جای کلید تازه در هر بیلد → به‌روزرسانی بدون حذف برنامه.
-5. **ثبت خودِ APK در مخزن** (`android-app/dist/`) + `BUILD-INFO.txt`، تا اگر دانلود از بخش Artifacts/ریلیز در شبکه‌ای بسته بود، فایل از خودِ مخزن هم قابل گرفتن باشد.
-6. **ساخت و امضا و انتشار** نسخهٔ ۱٫۰٫۰ و ثبت گزارش بازرسی در `android-app/apk-report.txt`.
-7. **همین سند بررسی** (این فایل).
+5. **محدودکردن محرّک بیلد به کد/پیکربندی** (تغییر مستندات دیگر APK را بازسازی نمی‌کند).
+6. **ثبت خودِ APK در مخزن** (`android-app/dist/`) + `BUILD-INFO.txt`، تا اگر دانلود از بخش Artifacts/ریلیز در شبکه‌ای بسته بود، فایل از خودِ مخزن هم قابل گرفتن باشد.
+7. **ساخت و امضا و انتشار** نسخهٔ ۱٫۰٫۰ و ثبت گزارش بازرسی در `android-app/apk-report.txt`.
+8. **همین سند بررسی** (این فایل).
 
 ---
 

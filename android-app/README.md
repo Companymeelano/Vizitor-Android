@@ -21,14 +21,14 @@ APK ساخته شد و در صفحهٔ ریلیز همین مخزن قابل د�
 https://github.com/Companymeelano/Vizitor-Android/releases/tag/vizitor-direct-v1.0.0
 ```
 
-> 🆕 **آخرین بیلد — ۲۰۲۶-۰۹-۲۲** (کامیت `6aae9e0`): با **کلید امضای پایدار پروژه**
+> 🆕 **آخرین بیلد — ۲۰۲۶-۰۹-۲۲** (کامیت `d00f5a9` • اجرای CI `35689176742`): با **کلید امضای پایدار پروژه**
 > (`android-app/vizitor-ci.jks`، همان کلید برای بیلدهای بعدی) امضا شده و خودِ فایل هم داخل
 > مخزن هست: [`dist/VizitorDirect-1.0.0.apk`](dist/VizitorDirect-1.0.0.apk).
 >
 > | فایل | حجم | sha256 |
 > |---|---|---|
-> | `VizitorDirect-1.0.0.apk` | ۷٬۶۲۳٬۴۱۵ بایت | `8a17ea650ab1883de359db18fc7ea04681623d1f87f62468ea5e3a9cdcf1051d` |
-> | `VizitorDirect-1.0.0-debug.apk` | ۱۰٬۷۱۴٬۳۵۰ بایت | `c0c2b82b6e1c7ee6dfef5ac2c79b1df3ed6c317d5cdba6dc7c41b2459f83bfd9` |
+> | `VizitorDirect-1.0.0.apk` | ۷٬۶۲۳٬۴۱۵ بایت | `44019a2ea9bc539e131f9a6bfbff2c2db521e544a356e86a8bc25a96638d11ea` |
+> | `VizitorDirect-1.0.0-debug.apk` | ۱۰٬۷۱۴٬۳۵۸ بایت | `3336b5060de31c6e7bca32f554c15bdae76968129773b5d8ff216a979ce39dbb` |
 >
 > (جدول قدیمی زیر مربوط به بیلد ۲۰۲۶-۰۹-۲۰ است؛ چون کلید آن بیلد با این یکی یکی نیست،
 > برای نصب تازه همان فایل تازه را بگذارید.)
