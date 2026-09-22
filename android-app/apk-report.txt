@@ -1,10 +1,10 @@
 گزارش بازرسی APK — ویزیتور مستقیم (اتصال مستقیم به SQL Server، پورت ۱۴۳۳)
-تاریخ ساخت: 2026-09-22 04:56:28 UTC   کامیت: 418a9bcf688ececbfdd7e85d36bfb6d40a131563
+تاریخ ساخت: 2026-09-22 05:01:34 UTC   کامیت: 6aae9e0ea5079bfdfe1876c7d88bef88520d836b
 ================================================================================
 
 ### dist/VizitorDirect-1.0.0-debug.apk
-حجم: 10714514 بایت
-9c673f58ddb6bc14b1830e0f7a56b63c1dcbfd2583caefbdd3e4b16e2ceb929b  dist/VizitorDirect-1.0.0-debug.apk
+حجم: 10714350 بایت
+c0c2b82b6e1c7ee6dfef5ac2c79b1df3ed6c317d5cdba6dc7c41b2459f83bfd9  dist/VizitorDirect-1.0.0-debug.apk
 
 --- تأیید امضا (apksigner) ---
 Verifies
@@ -17,22 +17,22 @@ Verified using v4 scheme (APK Signature Scheme v4): false
 Verified for SourceStamp: false
 Number of signers: 1
 V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
-V2 Signer: certificate SHA-256 digest: 29f92f7d25c6190a77fe8aacb534fe3db066f3b1191d5c16c6fe9cb1c97d0fe4
-V2 Signer: certificate SHA-1 digest: 56af660466f3d4c0848e074ed071ea4510c18090
-V2 Signer: certificate MD5 digest: 390897ee7a4693f3bd161f0491b9e973
+V2 Signer: certificate SHA-256 digest: d5b8429227c293abe8685240ec1c5c51d2d26ad039b51f6a46b727277545c283
+V2 Signer: certificate SHA-1 digest: 95fffb47dd8817b415c79d8c3e5cd84adfb8989f
+V2 Signer: certificate MD5 digest: d81f9364fd60b66abf489886b4aafc60
 V2 Signer: key algorithm: RSA
 V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: d453ce6c428ffb7ec02484573999b97973d142f688081eb324bedfd878e01f4c
-V2 Signer: public key SHA-1 digest: 81ec2f7b609144cae42d115c4269a5a1c1812c7c
-V2 Signer: public key MD5 digest: d7c5dbb7d2de4b45ef2af05c60b5cf2f
+V2 Signer: public key SHA-256 digest: 51b725f519df216c3c614d18055ca0b3a8bbf9d109e44acf7ae1c717296dcef3
+V2 Signer: public key SHA-1 digest: edfbfe18a0acf3dae02e8f4168c2f146a3ec9749
+V2 Signer: public key MD5 digest: 509dd002a38bb3e118898a430f46373d
 
 --- فهرست داخل APK (نمونه) ---
 Archive:  dist/VizitorDirect-1.0.0-debug.apk
   Length      Date    Time    Name
 ---------  ---------- -----   ----
        56  1981-01-01 01:01   META-INF/com/android/build/gradle/app-metadata.properties
- 17301540  1981-01-01 01:01   classes.dex
-  7313020  1981-01-01 01:01   classes10.dex
+ 17301536  1981-01-01 01:01   classes.dex
+  7313024  1981-01-01 01:01   classes10.dex
     42292  1981-01-01 01:01   classes2.dex
      8744  1981-01-01 01:01   classes3.dex
    110848  1981-01-01 01:01   classes4.dex
@@ -64,7 +64,7 @@ Archive:  dist/VizitorDirect-1.0.0-debug.apk
 
 ### dist/VizitorDirect-1.0.0.apk
 حجم: 7623415 بایت
-78b9d8f4c7957d692f45a85da4143d40c7991489eb3331cb97d57335a2c52412  dist/VizitorDirect-1.0.0.apk
+8a17ea650ab1883de359db18fc7ea04681623d1f87f62468ea5e3a9cdcf1051d  dist/VizitorDirect-1.0.0.apk
 
 --- تأیید امضا (apksigner) ---
 Verifies
@@ -77,14 +77,14 @@ Verified using v4 scheme (APK Signature Scheme v4): false
 Verified for SourceStamp: false
 Number of signers: 1
 V2 Signer: certificate DN: CN=Vizitor Direct, OU=Meelano Studio Design, O=Meelano, L=Tehran, C=IR
-V2 Signer: certificate SHA-256 digest: 4e1c8a26a64082b4121edcbf916afd1bc284aa31c388bba6f6b8d4e057e91988
-V2 Signer: certificate SHA-1 digest: 0fd3605e13c2505f8edc605b586bd6388aeb7e44
-V2 Signer: certificate MD5 digest: 0965b8c97c416180eb7d6c67fb5849f8
+V2 Signer: certificate SHA-256 digest: 1b47b00dc3f393a3cfe7814c65b99ed8539ab05d017887482179b0a1ba67f84a
+V2 Signer: certificate SHA-1 digest: 103c50b17d5de9990f88fd3a29bb5615cca42482
+V2 Signer: certificate MD5 digest: 73bb76484fe5383608d8fa384c0dd35d
 V2 Signer: key algorithm: RSA
 V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: a989211407b2a326f8b30f39fca86bd4140bd6c72cec6932bfd6477f7a80b2f0
-V2 Signer: public key SHA-1 digest: 2780545b96dede7fdde780b7d2b5e80e52469ec9
-V2 Signer: public key MD5 digest: 5322233e1f7ae8a78c79a8908a0ddc5e
+V2 Signer: public key SHA-256 digest: b093af3ccfc23b384f27fc96e8197d8ba8446da5654078b93049cb7fcf6b564c
+V2 Signer: public key SHA-1 digest: 7cf7e07be30078540d1e99f885ee6ad7240a8700
+V2 Signer: public key MD5 digest: 2cee33731bd39b347579cb9c2d353dc8
 
 --- فهرست داخل APK (نمونه) ---
 Archive:  dist/VizitorDirect-1.0.0.apk
