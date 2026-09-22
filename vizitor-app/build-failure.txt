@@ -1,35 +1,55 @@
-لاگ شکست بیلد برنامهٔ ویزیتور — 2026-09-22 07:47:38 UTC
+لاگ شکست بیلد برنامهٔ ویزیتور — 2026-09-22 09:06:58 UTC
 ==================================================================
 e: The daemon has terminated unexpectedly on startup attempt #1 with error code: 0. The daemon process output:
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:23:48 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:24:45 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:25:45 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:26:45 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:27:45 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:28:43 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:29:42 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:30:44 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:31:46 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:32:44 Const 'val' initializer should be a constant value.
-e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/catalog/ProductVisuals.kt:33:44 Const 'val' initializer should be a constant value.
 > Task :app:compileDebugKotlin FAILED
-FAILURE: Build failed with an exception.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/components/MiniRouteMap.kt:154:9 Unresolved reference 'StatusDot'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/manager/ManagerAnalytics.kt:100:108 Argument type mismatch: actual type is 'kotlin.Int', but 'kotlin.Double' was expected.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/manager/ManagerAnalytics.kt:113:96 Argument type mismatch: actual type is 'kotlin.Int', but 'kotlin.Double' was expected.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:77:40 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:80:40 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:81:40 Unresolved reference 'RoyalBarChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:85:40 Unresolved reference 'StatusDot'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:86:40 Unresolved reference 'TwinDonutChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:448:17 Unresolved reference 'TwinDonutChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:625:25 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:644:29 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:730:9 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:742:13 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:772:13 Unresolved reference 'RoyalBarChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:827:25 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:839:29 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/ReportsScreen.kt:347:106 Argument type mismatch: actual type is 'kotlin.Int', but 'kotlin.Double' was expected.
+> Task :app:compileReleaseKotlin FAILED
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/components/MiniRouteMap.kt:154:9 Unresolved reference 'StatusDot'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/manager/ManagerAnalytics.kt:100:108 Argument type mismatch: actual type is 'kotlin.Int', but 'kotlin.Double' was expected.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/manager/ManagerAnalytics.kt:113:96 Argument type mismatch: actual type is 'kotlin.Int', but 'kotlin.Double' was expected.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:77:40 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:80:40 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:81:40 Unresolved reference 'RoyalBarChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:85:40 Unresolved reference 'StatusDot'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:86:40 Unresolved reference 'TwinDonutChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:448:17 Unresolved reference 'TwinDonutChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:625:25 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:644:29 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:730:9 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:742:13 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:772:13 Unresolved reference 'RoyalBarChart'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:827:25 Unresolved reference 'RankBadge3D'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/DashboardScreen.kt:839:29 Unresolved reference 'DepthBar'.
+e: file:///home/runner/work/Vizitor-Android/Vizitor-Android/vizitor-app/app/src/main/java/ir/atiran/vizitor/ui/screens/ReportsScreen.kt:347:106 Argument type mismatch: actual type is 'kotlin.Int', but 'kotlin.Double' was expected.
+FAILURE: Build completed with 2 failures.
 * What went wrong:
 Execution failed for task ':app:compileDebugKotlin'.
 org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin'.
 Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
 Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+* What went wrong:
+Execution failed for task ':app:compileReleaseKotlin'.
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileReleaseKotlin'.
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
 
 --- ۱۲۰ خط آخر ---
-	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
-	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
-	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
-	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
-	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
-	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
-	at org.gradle.internal.execution.steps.BuildCacheStep.executeAndStoreInCache(BuildCacheStep.java:145)
-	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$4(BuildCacheStep.java:101)
-	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$executeWithCache$5(BuildCacheStep.java:101)
 	at org.gradle.internal.Try$Success.map(Try.java:175)
 	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithCache(BuildCacheStep.java:85)
 	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$0(BuildCacheStep.java:74)
@@ -41,6 +61,7 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
 	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
 	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
 	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
 	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
@@ -70,6 +91,7 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
 	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
 	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
 	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
@@ -106,6 +128,9 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
 Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
 	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
 	at org.jetbrains.kotlin.compilerRunner.GradleKotlinCompilerWork.run(GradleKotlinCompilerWork.kt:119)
@@ -127,6 +152,7 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:59)
 	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:195)
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$700(DefaultConditionalExecutionQueue.java:128)
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:170)
@@ -136,8 +162,11 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:136)
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:165)
 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:134)
-	... 2 more
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	... 5 more
 
+==============================================================================
 
-BUILD FAILED in 3m 50s
-58 actionable tasks: 54 executed, 4 from cache
+BUILD FAILED in 4m 58s
+71 actionable tasks: 67 executed, 4 from cache
