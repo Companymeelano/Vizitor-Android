@@ -182,7 +182,10 @@ fun GlamourButton(
 
 enum class GlamourTone { GOLD, PURPLE, GREEN, GLASS }
 
-/** کاشی شاخص کلیدی (KPI) — برای پنل مدیریت و سربرگ بخش‌ها. */
+/**
+ * کاشی شاخص کلیدی (KPI) — به سبک کارت‌های شاخص مرجع:
+ * آیکن طلایی گوشه‌گرد، عنوان، خط کوتاه طلایی و مقدار درشت رنگی.
+ */
 @Composable
 fun KpiCard(
     label: String,
@@ -194,23 +197,15 @@ fun KpiCard(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color(0x12FFFFFF))
-            .border(1.dp, tint.copy(alpha = 0.38f), RoundedCornerShape(18.dp))
+            .metalPanel(RoundedCornerShape(18.dp), corner = 18f)
             .padding(horizontal = 10.dp, vertical = 9.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(26.dp)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(tint.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center
-            ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(15.dp)) }
+            MaIconBadge(icon, size = 28.dp, tint = tint)
             Spacer(Modifier.width(6.dp))
             AutoFitText(
                 text = label,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
                 fontWeight = FontWeight.Bold,
                 minimumSize = 8.sp,
                 maximumSize = 11.sp,
@@ -218,13 +213,21 @@ fun KpiCard(
                 modifier = Modifier.weight(1f, fill = true)
             )
         }
+        Spacer(Modifier.height(6.dp))
+        Box(
+            Modifier
+                .width(30.dp)
+                .height(3.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Brush.horizontalGradient(listOf(tint, tint.copy(alpha = 0.25f))))
+        )
         Spacer(Modifier.height(5.dp))
         AutoFitText(
             text = value,
             color = tint,
             fontWeight = FontWeight.Black,
             minimumSize = 11.sp,
-            maximumSize = 16.sp,
+            maximumSize = 17.sp,
             modifier = Modifier.fillMaxWidth()
         )
         if (footnote != null) {
@@ -241,7 +244,7 @@ fun KpiCard(
     }
 }
 
-/** قاب شیشه‌ای طلایی — دور جدول‌ها و نمودارها. */
+/** قاب فلزی-طلایی — دور جدول‌ها و نمودارها (به سبک کارت‌های مرجع). */
 @Composable
 fun GlamourCard(
     modifier: Modifier = Modifier,
@@ -250,36 +253,19 @@ fun GlamourCard(
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    val p = vizitorPalette
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(p.surface.copy(alpha = 0.90f), p.surfaceDeep.copy(alpha = 0.95f))
-                )
-            )
-            .border(1.dp, p.gold.copy(alpha = 0.32f), RoundedCornerShape(22.dp))
+            .metalPanel(RoundedCornerShape(22.dp), corner = 22f)
             .padding(12.dp)
     ) {
         if (title != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) {
-                    Icon(icon, contentDescription = null, tint = p.gold, modifier = Modifier.size(17.dp))
-                    Spacer(Modifier.width(6.dp))
-                }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
-                    color = p.textPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                trailing?.invoke()
+            MaSectionHeader(title = title, icon = icon)
+            trailing?.let {
+                Spacer(Modifier.height(6.dp))
+                it()
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(9.dp))
         }
         content()
     }

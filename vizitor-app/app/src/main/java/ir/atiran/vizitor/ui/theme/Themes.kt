@@ -152,15 +152,50 @@ val RoseLuxePalette = VizitorPalette(
     donutTrack = Color(0xFFEDD9E0)
 )
 
+/** ۰) گزارش طلایی — مشکیِ عمیق + طلای فلزی (زبانِ طراحی مرجع M•A Report). */
+val MaReportGoldPalette = VizitorPalette(
+    id = "ma_report_gold", displayName = "گزارش طلایی", isDark = true,
+    background = Color(0xFF0B0906), surface = Color(0xFF17130C), surfaceDeep = Color(0xFF050403),
+    royalSurfaceTop = Color(0xFF241C0E), royalSurfaceBottom = Color(0xFF120D06),
+    glassBorder = Color(0x33E8B94F), topStreak = Color(0x1AFFFFFF),
+    halo1 = Color(0x2AF0B23C), halo2 = Color(0x14FFFFFF),
+    primary = Color(0xFFF0B23C), primaryDark = Color(0xFFA87A1C),
+    btnPrimaryTop = Color(0xFFFFE49A), btnPrimaryBottom = Color(0xFFC8912A), onPrimary = Color(0xFF201604),
+    accent = Color(0xFFD9B45C), accentDark = Color(0xFFA8853A),
+    btnAccentTop = Color(0xFFF2DCA2), btnAccentBottom = Color(0xFFB8933F), onAccent = Color(0xFF1A1305),
+    gold = Color(0xFFF0B23C), goldDark = Color(0xFFB9862A), goldHighlight = Color(0xFFFFF0C0),
+    danger = Color(0xFFE5544B),
+    textPrimary = Color(0xFFF4ECDC), textSecondary = Color(0xFFA3906F), accentText = Color(0xFFF3C869),
+    donutTrack = Color(0xFF241C10)
+)
+
+/** ۰-روشن) شامپاین روشن — کرم/عاج + طلای عمیق (هم‌خانوادهٔ همان زبان طراحی). */
+val ChampagneLightPalette = VizitorPalette(
+    id = "champagne_light", displayName = "شامپاین روشن", isDark = false,
+    background = Color(0xFFFBF6EC), surface = Color(0xFFFFFDF8), surfaceDeep = Color(0xFFF1E8D7),
+    royalSurfaceTop = Color(0xFFFFF6E2), royalSurfaceBottom = Color(0xFFFDF9F0),
+    glassBorder = Color(0x40B08A2A), topStreak = Color(0x66FFFFFF),
+    halo1 = Color(0x1FB08A2A), halo2 = Color(0x12108A5A),
+    primary = Color(0xFFA87E1E), primaryDark = Color(0xFF7C5B10),
+    btnPrimaryTop = Color(0xFFE8C46E), btnPrimaryBottom = Color(0xFFA87E1E), onPrimary = Color.White,
+    accent = Color(0xFF0E8F62), accentDark = Color(0xFF0A6B49),
+    btnAccentTop = Color(0xFF4ED9A0), btnAccentBottom = Color(0xFF0A6B49), onAccent = Color.White,
+    gold = Color(0xFF9A7524), goldDark = Color(0xFF7A5A16), goldHighlight = Color(0xFFE9CE8F),
+    danger = Color(0xFFC94A3F),
+    textPrimary = Color(0xFF241C10), textSecondary = Color(0xFF6F6250), accentText = Color(0xFF8A6A1A),
+    donutTrack = Color(0xFFE7DCC6)
+)
+
 /** همه تم‌ها به ترتیب نمایش در انتخابگر. */
 val AllPalettes: List<VizitorPalette> = listOf(
+    MaReportGoldPalette, ChampagneLightPalette,
     RoyalDarkPalette, MidnightGoldPalette, EmeraldNoirPalette, RoyalPearlPalette, RoseLuxePalette
 )
 
-fun paletteById(id: String): VizitorPalette = AllPalettes.firstOrNull { it.id == id } ?: RoyalDarkPalette
+fun paletteById(id: String): VizitorPalette = AllPalettes.firstOrNull { it.id == id } ?: MaReportGoldPalette
 
 /** CompositionLocal سراسری پالت فعال — تنها منبع رنگی تمام اجزای UI. */
-val LocalVizitorPalette = compositionLocalOf { RoyalDarkPalette }
+val LocalVizitorPalette = compositionLocalOf { MaReportGoldPalette }
 
 /** دسترسی کوتاه به پالت فعال داخل کامپوزبل‌ها. */
 val vizitorPalette: VizitorPalette
@@ -176,12 +211,12 @@ object ThemeManager {
     private const val PREFS = "vizitor_theme_prefs"
     private const val KEY_THEME = "theme_id"
 
-    private val _themeId = MutableStateFlow(RoyalDarkPalette.id)
+    private val _themeId = MutableStateFlow(MaReportGoldPalette.id)
     val themeId: StateFlow<String> = _themeId.asStateFlow()
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        _themeId.value = prefs.getString(KEY_THEME, RoyalDarkPalette.id) ?: RoyalDarkPalette.id
+        _themeId.value = prefs.getString(KEY_THEME, MaReportGoldPalette.id) ?: MaReportGoldPalette.id
     }
 
     fun setTheme(context: Context, id: String) {

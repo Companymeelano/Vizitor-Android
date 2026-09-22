@@ -639,19 +639,26 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             // نشان سه‌بعدی اختصاصی هر تب — ابعاد ثابت در هر دو حالت + واکنش به تم:
             // حلقه/سطح با رنگ‌های پالت، حالت غیرفعال کمی کم‌رنگ‌تر
+            // v2.17.0 — کاشی طلایی گوشه‌گرد پشت آیکن (به سبک منوی مرجع)
             Box(
                 modifier = Modifier
                     .size(TAB_ICON_BOX)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(17.dp))
                     .then(
                         if (selected)
-                            Modifier.border(2.dp, p.gold.copy(alpha = 0.9f), CircleShape)
+                            Modifier.background(
+                                Brush.verticalGradient(
+                                    listOf(p.goldHighlight, p.gold, p.goldDark)
+                                )
+                            )
                         else
-                            Modifier.border(1.dp, Color(0x33FFFFFF), CircleShape)
+                            Modifier.background(Color(0x0FFFFFFF))
                     )
                     .then(
-                        if (selected) Modifier.background(p.gold.copy(alpha = 0.10f))
-                        else Modifier
+                        if (selected)
+                            Modifier.border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(17.dp))
+                        else
+                            Modifier.border(1.dp, p.gold.copy(alpha = 0.20f), RoundedCornerShape(17.dp))
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -660,8 +667,8 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
                     contentDescription = tab.label,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(TAB_IMAGE)
-                        .clip(CircleShape),
+                        .size(if (selected) TAB_IMAGE else TAB_IMAGE - 6.dp)
+                        .clip(RoundedCornerShape(13.dp)),
                     colorFilter = if (selected) null
                     else ColorFilter.colorMatrix(
                         ColorMatrix().apply { setToSaturation(0.55f) }

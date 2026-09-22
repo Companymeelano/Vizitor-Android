@@ -314,20 +314,10 @@ fun NeonGreenButton(
     }
 }
 
-/** عنوان هر بخش از صفحه با نشان طلایی. */
+/** عنوان هر بخش از صفحه با نگین و متن گرادیانی طلایی (سبک مرجع). */
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, tint = Gold, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            text = text,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-    }
+    MaSectionHeader(title = text, icon = icon, modifier = modifier)
 }
 
 /** برچسب وضعیت کوچک رنگی با حلقه ظریف هم‌رنگ. */
@@ -349,31 +339,50 @@ fun StatusChip(text: String, color: Color, modifier: Modifier = Modifier) {
 
 /**
  * ═ فوتر کپی‌رایت — الزام هویتی پروژه ═
- * متن با گرادیان طلایی و جداکننده درخشان.
+ * v2.17.0: به سبک مرجع — قرصِ «MEELANO STUDIO DESIGN» با نشان M،
+ * و زیر آن نام برنامه‌نویس. دقیقاً امضای انتهای صفحه‌های نمونهٔ مرجع.
  */
 @Composable
 fun MilanoFooter(modifier: Modifier = Modifier) {
+    val p = vizitorPalette
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 18.dp, bottom = 10.dp),
+            .padding(top = 16.dp, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Box(
-            modifier = Modifier
-                .width(72.dp)
-                .height(2.dp)
-                .background(
-                    Brush.horizontalGradient(listOf(Color.Transparent, Gold, Color(0xFFFFF6CC), Gold, Color.Transparent))
-                )
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Developed by Milano Technical Team, Milad Yaghoobi",
-            color = Gold,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            textAlign = TextAlign.Center
-        )
+        MeelanoPill()
+        Spacer(Modifier.height(7.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .width(26.dp)
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, p.gold.copy(alpha = 0.6f))
+                        )
+                    )
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "برنامه‌نویس • میلاد یعقوبی",
+                color = p.textSecondary,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.width(6.dp))
+            Box(
+                Modifier
+                    .width(26.dp)
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(p.gold.copy(alpha = 0.6f), Color.Transparent)
+                        )
+                    )
+            )
+        }
     }
 }

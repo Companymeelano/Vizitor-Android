@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Color
  */
 @Composable
 fun VizitorTheme(
-    themeId: String = RoyalDarkPalette.id,
+    themeId: String = MaReportGoldPalette.id,
     content: @Composable () -> Unit
 ) {
     val palette = paletteById(themeId)

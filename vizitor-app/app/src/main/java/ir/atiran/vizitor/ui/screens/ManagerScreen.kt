@@ -60,8 +60,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.atiran.vizitor.VizitorViewModel
-import ir.atiran.vizitor.ui.components.BarChart
 import ir.atiran.vizitor.ui.components.DonutChart
+import ir.atiran.vizitor.ui.components.LineTrendChart
+import ir.atiran.vizitor.ui.components.MaAmber
+import ir.atiran.vizitor.ui.components.MaGreen
+import ir.atiran.vizitor.ui.components.MaPulseCard
+import ir.atiran.vizitor.ui.components.MaPulseRow
+import ir.atiran.vizitor.ui.components.MaRed
+import ir.atiran.vizitor.ui.components.MaStatStrip
+import ir.atiran.vizitor.ui.components.MaToolGrid
+import ir.atiran.vizitor.ui.components.MaToolTile
+import ir.atiran.vizitor.ui.components.MetalBarChart
+import ir.atiran.vizitor.ui.components.Ring3DChart
+import ir.atiran.vizitor.ui.components.TrendSeries
+import ir.atiran.vizitor.ui.components.maStatus
 import ir.atiran.vizitor.ui.components.GlamourButton
 import ir.atiran.vizitor.ui.components.GlamourCard
 import ir.atiran.vizitor.ui.components.GlamourTone
@@ -90,6 +102,7 @@ fun ManagerScreen(
     val serverInvoices by viewModel.serverInvoices.collectAsState()
     val customers by viewModel.customers.collectAsState()
     val products by viewModel.products.collectAsState()
+    val session by ir.atiran.vizitor.sqldirect.VizitorSession.state.collectAsState()
     val p = vizitorPalette
 
     val snap = remember(serverInvoices, customers, products) {
@@ -195,6 +208,75 @@ fun ManagerScreen(
             }
         }
 
+        // ═════════════════ نوار خلاصهٔ عددی (سبک مرجع) ═════════════════
+        item {
+            MaStatStrip(
+                items = listOf(
+                    Triple("فروش کل", snap.totalSales.toFaPrice(), Gold),
+                    Triple("فاکتور", snap.invoiceCount.toFaNumber(), NeonGreen),
+                    Triple("مشتری", snap.customerCount.toFaNumber(), p.gold),
+                    Triple("بدهی", snap.totalDebt.toFaPrice(), DangerRed),
+                )
+            )
+        }
+
+        // ═════════════════ نبض کسب‌وکار (نوار وضعیت رنگی) ═════════════════
+        item {
+            val salesPulse = if (snap.totalSales > 0L)
+                ((snap.totalSales - snap.totalDebt).coerceAtLeast(0L).toFloat() / snap.totalSales.toFloat())
+                    .coerceIn(0f, 1f) else 0f
+            val officialShare = if (snap.invoiceCount > 0)
+                snap.officialInvoiceCount.toFloat() / snap.invoiceCount.toFloat() else 0f
+            val stockHealth = if (snap.productCount > 0)
+                1f - (snap.outOfStockCount.toFloat() / snap.productCount.toFloat()) else 0f
+            val cleanCustomers = if (snap.customerCount > 0)
+                1f - (snap.debtorCount.toFloat() / snap.customerCount.toFloat()) else 0f
+            val (c1, t1) = maStatus(salesPulse)
+            val (c2, t2) = maStatus(officialShare)
+            val (c3, t3) = maStatus(stockHealth)
+            val (c4, t4) = maStatus(cleanCustomers)
+            val (c5, t5) = maStatus(if (session.connected) 1f else 0f)
+            MaPulseCard(
+                rows = listOf(
+                    MaPulseRow(
+                        label = "وصول مطالبات",
+                        fraction = salesPulse,
+                        status = t1,
+                        color = c1,
+                        hint = "فروش منهای بدهی مشتریان"
+                    ),
+                    MaPulseRow(
+                        label = "فاکتور رسمی",
+                        fraction = officialShare,
+                        status = t2,
+                        color = c2,
+                        hint = "نسبت به کل فاکتورها"
+                    ),
+                    MaPulseRow(
+                        label = "سلامت انبار",
+                        fraction = stockHealth,
+                        status = t3,
+                        color = c3,
+                        hint = "${snap.outOfStockCount.toFaNumber()} کالای ناموجود"
+                    ),
+                    MaPulseRow(
+                        label = "مشتریان خوش‌حساب",
+                        fraction = cleanCustomers,
+                        status = t4,
+                        color = c4,
+                        hint = "${snap.debtorCount.toFaNumber()} مشتری بدهکار"
+                    ),
+                    MaPulseRow(
+                        label = "اتصال سرور آتیران",
+                        fraction = if (session.connected) 1f else 0f,
+                        status = t5,
+                        color = c5,
+                        hint = if (session.connected) "متصل — ${session.serverLabel}" else "وصل نیست"
+                    ),
+                )
+            )
+        }
+
         // ═════════════════ شاخص‌های کلیدی ═════════════════
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -269,7 +351,36 @@ fun ManagerScreen(
                         color = TextSecondary
                     )
                 } else {
-                    BarChart(data = snap.salesByDay)
+                    MetalBarChart(rows = snap.salesByDay)
+                }
+            }
+        }
+
+        // ═════════════════ روند فروش و تخفیف (نمودار خطی دوسری) ═════════════════
+        item {
+            GlamourCard(title = "روند فروش و تخفیف — تاریخ‌های اخیر", icon = Icons.Filled.TrendingUp) {
+                if (snap.salesTrend.size < 2) {
+                    Text(
+                        "برای رسم روند، دست‌کم دو تاریخ با فاکتور لازم است — «همگام‌سازی تازه از سرور» را بزنید.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
+                } else {
+                    LineTrendChart(
+                        labels = snap.salesTrend.map { it.first },
+                        series = listOf(
+                            TrendSeries(
+                                name = "فروش",
+                                color = Gold,
+                                values = snap.salesTrend.map { it.second }
+                            ),
+                            TrendSeries(
+                                name = "تخفیف",
+                                color = NeonGreen,
+                                values = snap.salesTrend.map { it.third }
+                            ),
+                        )
+                    )
                 }
             }
         }
@@ -281,6 +392,31 @@ fun ManagerScreen(
                     slices = snap.invoiceSplit.map { Triple(it.first, it.second, Color(it.third)) },
                     centerTitle = "کل فاکتور",
                     centerValue = snap.invoiceCount.toFaNumber()
+                )
+            }
+        }
+
+        // ═════════════════ حلقهٔ سه‌بعدی درخشان (سبک مرجع) ═════════════════
+        item {
+            GlamourCard(title = "نسبت وصول مطالبات — حلقهٔ سه‌بعدی", icon = Icons.Filled.AccountBalanceWallet) {
+                val collect = if (snap.totalSales > 0L)
+                    ((snap.totalSales - snap.totalDebt).coerceAtLeast(0L).toFloat() / snap.totalSales.toFloat())
+                        .coerceIn(0f, 1f) else 0f
+                androidx.compose.foundation.layout.Box(
+                    Modifier.fillMaxWidth(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    Ring3DChart(
+                        percent = collect,
+                        centerTitle = "وصول از فروش",
+                        centerValue = "${(collect * 100).toInt().toFaNumber()}٪"
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "جمع فروش ${snap.totalSales.toFaPrice()} ریال • جمع بدهی مشتریان ${snap.totalDebt.toFaPrice()} ریال",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary
                 )
             }
         }
@@ -413,6 +549,21 @@ fun ManagerScreen(
                     }
                 }
             }
+        }
+
+        // ═════════════════ دسترسی سریع مدیر (کاشی‌های ابزار) ═════════════════
+        item {
+            MaToolGrid(
+                title = "دسترسی سریع مدیریت",
+                columns = 5,
+                tools = listOf(
+                    MaToolTile("همگام‌سازی سرور", Icons.Filled.Sync, NeonPurple) { viewModel.syncNow() },
+                    MaToolTile("همگام‌سازی مشتریان", Icons.Filled.People, MaGreen) { viewModel.syncCustomersNow() },
+                    MaToolTile("تنظیمات اتصال", Icons.Filled.Settings, MaAmber) { onOpenSettings() },
+                    MaToolTile("صفحهٔ ورود", Icons.Filled.ArrowBack, Gold) { onBack() },
+                    MaToolTile("خروج از حساب", Icons.Filled.ExitToApp, MaRed) { onLogout() },
+                )
+            )
         }
 
         item {

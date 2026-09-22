@@ -1,2 +1,0 @@
-88d0a807378d04e4a80f48fdebe5e910f1b8db5ac07b0fad89511a2d32dad170  Vizitor-2.16.0-direct-debug.apk
-ca40f68571dd2b01d5e911928fae78b108b7ec4334244e22a159b3de5e523cbc  Vizitor-2.16.0-direct.apk

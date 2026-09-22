@@ -128,7 +128,8 @@ fun GlassCard(
                 scaleY = s
                 translationY = (1f - e) * 30f
             }
-            .glassPanel(shape = shape, borderColor = borderColor)
+            // v2.17.0 — قاب فلزی-طلایی «گزارش طلایی» به‌جای شیشهٔ قبلی
+            .metalPanel(shape = shape, corner = 24f)
             .padding(16.dp),
         content = content
     )

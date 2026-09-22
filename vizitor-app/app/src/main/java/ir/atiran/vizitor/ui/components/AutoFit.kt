@@ -262,41 +262,8 @@ fun TableHeader(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) {
-                Icon(icon, contentDescription = null, tint = Color(0xFFF0B23C), modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-            }
-            Text(
-                title,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(Color(0x22F0B23C))
-                    .border(1.dp, Color(0x55F0B23C), RoundedCornerShape(50))
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
-            ) {
-                Text(count, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF0B23C))
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(Color(0x88F0B23C), Color(0x22F0B23C), Color.Transparent)
-                    )
-                )
-        )
-    }
+    // v2.17.0 — سربرگ بخش‌ها با نگین طلایی و شمارشِ قرص‌مانند (سبک مرجع)
+    MaSectionHeader(title = title, count = count, icon = icon, modifier = modifier)
 }
 
 /** کاشی کوچک آماری برای سربرگ بخش‌ها (تعداد کالا/مشتری/فاکتور). */
@@ -307,11 +274,16 @@ fun MiniStat(
     tint: Color,
     modifier: Modifier = Modifier,
 ) {
+    // v2.17.0 — کاشی کوچک آماری با قاب فلزی طلایی هم‌رنگ مقدار
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0x12FFFFFF))
-            .border(1.dp, tint.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(tint.copy(alpha = 0.16f), Color(0x0A000000))
+                )
+            )
+            .border(1.dp, tint.copy(alpha = 0.42f), RoundedCornerShape(12.dp))
             .padding(horizontal = 9.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

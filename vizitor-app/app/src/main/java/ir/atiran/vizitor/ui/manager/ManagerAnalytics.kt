@@ -35,6 +35,8 @@ object ManagerAnalytics {
         val outOfStockCount: Int,
         // ── نمودار/جدول ──
         val salesByDay: List<Pair<String, Long>>,
+        /** (تاریخ، فروش، تخفیف) — برای نمودار روند دوسری. */
+        val salesTrend: List<Triple<String, Long, Long>> = emptyList(),
         val invoiceSplit: List<Triple<String, Long, Int>>,   // (نام، مقدار، رنگ)
         val topCustomers: List<Triple<String, String, Long>>, // (نام، کد، جمع خرید)
         val debtors: List<CustomerEntity>,
@@ -62,15 +64,16 @@ object ManagerAnalytics {
 
         val debtors = customers.filter { it.debt > 0 }.sortedByDescending { it.debt }
 
-        // فروش به تفکیک تاریخ (همان رشتهٔ تاریخ واقعی سرور، مرتب‌شدهٔ نزولی)
-        val byDay = invoices
+        // فروش/تخفیف به تفکیک تاریخ (همان رشتهٔ تاریخ واقعی سرور، مرتب‌شدهٔ نزولی)
+        val trend = invoices
             .groupBy { it.dateText.ifBlank { "بدون تاریخ" } }
-            .mapValues { (_, rows) -> rows.sumOf { it.total } }
-            .entries
-            .sortedByDescending { it.key }
+            .map { (date, rows) ->
+                Triple(date, rows.sumOf { it.total }, rows.sumOf { it.discount })
+            }
+            .sortedByDescending { it.first }
             .take(8)
-            .map { it.key to it.value }
             .reversed()
+        val byDay = trend.map { it.first to it.second }
 
         val split = listOf(
             Triple("فاکتور رسمی", official.toLong(), C_GREEN),
@@ -126,6 +129,7 @@ object ManagerAnalytics {
             stockValue = stockValue,
             outOfStockCount = products.count { it.stock <= 0.0 },
             salesByDay = byDay,
+            salesTrend = trend,
             invoiceSplit = split,
             topCustomers = topCustomers,
             debtors = debtors.take(8),

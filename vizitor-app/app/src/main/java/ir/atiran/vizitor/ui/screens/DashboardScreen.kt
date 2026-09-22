@@ -76,6 +76,15 @@ import ir.atiran.vizitor.data.local.InvoiceStatus
 import ir.atiran.vizitor.data.local.TopProduct
 import ir.atiran.vizitor.ui.components.DepthBar
 import ir.atiran.vizitor.ui.components.GlassCard
+import ir.atiran.vizitor.ui.components.MaGreen
+import ir.atiran.vizitor.ui.components.MaIconBadge
+import ir.atiran.vizitor.ui.components.metalPanel
+import ir.atiran.vizitor.ui.components.MaHeroTitle
+import ir.atiran.vizitor.ui.components.MaPulseCard
+import ir.atiran.vizitor.ui.components.MaPulseRow
+import ir.atiran.vizitor.ui.components.MaRed
+import ir.atiran.vizitor.ui.components.MaStatStrip
+import ir.atiran.vizitor.ui.components.maStatus
 import ir.atiran.vizitor.ui.components.MilanoFooter
 import ir.atiran.vizitor.ui.components.RankBadge3D
 import ir.atiran.vizitor.ui.components.RoyalBarChart
@@ -160,6 +169,73 @@ fun DashboardScreen(
                 Spacer(Modifier.width(10.dp))
                 ThemeDotsSwitch()
             }
+        }
+
+        // ── تیتر قهرمان صفحه (سبک مرجع: طلایی درشت + زیرنویس لوکس) ─────────
+        item {
+            MaHeroTitle(
+                title = "آتیران ویزیتور",
+                subtitle = "ATIRAN • INTELLIGENT SALES EXPERIENCE",
+                fx = true
+            )
+        }
+
+        // ── نوار خلاصهٔ عددی امروز ─────────────────────────────────────────
+        item {
+            MaStatStrip(
+                items = listOf(
+                    Triple("فروش امروز", todaySales.toFaPrice(), Gold),
+                    Triple("هدف روز", target.toFaPrice(), NeonPurple),
+                    Triple("ارسال‌شده", sentToday.toFaNumber(), NeonGreen),
+                    Triple("در انتظار", pending.toFaNumber(), DangerRed),
+                )
+            )
+        }
+
+        // ── نبض امروز (ردیف‌های وضعیت رنگی به سبک مرجع) ────────────────────
+        item {
+            val debtCount = customers.count { it.debt > 0 }
+            val cleanShare = if (customers.isNotEmpty())
+                1f - (debtCount.toFloat() / customers.size.toFloat()) else 0f
+            val followShare = if (customers.isNotEmpty())
+                1f - (followUp.size.toFloat() / customers.size.toFloat()) else 0f
+            val (c1, t1) = maStatus(progress)
+            val (c2, t2) = maStatus(syncRatio)
+            val (c3, t3) = maStatus(cleanShare)
+            val (c4, t4) = maStatus(followShare)
+            MaPulseCard(
+                title = "نبض امروز",
+                rows = listOf(
+                    MaPulseRow(
+                        label = "فروش نسبت به هدف",
+                        fraction = progress,
+                        status = t1,
+                        color = c1,
+                        hint = "هدف ${target.toFaPrice()} ریال"
+                    ),
+                    MaPulseRow(
+                        label = "ارسال به سرور",
+                        fraction = syncRatio,
+                        status = t2,
+                        color = c2,
+                        hint = "${sentToday.toFaNumber()} ارسال‌شده"
+                    ),
+                    MaPulseRow(
+                        label = "مشتریان خوش‌حساب",
+                        fraction = cleanShare,
+                        status = t3,
+                        color = c3,
+                        hint = "${debtCount.toFaNumber()} بدهکار"
+                    ),
+                    MaPulseRow(
+                        label = "پوشش پیگیری مشتریان",
+                        fraction = followShare,
+                        status = t4,
+                        color = c4,
+                        hint = "${followUp.size.toFaNumber()} مشتری در فهرست"
+                    ),
+                )
+            )
         }
 
         // ── دسترسی سریع (v2.14.0) — ثبت ویزیت + گفتگوی ویزیتورها ───────────
@@ -358,28 +434,15 @@ private fun QuickTile(
     onClick: () -> Unit
 ) {
     val p = vizitorPalette
+    // v2.17.0 — کاشی فلزی-طلایی با نشان آیکن طلایی (سبک مرجع)
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(p.btnPrimaryTop.copy(alpha = 0.55f), p.surfaceDeep.copy(alpha = 0.8f))
-                )
-            )
-            .border(1.dp, p.gold.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+            .metalPanel(RoundedCornerShape(16.dp), corner = 16f)
             .clickable(onClick = onClick)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(p.btnPrimaryTop, p.btnPrimaryBottom))),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = title, tint = Color.White, modifier = Modifier.size(20.dp))
-        }
+        MaIconBadge(icon, size = 40.dp)
         Spacer(Modifier.height(7.dp))
         Text(
             title,
