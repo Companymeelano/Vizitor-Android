@@ -11,6 +11,10 @@
 # ═══════════════════════════════════════════════════════════════════════════
 name: Build Vizitor Android app (direct SQL)
 
+env:
+  # نام نسخهٔ برنامه — همهٔ نام فایل‌ها/تگ ریلیز از همین یک مقدار ساخته می‌شوند
+  APP_VERSION: "2.15.0"
+
 on:
   workflow_dispatch:
   push:
@@ -136,10 +140,10 @@ jobs:
         run: |
           set -e
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Vizitor-2.14.0-direct.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/Vizitor-2.14.0-direct-debug.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/Vizitor-$APP_VERSION-direct.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/Vizitor-$APP_VERSION-direct-debug.apk"
           # فقط سطر نسخهٔ اصلی در فایل .sha256 (نام فایل با نام همان APK یکی است)
-          cd dist && sha256sum Vizitor-2.14.0-direct.apk > Vizitor-2.14.0-direct.apk.sha256 \
+          cd dist && sha256sum "Vizitor-$APP_VERSION-direct.apk" > "Vizitor-$APP_VERSION-direct.apk.sha256" \
                     && sha256sum *.apk > SHA256SUMS.txt
           ls -l
 
@@ -218,21 +222,21 @@ jobs:
           set +e
           REL=vizitor-app/app/build/outputs/apk/release/app-release.apk
           DBG=vizitor-app/app/build/outputs/apk/debug/app-debug.apk
-          R1=vizitor-app/dist/Vizitor-2.14.0-direct.apk
-          R2=vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256
+          R1=vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk
+          R2=vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk.sha256
           R3=vizitor-app/dist/BUILD-INFO.txt
           R4=vizitor-app/dist/SHA256SUMS.txt
           rm -rf /tmp/cargo3 && mkdir -p /tmp/cargo3
           cp "$REL" /tmp/cargo3/apk || { echo "::warning::خروجی نسخهٔ اصلی پیدا نشد"; exit 0; }
           HASH=$(sha256sum /tmp/cargo3/apk | cut -d' ' -f1)
-          printf '%s  Vizitor-2.14.0-direct.apk\n' "$HASH" > /tmp/cargo3/sha
+          printf '%s  Vizitor-%s-direct.apk\n' "$HASH" "$APP_VERSION" > /tmp/cargo3/sha
           : > /tmp/cargo3/sums
           if [ -f "$DBG" ]; then
-            printf '%s  Vizitor-2.14.0-direct-debug.apk\n' "$(sha256sum "$DBG" | cut -d' ' -f1)" >> /tmp/cargo3/sums
+            printf '%s  Vizitor-%s-direct-debug.apk\n' "$(sha256sum "$DBG" | cut -d' ' -f1)" "$APP_VERSION" >> /tmp/cargo3/sums
           fi
-          printf '%s  Vizitor-2.14.0-direct.apk\n' "$HASH" >> /tmp/cargo3/sums
+          printf '%s  Vizitor-%s-direct.apk\n' "$HASH" "$APP_VERSION" >> /tmp/cargo3/sums
           {
-            echo "Vizitor-2.14.0-direct.apk  (آتیران ویزیتور — نسخه ۲٫۱۴٫۰ با اتصال مستقیم SQL)"
+            echo "Vizitor-$APP_VERSION-direct.apk  (آتیران ویزیتور — نسخه $APP_VERSION با اتصال مستقیم SQL)"
             echo "تاریخ ساخت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "کامیت: ${GITHUB_SHA}"
             echo "حجم: $(stat -c %s /tmp/cargo3/apk) بایت"
@@ -252,7 +256,7 @@ jobs:
             git diff --cached --quiet && { echo "APK از قبل ثبت شده بود"; break; }
             git config user.name "vizitor-ci"
             git config user.email "ci@vizitor.local"
-            git commit -q -m "chore(ci): APK امضاشدهٔ آتیران ویزیتور ۲٫۱۴٫۰ در مخزن [skip ci]"
+            git commit -q -m "chore(ci): APK امضاشدهٔ آتیران ویزیتور $APP_VERSION در مخزن [skip ci]"
             if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "APK در مخزن ثبت شد ✓ (sha256: $HASH)"; break; fi
             echo "پوش رد شد (تلاش $try) — تلاش دوباره"
             sleep 4
@@ -276,39 +280,45 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: vizitor-app-direct-2.14.0
-          name: "آتیران ویزیتور — نسخه ۲٫۱۴٫۰ (ثبت ویزیت) با اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
+          tag_name: vizitor-app-direct-${{ env.APP_VERSION }}
+          name: "آتیران ویزیتور — نسخه ${{ env.APP_VERSION }} (ورود ویزیتور از dbo.sys_vis + ویترین تصویری) با اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
           body: |
             برنامهٔ اندروید **آتیران ویزیتور** با اتصال **مستقیم** به SQL Server روی پورت
             **۱۴۳۳** — بدون IIS و بدون API میانی، هماهنگ با نصب‌کنندهٔ ویندوز.
 
             | فایل | توضیح |
             |---|---|
-            | `Vizitor-2.14.0-direct.apk` | نسخهٔ امضاشده (این را روی گوشی‌ها نصب کنید) — شناخته‌شده به `2.14.0-direct` (شمارهٔ ساخت ۲۱۸۱۰) |
-            | `Vizitor-2.14.0-direct-debug.apk` | نسخهٔ آزمون (در کنار نسخهٔ اصلی نصب می‌شود) |
+            | `Vizitor-${{ env.APP_VERSION }}-direct.apk` | نسخهٔ امضاشده (این را روی گوشی‌ها نصب کنید) — شناخته‌شده به `${{ env.APP_VERSION }}-direct` (شمارهٔ ساخت ۲۱۸۱۱) |
+            | `Vizitor-${{ env.APP_VERSION }}-direct-debug.apk` | نسخهٔ آزمون (در کنار نسخهٔ اصلی نصب می‌شود) |
 
-            **تازه در نسخهٔ ۲٫۱۴٫۰ — بخش «ثبت ویزیت» و فعال‌شدن همهٔ بخش‌ها بعد از ورود**
-            * **تب تازهٔ «ویزیت» در نوار پایین** — ثبت مراجعه به مشتری در جدول واقعی
-              `dbo.Visit` سامانهٔ آتیران: مشتری مجاز (از `dbo.sys_cus` با جست‌وجو)، مدت ویزیت،
-              توضیح، **موقعیت GPS** (اختیاری) و **تاریخ شمسی + ساعت** به همان قالب خود ERP.
-            * **بعد از وارد کردن اطلاعات ویزیتور (ورود از `dbo.sys_users`) همهٔ بخش‌ها فعال می‌شوند:**
-              پیشخوان، ویترین کالا (۵ سطح قیمت + موجودی)، ویزیت، مشتری، سبد → پیش‌فاکتور
-              (`dbo.add_sail_pish` + تریگر)، گزارشات (فاکتورهای واقعی `sailfact`/`sailfact_pish`) و تنظیمات.
-            * **ویزیت‌های اخیر + شمارش «امروز»** — مستقیم از `dbo.Visit` خوانده می‌شود
-              (نام مشتری با JOIN روی `dbo.CUSTOMERS`)؛ درج هم به حالت identity هم explicit کار می‌کند.
-            * **کارت «دسترسی سریع» در پیشخوان** — دو کاشی: ثبت ویزیت + گفتگوی ویزیتورها.
-            * **رفع خطاهای کلمپایل نسخهٔ لاکچری** (Luxury2/Premium) که بیلد ۲٫۱۳٫۸ را شکسته بود.
-            * **نصب‌کنندهٔ ویندوز به‌روز شد**: بخش «آماده‌سازی اتصال مستقیم اندروید» حالا
-              `GRANT INSERT ON dbo.Visit` را هم می‌دهد (فقط اگر جدول موجود باشد؛ غیرتلفیقی).
-            * اتصال روی پورت ۱۴۳۳ با درایورهای mssql-jdbc + jTDS، ذخیرهٔ رمزنگاری‌شدهٔ
-              تنظیمات (AES-GCM + Android Keystore) و ورود سریع با «به‌خاطر سپردن» — بدون تغییر.
-            * دو مرحلهٔ اعتبارنامه مثل خودِ سامانه: اول رمز «کاربر محدود دیتابیس» که نصب‌کننده
-              می‌سازد (`vizitor_android`)، بعد نام کاربری و کلمهٔ عبور خودِ ویزیتور
-              (ورود فقط با جدول واقعی `dbo.sys_users`).
+            **تازه در نسخهٔ ۲٫۱۵٫۰ — «ورود ویزیتور از dbo.sys_vis» + «ویترین تصویری حرفه‌ای»**
+            * **ورود دیگر نام کاربری/رمز کاربر آتیران نمی‌پرسد:** فهرست ویزیتورهای واقعی از جدول
+              `dbo.sys_vis` (⋈ `dbo.visitors` روی `shvis = vis_rdf`) خوانده می‌شود؛ کاربر فقط
+              ویزیتور خودش را از فهرست انتخاب می‌کند (نام، موبایل، کد ویزیتور و تعداد مشتری/کالای مجاز).
+              برای کاربران مدیریتی، «ورود دستی با نام کاربری آتیران» به‌صورت گزینهٔ اختیاری باقی مانده است.
+            * **ویترین تصویری:** هر کالا تصویر واقعی خودش را می‌گیرد — «فهرست پیش‌فرض تصاویر» بر اساس
+              نام کالا (پسته، بادام، گردو، بادام هندی، کشمش، خرما، انجیر، تخمه، زعفران/ادویه، عسل و آجیل مخلوط).
+            * **قیمت مصرف‌کننده و میانگین قیمت هر قلم:** سطح قیمت `forosh3` اگر در سرور خالی/صفر باشد،
+              قیمت مصرف‌کنندهٔ پیش‌فرض از روی نام کالا ساخته می‌شود و در UI با برچسب «پیش‌فرض» مشخص است؛
+              «میانگین قیمت هر قلم» = میانگین سطح‌های غیرصفر همان کالا (فقط دادهٔ واقعی سرور).
+              قیمت‌های فروش ۴ و ۵ و کمینه/بیشینهٔ مجاز هم به جدول قیمت کارت کالا اضافه شد.
+            * **رفع مشکل بارگذاری «نام مشتریان» و «گزارشات» در ورود:** نگاشت نام مشتری روی فاکتورها
+              اکنون با کلیدهای `shmo` **و** `code` انجام می‌شود (قبلاً فقط `code` بود و نام‌ها خالی می‌ماند) و
+              برای فهرست مشتریان، مسیر پشتیبان `CUSTOMERS.vis_rdf` اضافه شد تا اگر جدول مجوز `sys_cus`
+              برای کاربر خالی بود، فهرست مشتریان خالی نماند. پیام‌های وضعیت هم گویا شد
+              (مثلاً «برای این ویزیتور فاکتور یا پیش‌فاکتوری در سرور ثبت نشده»).
+            * **ارتقای همهٔ بخش‌ها:** جدول‌های ویترین/مشتریان/گزارشات با سرستون و کاشی‌های آماری،
+              فیلتر دستهٔ کالا در ویترین، دیالوگ بزرگ‌نمایی تصویر کالا، و مجموعهٔ تازهٔ رابط کاربری
+              (`AutoFitText` / `IdealButton` / `PriceRow` / `TableHeader` / `MiniStat`) — متن هر دکمه و
+              برچسب به‌صورت خودکار به اندازه‌ای می‌رسد که کامل جا شود و هیچ متنی سرریز نمی‌کند.
+            * مهاجرت پایگاه‌دادهٔ محلی ۶ → ۷ با حفظ دادهٔ سبد/فاکتورهای در انتظار، و امضای همان کلید نسخهٔ
+              قبلی — برنامه روی گوشی‌های موجود **درجا به‌روزرسانی** می‌شود.
+            * اتصال روی پورت ۱۴۳۳ با درایورهای mssql-jdbc + jTDS و ذخیرهٔ رمزنگاری‌شدهٔ تنظیمات
+              (AES-GCM + Android Keystore) — بدون تغییر.
 
             طراحی و برنامه‌نویسی: **میلاد یقوبی** — گروه نرم‌افزاری **Meelano Studio Design**.
           files: |
-            vizitor-app/dist/Vizitor-2.14.0-direct.apk
-            vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256
+            vizitor-app/dist/Vizitor-${{ env.APP_VERSION }}-direct.apk
+            vizitor-app/dist/Vizitor-${{ env.APP_VERSION }}-direct.apk.sha256
             vizitor-app/dist/SHA256SUMS.txt
-            vizitor-app/dist/Vizitor-2.14.0-direct-debug.apk
+            vizitor-app/dist/Vizitor-${{ env.APP_VERSION }}-direct-debug.apk

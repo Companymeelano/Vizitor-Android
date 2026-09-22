@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -51,6 +52,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SettingsEthernet
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
@@ -64,9 +67,12 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -91,11 +97,16 @@ import ir.atiran.vizitor.sqldirect.DirectSqlViewModel
 import ir.atiran.vizitor.sqldirect.DirectUiState
 import ir.atiran.vizitor.sqldirect.ServerSession
 import ir.atiran.vizitor.sqldirect.VizitorSession
+import ir.atiran.vizitor.sqldirect.VisitorLoginRepository
+import ir.atiran.vizitor.sqldirect.VisitorOption
 import ir.atiran.vizitor.ui.components.BtnTone
 import ir.atiran.vizitor.ui.components.GlowChip
 import ir.atiran.vizitor.ui.components.dashboardBackdrop
 import ir.atiran.vizitor.ui.components.GoldDivider
+import ir.atiran.vizitor.ui.components.AutoFitText
 import ir.atiran.vizitor.ui.components.GoldFlourish
+import ir.atiran.vizitor.ui.components.IdealButton
+import ir.atiran.vizitor.ui.components.MiniStat
 import ir.atiran.vizitor.ui.components.LuxBanner
 import ir.atiran.vizitor.ui.components.LuxChip
 import ir.atiran.vizitor.ui.components.LuxTone
@@ -131,6 +142,15 @@ fun DirectSqlScreen(
     val session by VizitorSession.state.collectAsState()
     val p = vizitorPalette
     val fit = rememberScreenFit()
+
+    // ── پس از ورود موفق ویزیتور (از dbo.sys_vis) خودکار به پنل می‌رویم ──────
+    //  فقط وقتی «همین‌جا» ورود انجام شده باشد (نه وقتی کاربر وارد‌شده این صفحه
+    //  را برای تغییر تنظیمات باز کرده باشد) تا هیچ پرتی از صفحه رخ ندهد.
+    var wasLoggedIn by remember { mutableStateOf(state.loggedIn) }
+    LaunchedEffect(state.loggedIn, state.busy) {
+        if (state.loggedIn && !state.busy && !wasLoggedIn) onEnterPanel()
+        wasLoggedIn = state.loggedIn
+    }
 
     Box(Modifier.fillMaxSize().dashboardBackdrop()) {
 
@@ -662,7 +682,12 @@ private fun ServerCard(
     }
 }
 
-// ═══════════════════════ گام ۳: ورود ویزیتور ═══════════════════════
+// ═══════════════════════ گام ۳: انتخاب و ورود ویزیتور ═══════════════════════
+//
+//  تغییر کلیدی نسخهٔ ۲٫۱۵: ورود دیگر از جدول dbo.sys_users پرسیده نمی‌شود.
+//  فهرست ویزیتورهای واقعی از dbo.sys_vis خوانده می‌شود و کاربر فقط ویزیتور
+//  خودش را انتخاب می‌کند (نام/موبایل/کد ویزیتور + تعداد مشتریان مجاز).
+//  ورود با نام کاربری آتیران هنوز «اختیاری» در بخش پیشرفته در دسترس است.
 
 @Composable
 private fun LoginCard(
@@ -674,10 +699,16 @@ private fun LoginCard(
 ) {
     val p = vizitorPalette
     var showPass by remember { mutableStateOf(false) }
+    var advanced by remember { mutableStateOf(false) }
+
+    val filtered = remember(state.visitorOptions, state.visitorFilter) {
+        VisitorLoginRepository.search(state.visitorOptions, state.visitorFilter)
+    }
 
     PremiumPanel(
-        title = "ورود ویزیتور",
-        hint = if (state.loggedIn) "وارد شده: ${state.loggedInUser}" else "با حساب خودتان در سامانهٔ آتیران",
+        title = if (state.loggedIn) "ویزیتور وارد شده" else "انتخاب ویزیتور (dbo.sys_vis)",
+        hint = if (state.loggedIn) "وارد شده: ${state.loggedInUser}"
+        else "ویزیتور خود را از فهرست واقعی سرور انتخاب کنید",
         icon = Icons.Filled.Person,
         step = 3,
         accent = if (state.loggedIn) p.accent else p.primary,
@@ -686,70 +717,167 @@ private fun LoginCard(
         onHeaderClick = viewModel::toggleLogin,
         expanded = state.loginExpanded || !state.loggedIn,
         trailing = {
-            if (state.loggedIn) {
-                GlowChip(text = "فعال", color = p.accent)
-            }
+            if (state.loggedIn) GlowChip(text = "فعال", color = p.accent)
+            else if (state.visitorOptions.isNotEmpty()) GlowChip(text = state.visitorOptions.size.toFaNumber(), color = p.gold)
         }
     ) {
         AnimatedVisibility(visible = state.loginExpanded || !state.loggedIn) {
             Column {
+                state.selectedVisitorName.takeIf { it.isNotBlank() && !state.loggedIn }?.let {
+                    Text(
+                        "ویزیتور انتخاب‌شده: $it",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = p.gold
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
                 Text(
-                    "همان نام کاربری و کلمهٔ عبوری که با آن به سامانه وارد می‌شوید (جدول واقعی dbo.sys_users).",
+                    "این برنامه ویزیتورها را مستقیم از جدول dbo.sys_vis می‌خواند؛ " +
+                        "نیازی به نام کاربری و کلمهٔ عبور کاربر آتیران نیست. " +
+                        "کافی است ویزیتور خودتان را انتخاب کنید.",
                     style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
                     color = p.textSecondary
                 )
                 Spacer(Modifier.height(10.dp))
-                PremiumField(
-                    value = state.erpUser,
-                    onValueChange = viewModel::onErpUser,
-                    label = "نام کاربری شما در سامانه",
-                    hint = "مثال: m.yaghoobi",
-                    icon = Icons.Filled.Person,
-                    minHeight = fit.fieldHeight,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(10.dp))
-                PremiumField(
-                    value = state.erpPassword,
-                    onValueChange = viewModel::onErpPassword,
-                    label = "کلمهٔ عبور شما",
-                    hint = "رمز شما در سامانهٔ آتیران",
-                    icon = Icons.Filled.Key,
-                    minHeight = fit.fieldHeight,
-                    visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailing = {
-                        IconButton(onClick = { showPass = !showPass }) {
-                            Icon(
-                                if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                contentDescription = "نمایش/پنهان رمز",
-                                tint = p.gold
-                            )
-                        }
+
+                IdealButton(
+                    label = when {
+                        state.visitorsLoading -> "در حال خواندن فهرست ویزیتورها…"
+                        state.visitorOptions.isEmpty() -> "خواندن فهرست ویزیتورها (sys_vis)"
+                        else -> "نمایش فهرست ویزیتورها (${state.visitorOptions.size} نفر)"
                     },
+                    icon = Icons.Filled.People,
+                    enabled = !state.busy && !state.visitorsLoading,
+                    onClick = { viewModel.loadVisitorsForLogin(force = true) },
                     modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(10.dp))
-                ToggleRow(
-                    label = "به‌خاطر سپردن",
-                    hint = "ورود سریع در اجرای بعدی — بدون تایپ مجدد",
-                    checked = state.rememberMe,
-                    onCheckedChange = viewModel::onRememberMe,
-                    icon = Icons.Filled.Key
                 )
 
-                Spacer(Modifier.height(14.dp))
+                if (state.visitorsLoading) {
+                    Spacer(Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = p.gold,
+                        trackColor = p.gold.copy(alpha = 0.18f)
+                    )
+                }
+
+                if (state.visitorOptions.isNotEmpty() && state.visitorPickerOpen) {
+                    Spacer(Modifier.height(10.dp))
+                    PremiumField(
+                        value = state.visitorFilter,
+                        onValueChange = viewModel::onVisitorFilter,
+                        label = "جست‌وجو در ویزیتورها",
+                        hint = "نام، موبایل یا کد ویزیتور",
+                        icon = Icons.Filled.Search,
+                        minHeight = fit.fieldHeight,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    filtered.take(60).forEach { option ->
+                        VisitorPickTile(
+                            option = option,
+                            selected = state.selectedVisitorRdf == option.visitorRdf,
+                            busy = state.busy,
+                            onClick = { viewModel.enterAsVisitor(option) }
+                        )
+                        Spacer(Modifier.height(6.dp))
+                    }
+                    if (filtered.isEmpty()) {
+                        Text(
+                            "ویزیتوری با این مشخصات پیدا نشد.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = p.textSecondary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
                 PremiumButton(
-                    text = if (state.loggedIn) "ورود به پنل" else "ورود و همگام‌سازی",
-                    subtitle = if (state.loggedIn) null else "اتصال + ورود + دریافت کالا، مشتری و فاکتور",
-                    icon = Icons.Filled.Login,
-                    tone = BtnTone.PRIMARY,
+                    text = if (state.loggedIn) "ورود به پنل" else "بررسی/اتصال سرور",
+                    subtitle = null,
+                    icon = if (state.loggedIn) Icons.Filled.Login else Icons.Filled.Storage,
+                    tone = if (state.loggedIn) BtnTone.PRIMARY else BtnTone.GLASS,
                     height = fit.buttonHeight,
                     textSize = fit.buttonText,
                     enabled = !state.busy,
                     loading = state.busy,
-                    onClick = { if (state.loggedIn) onEnterPanel() else viewModel.loginAndLoad() },
+                    onClick = { if (state.loggedIn) onEnterPanel() else viewModel.connectDatabase() },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(Modifier.height(6.dp))
+                TextButton(
+                    onClick = { advanced = !advanced },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (advanced) "بستن ورود دستی آتیران ▲" else "ورود دستی با نام کاربری آتیران (اختیاری) ▼",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = p.textSecondary
+                    )
+                }
+
+                AnimatedVisibility(visible = advanced) {
+                    Column {
+                        Text(
+                            "این مسیر فقط برای کاربران مدیریتی است: همان نام کاربری و کلمهٔ عبور dbo.sys_users.",
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
+                            color = p.textSecondary
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        PremiumField(
+                            value = state.erpUser,
+                            onValueChange = viewModel::onErpUser,
+                            label = "نام کاربری شما در سامانه",
+                            hint = "مثال: m.yaghoobi",
+                            icon = Icons.Filled.Person,
+                            minHeight = fit.fieldHeight,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        PremiumField(
+                            value = state.erpPassword,
+                            onValueChange = viewModel::onErpPassword,
+                            label = "کلمهٔ عبور شما",
+                            hint = "رمز شما در سامانهٔ آتیران",
+                            icon = Icons.Filled.Key,
+                            minHeight = fit.fieldHeight,
+                            visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailing = {
+                                IconButton(onClick = { showPass = !showPass }) {
+                                    Icon(
+                                        if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                        contentDescription = "نمایش/پنهان رمز",
+                                        tint = p.gold
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        ToggleRow(
+                            label = "به‌خاطر سپردن",
+                            hint = "ورود سریع در اجرای بعدی — بدون تایپ مجدد",
+                            checked = state.rememberMe,
+                            onCheckedChange = viewModel::onRememberMe,
+                            icon = Icons.Filled.Key
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        PremiumButton(
+                            text = if (state.loggedIn) "ورود به پنل" else "ورود و همگام‌سازی",
+                            subtitle = if (state.loggedIn) null else "اتصال + ورود + دریافت کالا، مشتری و فاکتور",
+                            icon = Icons.Filled.Login,
+                            tone = BtnTone.PRIMARY,
+                            height = fit.buttonHeight,
+                            textSize = fit.buttonText,
+                            enabled = !state.busy,
+                            loading = state.busy,
+                            onClick = { if (state.loggedIn) onEnterPanel() else viewModel.loginAndLoad() },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (state.loggedIn) {
@@ -787,6 +915,81 @@ private fun LoginCard(
                 }
             }
         }
+    }
+}
+
+/** یک ردیف ویزیتور در فهرست انتخاب — با نام، موبایل، کد و تعداد مشتریان مجاز. */
+@Composable
+private fun VisitorPickTile(
+    option: VisitorOption,
+    selected: Boolean,
+    busy: Boolean,
+    onClick: () -> Unit,
+) {
+    val p = vizitorPalette
+    val accent = when {
+        !option.isActive -> p.textSecondary
+        selected -> p.gold
+        else -> p.accent
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) accent.copy(alpha = 0.16f) else Color(0x12FFFFFF))
+            .border(1.dp, accent.copy(alpha = if (selected) 0.65f else 0.28f), RoundedCornerShape(16.dp))
+            .clickable(enabled = !busy && option.isActive, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(Brush.radialGradient(listOf(accent.copy(alpha = 0.55f), accent.copy(alpha = 0.12f)))),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                option.label.trim().take(1),
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.White
+            )
+        }
+        Spacer(Modifier.width(9.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            AutoFitText(
+                text = option.label,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.ExtraBold,
+                minimumSize = 10.sp,
+                maximumSize = 14.sp,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(2.dp))
+            AutoFitText(
+                text = option.subtitle,
+                color = p.textSecondary,
+                fontWeight = FontWeight.Medium,
+                minimumSize = 8.sp,
+                maximumSize = 10.5.sp,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        Spacer(Modifier.width(6.dp))
+        MiniStat(
+            label = "مشتری",
+            value = option.allowedCustomers.toString(),
+            tint = if (option.allowedCustomers > 0) p.accent else p.textSecondary
+        )
+        Spacer(Modifier.width(4.dp))
+        MiniStat(
+            label = "کالا",
+            value = option.allowedProducts.toString(),
+            tint = if (option.allowedProducts > 0) p.gold else p.textSecondary
+        )
     }
 }
 

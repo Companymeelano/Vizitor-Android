@@ -65,6 +65,13 @@ data class DirectUiState(
     val allowedProducts: Int = 0,
     val allowedWarehouses: Int = 0,
     val visitorsOfUser: Int = 0,
+    // ── ورود از جدول sys_vis (بدون پرسیدن نام کاربری/رمز کاربر آتیران) ──────
+    val visitorOptions: List<VisitorOption> = emptyList(),
+    val visitorPickerOpen: Boolean = false,
+    val visitorsLoading: Boolean = false,
+    val selectedVisitorRdf: Int? = null,
+    val selectedVisitorName: String = "",
+    val visitorFilter: String = "",
 )
 
 class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
@@ -180,6 +187,16 @@ class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
         VizitorSession.setStatus(message, 2)
     }
 
+    /** آیا ویزیتور (از sys_vis) روی گوشی ذخیره شده است؟ (برای ورود سریع بدون پرسیدن رمز) */
+    private var visitorSavedCache: Boolean? = null
+
+    private fun hasSavedVisitor(): Boolean {
+        visitorSavedCache?.let { return it }
+        val saved = runCatching { SecureDbStore.loadVisitor() != null }.getOrDefault(false)
+        visitorSavedCache = saved
+        return saved
+    }
+
     private fun publishSession() {
         val s = _state.value
         VizitorSession.update {
@@ -187,7 +204,8 @@ class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
                 configured = s.host.isNotBlank() && s.database.isNotBlank() && s.dbUser.isNotBlank(),
                 connected = s.connected,
                 loggedIn = s.loggedIn,
-                credentialsSaved = s.rememberMe && s.erpUser.isNotBlank(),
+                // ورود سریع: یا اعتبارنامهٔ آتیران ذخیره شده، یا ویزیتور sys_vis انتخاب‌شده داریم
+                credentialsSaved = (s.rememberMe && s.erpUser.isNotBlank()) || hasSavedVisitor(),
                 host = s.host, publicHost = s.publicHost, usePublicHost = s.usePublicHost,
                 port = s.port.toIntOrNull() ?: 1433, database = s.database,
                 erpUser = s.loggedInUser.ifBlank { s.erpUser },
@@ -304,6 +322,10 @@ class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
             val savedErp = SecureDbStore.loadErp()
             if (autoLoginAfter && savedErp != null && savedErp.remember && savedErp.password.isNotBlank()) {
                 loginAndSync(savedErp.username, savedErp.password)
+            } else if (!_state.value.loggedIn) {
+                // اتصال برقرار شد ولی ورود انجام نشده ⇒ فهرست ویزیتورهای واقعی
+                // (dbo.sys_vis) خودکار خوانده می‌شود تا کاربر فقط انتخاب کند.
+                loadVisitorsForLogin(force = true)
             }
         }
     }
@@ -316,8 +338,35 @@ class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
             fail("هنوز اتصالی ذخیره نشده است — «تنظیم اتصال» را کامل کنید.")
             return
         }
+        // مسیر تازهٔ پیش‌فرض: ویزیتور ذخیره‌شده از sys_vis (بدون نام کاربری/رمز آتیران)
+        val savedVisitor = SecureDbStore.loadVisitor()
+        if (savedVisitor != null && savedVisitor.visitorRdf > 0 &&
+            (erp == null || !erp.remember || erp.password.isBlank())
+        ) {
+            val (external, local, useExternal) = SecureDbStore.loadAddresses()
+            _state.update {
+                it.copy(
+                    host = local.ifBlank { saved.host }, publicHost = external,
+                    usePublicHost = useExternal && external.isNotBlank(),
+                    port = saved.port.toString(), database = saved.database,
+                    dbUser = saved.username, dbPassword = saved.password,
+                    useEncryption = saved.useEncryption,
+                )
+            }
+            enterAsVisitor(
+                VisitorOption(
+                    userId = savedVisitor.userId,
+                    companyId = savedVisitor.companyId,
+                    visitorRdf = savedVisitor.visitorRdf,
+                    name = savedVisitor.name,
+                    cell = "", region = null, city = null, active = "t",
+                    allowedCustomers = 0, allowedProducts = 0, allowedWarehouses = 0,
+                )
+            )
+            return
+        }
         if (erp == null || !erp.remember || erp.password.isBlank() || erp.username.isBlank()) {
-            // تنظیمات هست ولی اعتبارنامهٔ ذخیره‌شده نداریم → ورود دستی
+            // تنظیمات هست ولی نه ویزیتور ذخیره‌شده و نه اعتبارنامهٔ آتیران → انتخاب ویزیتور
             val (external, local, useExternal) = SecureDbStore.loadAddresses()
             _state.update {
                 it.copy(
@@ -363,6 +412,154 @@ class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }
             loginAndSync(erp.username, erp.password)
+        }
+    }
+
+    // ══════════════════ ورود از جدول واقعی dbo.sys_vis ═══════════════════════
+    //  جریان تازه (خواستهٔ کارفرما): بدون هیچ پرس‌وجوی «نام کاربری/رمز کاربر آتیران»،
+    //  ابتدا فهرست ویزیتورها از sys_vis خوانده می‌شود و کاربر فقط ویزیتورش را
+    //  انتخاب می‌کند؛ بعد همهٔ داده‌ها با همان UserID/SysID/shvis همگام می‌شوند.
+
+    fun toggleVisitorPicker() = _state.update { it.copy(visitorPickerOpen = !it.visitorPickerOpen) }
+
+    fun onVisitorFilter(v: String) = _state.update { it.copy(visitorFilter = v) }
+
+    /** خواندن فهرست ویزیتورهای قابل انتخاب از sys_vis (نیازمند اتصال برقرار). */
+    fun loadVisitorsForLogin(force: Boolean = false) {
+        if (!force && _state.value.visitorOptions.isNotEmpty()) {
+            _state.update { it.copy(visitorPickerOpen = true) }
+            return
+        }
+        viewModelScope.launch {
+            _state.update {
+                it.copy(visitorsLoading = true, visitorPickerOpen = true,
+                    status = "در حال خواندن فهرست ویزیتورها از dbo.sys_vis …", statusKind = 0)
+            }
+            // اگر هنوز وصل نیستیم، با تنظیمات ذخیره‌شده وصل شو (هیچ رمزی پرسیده نمی‌شود
+            // چون رمز کاربر محدود دیتابیس از قبل روی گوشی ذخیره شده است).
+            if (!_state.value.connected) {
+                val saved = SecureDbStore.load()
+                if (saved != null) {
+                    _state.update {
+                        it.copy(
+                            host = it.host.ifBlank { saved.host },
+                            database = it.database.ifBlank { saved.database },
+                            dbUser = it.dbUser.ifBlank { saved.username },
+                            dbPassword = it.dbPassword.ifBlank { saved.password },
+                            useEncryption = saved.useEncryption,
+                        )
+                    }
+                }
+                if (!SqlConnectionManager.connect(settings())) {
+                    val msg = (SqlConnectionManager.state.value as? ConnectionState.Error)?.message
+                    _state.update {
+                        it.copy(visitorsLoading = false, status = "اتصال به سرور برقرار نشد ❌ — ${msg ?: "خطای نامشخص"}", statusKind = 2)
+                    }
+                    return@launch
+                }
+                SecureDbStore.save(settings())
+                _state.update { it.copy(connected = true) }
+                publishSession()
+            }
+            val options = runCatching { VisitorLoginRepository.options(companyId = 0) }
+                .getOrElse { emptyList() }
+            val savedVisitor = SecureDbStore.loadVisitor()
+            _state.update {
+                it.copy(
+                    visitorOptions = options,
+                    visitorsLoading = false,
+                    selectedVisitorRdf = savedVisitor?.visitorRdf ?: it.selectedVisitorRdf,
+                    selectedVisitorName = savedVisitor?.name ?: it.selectedVisitorName,
+                    status = if (options.isEmpty())
+                        "در جدول dbo.sys_vis ویزیتوری برای انتخاب پیدا نشد — دسترسی کاربر دیتابیس و دادهٔ sys_vis را بررسی کنید."
+                    else
+                        "فهرست ویزیتورها آماده است ✅ — ${options.size} ویزیتور؛ یکی را انتخاب کنید.",
+                    statusKind = if (options.isEmpty()) 2 else 1,
+                )
+            }
+        }
+    }
+
+    /** ورود به‌عنوان ویزیتور انتخاب‌شده از sys_vis — بدون نام کاربری/رمز آتیران. */
+    fun enterAsVisitor(option: VisitorOption) {
+        if (!option.isActive) {
+            fail("ویزیتور «${option.label}» در سامانه غیرفعال است (visitors.active = 'f').")
+            return
+        }
+        viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    busy = true, visitorPickerOpen = false,
+                    selectedVisitorRdf = option.visitorRdf, selectedVisitorName = option.label,
+                    status = "در حال اتصال به‌عنوان ${option.label} …", statusKind = 0,
+                )
+            }
+            VizitorSession.beginBusy("در حال ورود ویزیتور ${option.label}…")
+            if (!_state.value.connected && !SqlConnectionManager.connect(settings())) {
+                val msg = (SqlConnectionManager.state.value as? ConnectionState.Error)?.message
+                fail("اتصال به سرور برقرار نشد ❌ — ${msg ?: "خطای نامشخص"}")
+                return@launch
+            }
+            SecureDbStore.save(settings())
+            SecureDbStore.saveVisitor(
+                userId = option.userId, companyId = option.companyId,
+                visitorRdf = option.visitorRdf, name = option.label,
+            )
+            visitorSavedCache = true
+            val identity = runCatching { data.visitorIdentity(option.userId, option.companyId) }.getOrNull()
+            val visitors = runCatching { VisitorRepository.visitorsForUser(option.userId, option.companyId) }
+                .getOrElse { emptyList() }
+            val columns = runCatching { VisitorRepository.visitorsColumns() }.getOrElse { emptyList() }
+            val total = runCatching { VisitorRepository.visitorCount() }.getOrDefault(0)
+            _state.update { st ->
+                st.copy(
+                    connected = true, loggedIn = true,
+                    loggedInUser = option.label, loggedInName = option.label,
+                    loggedInUserId = option.userId, loggedInCompanyId = option.companyId,
+                    visitors = visitors, visitorsOfUser = visitors.size,
+                    columns = columns, visitorCount = total,
+                    allowedCustomers = option.allowedCustomers,
+                    allowedProducts = option.allowedProducts,
+                    allowedWarehouses = option.allowedWarehouses,
+                    rememberMe = true,
+                    status = "ورود ویزیتور «${option.label}» انجام شد ✅ — در حال همگام‌سازی…",
+                    statusKind = 1,
+                )
+            }
+            publishSession()
+            VizitorSession.beginSync()
+            val report = runCatching {
+                SqldirectSync.run(
+                    db = db,
+                    userId = option.userId,
+                    companyId = option.companyId,
+                    visitorRdf = identity?.visitorRdf ?: option.visitorRdf,
+                )
+            }
+            report.fold(
+                onSuccess = { r ->
+                    _state.update { it.copy(busy = false, status = "ویزیتور ${option.label} ✅ — " + r.summary, statusKind = 1) }
+                    VizitorSession.update {
+                        it.copy(
+                            loggedIn = true, connected = true,
+                            erpUser = option.label, erpName = option.label,
+                            erpUserId = option.userId, companyId = option.companyId,
+                            visitorRdf = identity?.visitorRdf ?: option.visitorRdf,
+                            productsCount = r.products, customersCount = r.customers,
+                            invoicesCount = r.invoices, visitorsCount = visitors.size,
+                            credentialsSaved = true,
+                        )
+                    }
+                    VizitorSession.endSync(r.summary)
+                },
+                onFailure = { e ->
+                    _state.update {
+                        it.copy(busy = false, statusKind = 2,
+                            status = "ورود انجام شد ✅ ولی همگام‌سازی ناتمام ماند — " + (e.message ?: "") + "\nاز «همگام‌سازی» دوباره امتحان کنید.")
+                    }
+                    VizitorSession.endSync("همگام‌سازی ناتمام: " + (e.message ?: "خطای نامشخص"), 2)
+                },
+            )
         }
     }
 
@@ -535,10 +732,14 @@ class DirectSqlViewModel(app: Application) : AndroidViewModel(app) {
     fun logout() {
         SqlConnectionManager.disconnect()
         SecureDbStore.clearErp()
+        SecureDbStore.clearVisitor()   // ویزیتور انتخاب‌شده هم پاک می‌شود (ورود دوباره با انتخاب تازه)
+        visitorSavedCache = false
         _state.update {
             it.copy(
                 connected = false, loggedIn = false, rememberMe = false,
-                erpPassword = "", visitors = emptyList(), columns = emptyList(),
+                erpPassword = "", erpUser = "", visitors = emptyList(), columns = emptyList(),
+                visitorOptions = emptyList(), selectedVisitorRdf = null,
+                selectedVisitorName = "", visitorFilter = "", visitorPickerOpen = false,
                 loggedInUser = "", loggedInName = "", loggedInUserId = null, loggedInCompanyId = null,
                 status = "از حساب خارج شدید. (اطلاعات اتصال سرور محفوظ ماند)", statusKind = 0,
             )

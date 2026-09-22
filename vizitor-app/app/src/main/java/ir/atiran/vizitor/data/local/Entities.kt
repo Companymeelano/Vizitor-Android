@@ -27,7 +27,15 @@ data class ProductEntity(
     val unit: String = "کیلو",     // واحد شمارش کالا
     val packSize: Int = 1,         // تعداد/وزن داخل هر بسته
     val price2: Long = 0,          // قیمت فروش ۲ (۰ = مشابه فروش ۱)
-    val consumerPrice: Long = 0,   // قیمت مصرف‌کننده (۰ = مشابه فروش ۱)
+    val consumerPrice: Long = 0,   // قیمت مصرف‌کننده (forosh3 — واقعی سرور)
+    // ── افزودهٔ نسخهٔ ۲٫۱۵ (ویترین حرفه‌ای) ─────────────────────────────────
+    val price4: Long = 0,          // قیمت فروش ۴ (forosh4)
+    val price5: Long = 0,          // قیمت فروش ۵ (forosh5)
+    val minPrice: Long = 0,        // MinPrice — کمینهٔ مجاز قیمت
+    val maxPrice: Long = 0,        // MaxPrice — بیشینهٔ مجاز قیمت
+    val avgPrice: Long = 0,        // میانگین سطح‌های قیمتی موجود (محاسبهٔ محلی از دادهٔ سرور)
+    val consumerIsDefault: Boolean = false, // true = قیمت مصرف‌کننده از فهرست پیش‌فرض نام کالا آمده
+    val category: String = "",     // دستهٔ پیشنهادی بر اساس نام کالا
     val updatedAt: Long = System.currentTimeMillis()
 )
 

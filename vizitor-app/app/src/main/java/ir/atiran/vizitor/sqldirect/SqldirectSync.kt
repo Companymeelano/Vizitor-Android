@@ -72,17 +72,38 @@ object SqldirectSync {
             val products = data.products(limit = 2000)
             if (products.isNotEmpty()) {
                 val rows = products.map { p ->
+                    val name = p.name.ifBlank { "کالای ${p.shka}" }
+                    val tiers = listOf(
+                        p.priceTier1, p.priceTier2, p.priceTier3, p.priceTier4, p.priceTier5
+                    )
+                    // میانگین قیمت = میانگین سطح‌های غیرصفرِ همان کالا (دادهٔ واقعی سرور)
+                    var avg = ProductDefaults.averageOf(tiers)
+                    if (avg <= 0L) avg = ProductDefaults.midOf(p.minPrice, p.maxPrice)
+                    // قیمت مصرف‌کننده: اول forosh3 سرور؛ اگر صفر بود ⇒ پیش‌فرض بر اساس نام کالا
+                    val consumerFromServer = p.priceTier3
+                    val consumer = if (consumerFromServer > 0L) consumerFromServer
+                    else ProductDefaults.consumerFromName(
+                        base = if (p.priceTier1 > 0L) p.priceTier1 else avg,
+                        name = name,
+                    )
                     ProductEntity(
                         id = p.shka.toInt(),
                         code = p.code.ifBlank { p.shka.toString() },
-                        name = p.name.ifBlank { "کالای ${p.shka}" },
+                        name = name,
                         groupName = groups[p.groupRdf].orEmpty(),
                         price = p.priceTier1,
                         stock = stock[p.shka.toInt()] ?: p.stockVah,
                         unit = p.unit.ifBlank { "کیلو" },
                         packSize = p.packSize.toInt().coerceAtLeast(1),
                         price2 = p.priceTier2,
-                        consumerPrice = p.priceTier3,
+                        consumerPrice = consumer,
+                        price4 = p.priceTier4,
+                        price5 = p.priceTier5,
+                        minPrice = p.minPrice,
+                        maxPrice = p.maxPrice,
+                        avgPrice = avg,
+                        consumerIsDefault = consumerFromServer <= 0L && consumer > 0L,
+                        category = ProductDefaults.categoryOf(name),
                         updatedAt = System.currentTimeMillis(),
                     )
                 }
@@ -98,10 +119,20 @@ object SqldirectSync {
         var customerCount = 0
         val customerNames = HashMap<String, String>()
         runCatching {
-            val customers = data.customersFor(userId = userId, companyId = companyId, limit = 2000)
+            // مسیر اصلی: مشتریان مجاز کاربر از dbo.sys_cus
+            var customers = data.customersFor(userId = userId, companyId = companyId, limit = 2000)
+            // مسیر پشتیبان: اگر جدول مجوز برای این کاربر خالی بود، مشتریانِ خودِ ویزیتور
+            // (ستون واقعی CUSTOMERS.vis_rdf) خوانده می‌شوند — تا فهرست مشتریان خالی نماند.
+            if (customers.isEmpty() && visitorRdf != null) {
+                customers = data.customersForVisitor(visitorRdf = visitorRdf, companyId = companyId, limit = 2000)
+            }
             if (customers.isNotEmpty()) {
                 val rows = customers.map { c ->
-                    customerNames[c.code.ifBlank { c.shmo.toString() }] = c.name
+                    // کلید نام: هم کد مشتری و هم شمارهٔ مشتری (SHMO) — چون فاکتورها SHMO را
+                    // در ستون shmo نگه می‌دارند و قبلاً فقط «کد» نگاشت می‌شد و نام‌ها خالی می‌ماند.
+                    val nameKey = c.name
+                    customerNames[c.shmo.toString()] = nameKey
+                    if (c.code.isNotBlank()) customerNames[c.code] = nameKey
                     CustomerEntity(
                         id = c.shmo,
                         code = c.code.ifBlank { c.shmo.toString() },
@@ -121,7 +152,7 @@ object SqldirectSync {
                 db.customers().upsertAll(rows)
                 customerCount = rows.size
             } else {
-                warnings += "فهرست مشتریان مجاز این کاربر خالی است"
+                warnings += "برای این ویزیتور مشتری مجازی در sys_cus و CUSTOMERS.vis_rdf پیدا نشد"
             }
         }.onFailure { warnings += "مشتریان: ${it.message ?: it.javaClass.simpleName}" }
 
@@ -146,6 +177,10 @@ object SqldirectSync {
                         }
                     )
                     invoiceCount = invoices.size
+                    val named = invoices.count { customerNames[it.customerCode]?.isNotBlank() == true }
+                    if (named == 0) warnings += "نام مشتری روی فاکتورها پیدا نشد (کلید shmo)"
+                } else {
+                    warnings += "برای این ویزیتور فاکتور یا پیش‌فاکتوری در سرور ثبت نشده"
                 }
             }.onFailure { warnings += "فاکتورها: ${it.message ?: it.javaClass.simpleName}" }
         } else {

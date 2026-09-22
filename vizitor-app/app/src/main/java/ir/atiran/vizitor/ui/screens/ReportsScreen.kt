@@ -97,6 +97,8 @@ import ir.atiran.vizitor.ui.theme.NeonGreen
 import ir.atiran.vizitor.ui.theme.NeonPurple
 import ir.atiran.vizitor.ui.theme.TextSecondary
 import ir.atiran.vizitor.ui.theme.ThemeManager
+import ir.atiran.vizitor.ui.components.MiniStat
+import ir.atiran.vizitor.ui.components.TableHeader
 import ir.atiran.vizitor.ui.theme.VizitorPalette
 import ir.atiran.vizitor.ui.theme.vizitorPalette
 import ir.atiran.vizitor.util.toFaDate
@@ -127,12 +129,53 @@ fun ReportsScreen(viewModel: VizitorViewModel) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary
                 )
+                Spacer(Modifier.height(10.dp))
+                // ── کاشی‌های آماری گزارشات: سریع‌ترین نگاه به عملکرد ──
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    MiniStat(
+                        label = "فاکتور صادرشده",
+                        value = invoices.size.toFaNumber(),
+                        tint = palette.accent,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MiniStat(
+                        label = "فاکتور سرور",
+                        value = serverInvoices.size.toFaNumber(),
+                        tint = palette.gold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MiniStat(
+                        label = "جمع مبلغ سرور",
+                        value = serverInvoices.sumOf { it.total }.toFaPrice(),
+                        tint = palette.accentText,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (serverInvoices.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        MiniStat(
+                            label = "جمع تخفیف سرور",
+                            value = serverInvoices.sumOf { it.discount }.toFaPrice(),
+                            tint = palette.gold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MiniStat(
+                            label = "میانگین هر فاکتور",
+                            value = (serverInvoices.sumOf { it.total } / serverInvoices.size).toFaPrice(),
+                            tint = palette.accent,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                TableHeader(
+                    title = "تاریخچهٔ فاکتورها",
+                    count = invoices.size.toFaNumber() + " رکورد",
+                    icon = Icons.Filled.History
+                )
             }
         }
-
-
-        // ── تاریخچه فاکتورها ────────────────────────────────────────────────
-        item { SectionTitle(text = "تاریخچه فاکتورها", icon = Icons.Filled.History) }
 
         if (invoices.isEmpty()) {
             item {
@@ -152,7 +195,13 @@ fun ReportsScreen(viewModel: VizitorViewModel) {
 
 
         // ── فاکتورهای واقعی سامانه (خوانده‌شده با اتصال مستقیم به SQL Server) ──
-        item { SectionTitle(text = "فاکتورهای سامانه (از سرور آتیران)", icon = Icons.Filled.Dns) }
+        item {
+            TableHeader(
+                title = "فاکتورهای سامانه (از سرور آتیران)",
+                count = serverInvoices.size.toFaNumber() + " فاکتور",
+                icon = Icons.Filled.Dns
+            )
+        }
 
         if (serverInvoices.isEmpty()) {
             item {
@@ -225,7 +274,7 @@ fun ReportsScreen(viewModel: VizitorViewModel) {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Text(
-                        "آتیران ویزیتور — نسخه ۲٫۱۳٫۶",
+                        "آتیران ویزیتور — نسخه ۲٫۱۵٫۰",
                         style = MaterialTheme.typography.titleMedium,
                         color = Gold
                     )

@@ -27,7 +27,15 @@ object SeedData {
         ProductEntity(10, "6260201000103", "انجیر خشک استعناب", "خشکبار", 540_000, 15.0, "🍯", isVip = true, unit = "بسته ۵۰۰ گرم", packSize = 2, price2 = 560_000, consumerPrice = 672_000),
         ProductEntity(11, "6260201000110", "تخمه کدو گرامی بو داده", "تخمه", 720_000, 74.0, "🎃", unit = "کیلو", packSize = 16, price2 = 745_000, consumerPrice = 894_000),
         ProductEntity(12, "6260201000127", "بادام درختی سنگی خام", "مغز آجیل", 890_000, 102.0, "🌰", unit = "کیلو", packSize = 20, price2 = 920_000, consumerPrice = 1_104_000),
-    )
+    ).map { p ->
+        // دستهٔ پیشنهادی + میانگین قیمت هر قلم (همان قواعدی که روی دادهٔ واقعی سرور اجرا می‌شود)
+        p.copy(
+            category = ir.atiran.vizitor.sqldirect.ProductDefaults.categoryOf(p.name),
+            avgPrice = ir.atiran.vizitor.sqldirect.ProductDefaults.averageOf(
+                listOf(p.price, p.price2, p.consumerPrice)
+            ),
+        )
+    }
 
     val customers = listOf(
         CustomerEntity(1, "C-1001", "آجیل و خشکبار برادران رحیمی", "عمده", "تهران", "بازار بزرگ، دالان زرگرها، پلاک ۱۲", "09121112233", 35.6710, 51.4200, true, true, 3, 5, 18_500_000),

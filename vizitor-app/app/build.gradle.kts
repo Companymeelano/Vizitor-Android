@@ -34,8 +34,8 @@ android {
         //           (مشتری مجاز + مدت + توضیح + GPS + تاریخ شمسی)، تب تازه
         //           در نوار پایین، کارت دسترسی سریع در پیشخوان، و رفع
         //           خطاهای کلمپایل «لاکچری نسل ۲» (Luxury2/Premium)
-        versionCode = 21810
-        versionName = "2.14.0-direct"
+        versionCode = 21811
+        versionName = "2.15.0-direct"
         vectorDrawables { useSupportLibrary = true }
     }
 

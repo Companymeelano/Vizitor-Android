@@ -323,6 +323,41 @@ class MeelanoDataSource(private val db: SqlConnectionManager) {
             }
         }
 
+    /**
+     * مشتریان «همان ویزیتور» از ستون واقعی CUSTOMERS.vis_rdf.
+     * این تابع پشتیبان است: اگر جدول مجوز sys_cus برای کاربر خالی بود،
+     * مشتریانِ خودِ ویزیتور (که در ERP به او تخصیص داده شده‌اند) خوانده می‌شوند.
+     */
+    suspend fun customersForVisitor(
+        visitorRdf: Int,
+        companyId: Int? = null,
+        limit: Int = 500,
+        offset: Int = 0,
+    ): List<DbCustomer> =
+        db.withConnection { c ->
+            c.prepareStatement(
+                """
+                SELECT CUSTOMERS.SHMO, CUSTOMERS.MONAME, CUSTOMERS.code, CUSTOMERS.group_rdf,
+                       custgroup.group_name, CUSTOMERS.rdf_city, CUSTOMERS.addre,
+                       CUSTOMERS.cell, CUSTOMERS.cred, CUSTOMERS.man, CUSTOMERS.black_list,
+                       CUSTOMERS.active, CUSTOMERS.Lat, CUSTOMERS.Lng, CUSTOMERS.vis_rdf
+                  FROM dbo.CUSTOMERS
+                  LEFT JOIN dbo.custgroup ON custgroup.group_rdf = CUSTOMERS.group_rdf
+                 WHERE CUSTOMERS.vis_rdf = ?
+                   AND CUSTOMERS.active = ?
+                 ORDER BY CUSTOMERS.MONAME
+                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """.trimIndent()
+            ).use { ps ->
+                ps.queryTimeout = 30
+                ps.setInt(1, visitorRdf)
+                ps.setString(2, ACTIVE_CHAR)
+                ps.setInt(3, offset)
+                ps.setInt(4, limit.coerceIn(1, 2000))
+                ps.executeQuery().use { rs -> rs.mapRows(::readCustomer) }
+            }
+        }
+
     /** گروه‌های مشتری + تیر قیمت (پایهٔ کل منطق قیمت Atiran). */
     /** گروه‌های کالا (dbo.kagroup: group_rdf, group_name) — برای نام گروه هر کالا. */
     suspend fun productGroups(): List<DbProductGroup> =

@@ -30,6 +30,8 @@ import ir.atiran.vizitor.util.parseAmount
 import androidx.compose.ui.window.Dialog
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +45,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -80,7 +83,14 @@ import androidx.compose.ui.unit.sp
 import ir.atiran.vizitor.VizitorViewModel
 import ir.atiran.vizitor.data.local.ProductEntity
 import ir.atiran.vizitor.perf.VizitorPerf
+import ir.atiran.vizitor.sqldirect.ProductDefaults
+import ir.atiran.vizitor.ui.catalog.ProductImages
+import ir.atiran.vizitor.ui.components.AutoFitText
 import ir.atiran.vizitor.ui.components.GlassCard
+import ir.atiran.vizitor.ui.components.GoodsImage
+import ir.atiran.vizitor.ui.components.MiniStat
+import ir.atiran.vizitor.ui.components.PriceRow
+import ir.atiran.vizitor.ui.components.TableHeader
 import ir.atiran.vizitor.ui.components.NeonGreenButton
 import ir.atiran.vizitor.ui.components.MicButton
 import ir.atiran.vizitor.ui.components.MilanoFooter
@@ -107,6 +117,7 @@ fun CatalogScreen(
     val products by viewModel.products.collectAsState()
     val cartItems by viewModel.cartItems.collectAsState()
     var query by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf<String?>(null) }
     var zoomProduct by remember { mutableStateOf<ProductEntity?>(null) }
     var addProduct by remember { mutableStateOf<ProductEntity?>(null) }
     val selectedCustomer by viewModel.selectedCustomer.collectAsState()
@@ -125,9 +136,16 @@ fun CatalogScreen(
         onResult = { query = it; viewModel.showToast("جستجوی صوتی: «$it»") },
         onUnavailable = { viewModel.showToast("ورودی صوتی روی این دستگاه در دسترس نیست 🎙️") }
     )
-    val filtered = remember(products, query) {
-        if (query.isBlank()) products
-        else products.filter { it.name.contains(query) || it.code.contains(query) }
+    val filtered = remember(products, query, category) {
+        products.asSequence()
+            .filter { category == null || ProductDefaults.categoryOf(it.name) == category }
+            .filter {
+                query.isBlank() ||
+                    it.name.contains(query) ||
+                    it.code.contains(query) ||
+                    it.groupName.contains(query)
+            }
+            .toList()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -140,16 +158,79 @@ fun CatalogScreen(
                 Column {
                     ShimmerGoldText("ویترین کالا")
                     Text(
-                        "کاتالوگ زنده با موجودی لحظه‌ای — نمایش تک‌ردیفه واضح",
+                        "کاتالوگ زنده با تصویر، قیمت مصرف‌کننده و میانگین قیمت هر قلم",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
+
+                    // ── کاشی‌های آماری ویترین (تعداد کالا / موجود / در سبد) ──
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        MiniStat(
+                            label = "کالا در ویترین",
+                            value = products.size.toFaNumber(),
+                            tint = Gold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MiniStat(
+                            label = "موجود",
+                            value = products.count { it.stock > 0 }.toFaNumber(),
+                            tint = NeonGreen,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MiniStat(
+                            label = "قلم در سبد",
+                            value = cartItems.size.toFaNumber(),
+                            tint = NeonPurple,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f)) { SearchField(query) { query = it } }
                         Spacer(Modifier.width(8.dp))
                         MicButton(onClick = { startVoice() })
                     }
+
+                    // ── نوار دسته‌ها (بر اساس نام کالا) ──
+                    val categories = remember(products) {
+                        products.groupingBy { ProductDefaults.categoryOf(it.name) }
+                            .eachCount()
+                            .entries
+                            .sortedByDescending { it.value }
+                            .map { it.key to it.value }
+                    }
+                    if (categories.size > 1) {
+                        Spacer(Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            CategoryChip(
+                                label = "همه",
+                                count = products.size,
+                                selected = category == null,
+                                onClick = { category = null }
+                            )
+                            categories.forEach { (name, count) ->
+                                CategoryChip(
+                                    label = name,
+                                    count = count,
+                                    selected = category == name,
+                                    onClick = { category = if (category == name) null else name }
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    TableHeader(
+                        title = if (category == null) "فهرست کالاها (جدول قیمت)" else "دستهٔ $category",
+                        count = filtered.size.toFaNumber() + " قلم",
+                        icon = Icons.Filled.Sell
+                    )
                 }
             }
 
@@ -274,15 +355,18 @@ private fun ProductCard(
                     .auroraFrame(RoundedCornerShape(18.dp)),
                 contentAlignment = Alignment.Center
             ) {
+                // ── تصویر کالا: انتخاب از فهرست پیش‌فرض تصاویر بر اساس «نام کالا» ──
+                GoodsImage(
+                    resId = ProductImages.forName(product.name),
+                    contentDescription = product.name,
+                    modifier = Modifier.matchParentSize()
+                )
+                // هالهٔ تیرهٔ ملایم روی تصویر تا نشان‌ها (موجودی/VIP) کاملاً خوانا بمانند
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(listOf(p.gold.copy(alpha = 0.24f), Color.Transparent))
-                        )
+                        .matchParentSize()
+                        .background(Brush.verticalGradient(listOf(Color(0x1A000000), Color(0x73000000))))
                 )
-                Text(product.imageEmoji, fontSize = 52.sp, textAlign = TextAlign.Center)
                 // نشان موجودی (داخل صحنه، بالا-انتها)
                 Box(
                     modifier = Modifier
@@ -565,9 +649,26 @@ private fun PricePanel(product: ProductEntity) {
                     "قیمت مصرف‌کننده",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White.copy(alpha = 0.92f),
-                    modifier = Modifier.weight(1f)
+                    color = Color.White.copy(alpha = 0.92f)
                 )
+                // برچسب «پیش‌فرض» — وقتی forosh3 سرور صفر بوده و عدد از نام کالا ساخته شده
+                if (product.consumerIsDefault && consumer > 0) {
+                    Spacer(Modifier.width(5.dp))
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Color(0x33FFFFFF))
+                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            "پیش‌فرض ${ProductDefaults.markupPercentFor(product.name).toFaNumber()}٪",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
                 Text(
                     consumer.toFaPrice(),
                     fontSize = 11.sp,
@@ -575,6 +676,72 @@ private fun PricePanel(product: ProductEntity) {
                     color = Color(0xFFFFE29A)
                 )
             }
+        }
+
+        // ═══ جدول قیمت: میانگین هر قلم و سطوح تازهٔ سرور ═══
+        val extraRows = buildList {
+            if (product.avgPrice > 0) add(Triple("میانگین قیمت هر قلم", product.avgPrice.toFaPrice(), Gold))
+            if (product.price4 > 0) add(Triple("قیمت فروش ۴", product.price4.toFaPrice(), NeonPurple))
+            if (product.price5 > 0) add(Triple("قیمت فروش ۵", product.price5.toFaPrice(), NeonPurple))
+            if (product.minPrice > 0) add(Triple("کمینهٔ مجاز قیمت", product.minPrice.toFaPrice(), TextSecondary))
+            if (product.maxPrice > 0) add(Triple("بیشینهٔ مجاز قیمت", product.maxPrice.toFaPrice(), TextSecondary))
+        }
+        if (extraRows.isNotEmpty()) {
+            Spacer(Modifier.height(7.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                extraRows.forEach { (label, value, tint) ->
+                    PriceRow(
+                        label = label,
+                        value = value,
+                        tint = tint,
+                        emphasized = label.startsWith("میانگین")
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** چیپ دستهٔ کالا (فیلتر ویترین) — برچسب خودتنظیم + شمارش. */
+@Composable
+private fun CategoryChip(
+    label: String,
+    count: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val accent = if (selected) Gold else NeonPurple
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(accent.copy(alpha = if (selected) 0.22f else 0.10f))
+            .border(1.dp, accent.copy(alpha = if (selected) 0.70f else 0.30f), RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AutoFitText(
+            text = label,
+            color = if (selected) Gold else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f),
+            fontWeight = FontWeight.ExtraBold,
+            minimumSize = 8.5.sp,
+            maximumSize = 11.5.sp,
+            modifier = Modifier.widthIn(max = 130.dp)
+        )
+        Spacer(Modifier.width(5.dp))
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(50))
+                .background(accent.copy(alpha = 0.25f))
+                .padding(horizontal = 5.dp)
+        ) {
+            Text(
+                count.toFaNumber(),
+                fontSize = 8.5.sp,
+                fontWeight = FontWeight.Black,
+                color = accent,
+                maxLines = 1
+            )
         }
     }
 }
@@ -649,7 +816,28 @@ private fun ProductZoomDialog(product: ProductEntity, onDismiss: () -> Unit) {
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(product.imageEmoji, fontSize = 110.sp)
+                    GoodsImage(
+                        resId = ProductImages.forName(product.name),
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Brush.verticalGradient(listOf(Color(0x1A000000), Color(0x88000000))))
+                    )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            ProductDefaults.categoryOf(product.name),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFFE29A)
+                        )
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(product.name, style = MaterialTheme.typography.titleLarge)
@@ -778,7 +966,7 @@ private fun AddToCartDialog(
                 RoyalHeader(text = "افزودن به سبد فروش", icon = Icons.Filled.Add)
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "${product.imageEmoji} ${product.name}",
+                    product.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
                 )
                 Text(

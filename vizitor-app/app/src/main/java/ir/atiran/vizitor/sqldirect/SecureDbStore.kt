@@ -35,6 +35,17 @@ data class ErpCredentials(
     val remember: Boolean,
 )
 
+/**
+ * ویزیتور انتخاب‌شده از جدول dbo.sys_vis — برای «ورود سریع» بدون
+ * پرسیدن نام کاربری و رمز کاربر آتیران در اجرای بعدی برنامه.
+ */
+data class SelectedVisitor(
+    val userId: Int,       // sys_vis.UserID
+    val companyId: Int,    // sys_vis.SysID
+    val visitorRdf: Int,   // sys_vis.shvis = visitors.vis_rdf
+    val name: String,      // visitors.vis_name (برای نمایش)
+)
+
 /** نگهداری امن تنظیمات اتصال SQL Server (رمزنگارش AES-GCM + Keystore). */
 object SecureDbStore {
 
@@ -132,6 +143,43 @@ object SecureDbStore {
     }
 
     /** خواندن اعتبارنامهٔ ذخیره‌شدهٔ ویزیتور (یا null). */
+    /**
+     * ذخیرهٔ ویزیتور انتخاب‌شده (ورود از جدول sys_vis).
+     * فقط شناسه‌ها و نام ذخیره می‌شود — هیچ رمزی برای این مسیر وجود ندارد.
+     */
+    fun saveVisitor(userId: Int, companyId: Int, visitorRdf: Int, name: String) {
+        val o = currentJson() ?: JSONObject()
+        o.put("visUserId", userId)
+        o.put("visCompanyId", companyId)
+        o.put("visVisitorRdf", visitorRdf)
+        o.put("visName", name)
+        writeJson(o)
+    }
+
+    /** ویزیتور ذخیره‌شده (اگر کاربر یکی را انتخاب کرده باشد). */
+    fun loadVisitor(): SelectedVisitor? {
+        val o = currentJson() ?: return null
+        val rdf = o.optInt("visVisitorRdf", -1)
+        val uid = o.optInt("visUserId", -1)
+        if (rdf < 0 || uid < 0) return null
+        return SelectedVisitor(
+            userId = uid,
+            companyId = o.optInt("visCompanyId", 0),
+            visitorRdf = rdf,
+            name = o.optString("visName", ""),
+        )
+    }
+
+    /** پاک‌کردن ویزیتور ذخیره‌شده (وقتی کاربر ویزیتور دیگری انتخاب می‌کند یا خارج می‌شود). */
+    fun clearVisitor() {
+        val o = currentJson() ?: return
+        o.remove("visUserId")
+        o.remove("visCompanyId")
+        o.remove("visVisitorRdf")
+        o.remove("visName")
+        writeJson(o)
+    }
+
     fun loadErp(): ErpCredentials? {
         val o = currentJson() ?: return null
         val user = o.optString("erpUser", "")

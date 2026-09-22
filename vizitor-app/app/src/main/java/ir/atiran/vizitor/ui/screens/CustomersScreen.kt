@@ -109,6 +109,8 @@ import ir.atiran.vizitor.ui.components.NeonGreenButton
 import ir.atiran.vizitor.ui.components.StatusChip
 import ir.atiran.vizitor.ui.components.goldBorder
 import ir.atiran.vizitor.ui.theme.AccentText
+import ir.atiran.vizitor.ui.components.MiniStat
+import ir.atiran.vizitor.ui.components.TableHeader
 import ir.atiran.vizitor.ui.theme.DangerRed
 import ir.atiran.vizitor.ui.theme.Gold
 import ir.atiran.vizitor.ui.theme.NeonGreen
@@ -161,11 +163,40 @@ fun CustomersScreen(viewModel: VizitorViewModel) {
                     color = TextSecondary
                 )
                 Spacer(Modifier.height(10.dp))
+                // ── کاشی‌های آماری مشتریان (کل / دارای بدهی / جمع بدهی) ──
+                val debtors = customers.count { it.debt > 0 }
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    MiniStat(
+                        label = "کل مشتریان",
+                        value = customers.size.toFaNumber(),
+                        tint = vizitorPalette.accent,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MiniStat(
+                        label = "دارای بدهی",
+                        value = debtors.toFaNumber(),
+                        tint = DangerRed,
+                        modifier = Modifier.weight(1f)
+                    )
+                    MiniStat(
+                        label = "جمع بدهی (ریال)",
+                        value = customers.sumOf { it.debt }.toFaPrice(),
+                        tint = vizitorPalette.gold,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f)) { CustomerSearchField(query) { query = it } }
                     Spacer(Modifier.width(8.dp))
                     MicButton(onClick = { startVoice() })
                 }
+                Spacer(Modifier.height(10.dp))
+                TableHeader(
+                    title = "فهرست مشتریان این ویزیتور",
+                    count = list.size.toFaNumber() + " مشتری",
+                    icon = Icons.Filled.People
+                )
                 Spacer(Modifier.height(10.dp))
                 // دکمه‌های قهرمان — عنوان و زیرعنوان دقیقاً داخل قاب، بردر روی مرز
                 val p0 = vizitorPalette
