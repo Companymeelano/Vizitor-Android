@@ -344,7 +344,7 @@ fun ReportsScreen(viewModel: VizitorViewModel) {
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
-                    val stockValue = products.sumOf { it.price.coerceAtLeast(0) * it.stock.coerceAtLeast(0).toLong() }
+                    val stockValue = products.sumOf { it.price.coerceAtLeast(0L) * it.stock.coerceAtLeast(0.0).toLong() }
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         MiniStat(
                             label = "ارزش موجودی (ریال)",
@@ -367,12 +367,12 @@ fun ReportsScreen(viewModel: VizitorViewModel) {
                     }
                     Spacer(Modifier.height(8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        products.sortedByDescending { it.price * it.stock.toLong() }.take(8).forEachIndexed { i, pr ->
+                        products.sortedByDescending { it.price.coerceAtLeast(0L) * it.stock.coerceAtLeast(0.0).toLong() }.take(8).forEachIndexed { i, pr ->
                             ReportRow(
                                 index = (i + 1).toFaNumber(),
                                 title = pr.name,
                                 subtitle = "${pr.category.ifBlank { pr.groupName }} • موجودی ${pr.stock.toFaNumber()} ${pr.unit}",
-                                value = (pr.price * pr.stock.toLong()).toFaPrice(),
+                                value = (pr.price.coerceAtLeast(0L) * pr.stock.coerceAtLeast(0.0).toLong()).toFaPrice(),
                                 tint = palette.gold
                             )
                         }

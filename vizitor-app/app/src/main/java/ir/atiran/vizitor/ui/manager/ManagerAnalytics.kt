@@ -97,7 +97,7 @@ object ManagerAnalytics {
         // سهم دسته‌های کالا از «ارزش موجودی» (قیمت × موجودی)
         val categoryValue = products
             .groupBy { it.category.ifBlank { "سایر" } }
-            .mapValues { (_, rows) -> rows.sumOf { p -> (p.price.coerceAtLeast(0)) * p.stock.coerceAtLeast(0).toLong() } }
+            .mapValues { (_, rows) -> rows.sumOf { p -> p.price.coerceAtLeast(0L) * p.stock.coerceAtLeast(0.0).toLong() } }
             .entries
             .sortedByDescending { it.value }
             .take(6)
@@ -106,11 +106,11 @@ object ManagerAnalytics {
             }
 
         val topProducts = products
-            .map { p -> Triple(p.name, p.groupName.ifBlank { p.category }, p.price * p.stock.toLong()) }
+            .map { p -> Triple(p.name, p.groupName.ifBlank { p.category }, p.price.coerceAtLeast(0L) * p.stock.coerceAtLeast(0.0).toLong()) }
             .sortedByDescending { it.third }
             .take(8)
 
-        val stockValue = products.sumOf { (it.price.coerceAtLeast(0)) * it.stock.coerceAtLeast(0).toLong() }
+        val stockValue = products.sumOf { it.price.coerceAtLeast(0L) * it.stock.coerceAtLeast(0.0).toLong() }
 
         return Snapshot(
             invoiceCount = invoices.size,
