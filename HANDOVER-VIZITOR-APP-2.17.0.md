@@ -12,12 +12,17 @@
 
 | فایل | حجم | SHA‑256 |
 |---|---|---|
-| `vizitor-app/dist/Vizitor-2.17.0-direct.apk` (امضاشده) | ۴۱٫۹ … مگابایت (در ریلیز) | در فایل `.sha256` و صفحهٔ ریلیز |
-| `Vizitor-2.17.0-direct-debug.apk` (نسخهٔ آزمون) | — | — |
+| `vizitor-app/dist/Vizitor-2.17.0-direct.apk` (امضاشده) | ۴۱٫۸۳۰٫۰۵۴ بایت (≈۳۹٫۹ مبی‌بایت) | `24ef2f4540f867d54aa8685660fbc966d1e95b8d5e4441ac2328a9685d40c02a` |
+| `Vizitor-2.17.0-direct-debug.apk` (نسخهٔ آزمون) | ۵۲٫۸۷۰٫۷۵۳ بایت | — |
 
 - **کلید امضا تغییر نکرده:** `SHA-256 = 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a`
   (CN=Vizitor App Direct, O=Meelano, C=IR) → **به‌روزرسانی درجا** روی نسخهٔ نصب‌شده.
-- گزارش کامل بیلد و امضا در `vizitor-app/apk-report.txt`.
+- گزارش کامل بیلد و امضا در `vizitor-app/apk-report.txt`. کامیت بیلد (CI): `57eab29`.
+- بازرسی محتوای همین APK در CI انجام شد: نام بسته `ir.atiran.vizitor`، شمارهٔ ساخت ۲۱۸۱۳،
+  نام نسخه `2.17.0-direct`، و همهٔ رشته‌های تازه («گزارش طلایی»، «نبض کسب‌وکار»،
+  «روند فروش و تخفیف»، «نبض امروز»، «دسترسی سریع مدیریت»، «MEELANO STUDIO DESIGN») و
+  کلاس‌های تازه (MaReport/MetalBarChart/Ring3DChart/LineTrendChart/MaPulseCard/MaToolGrid)
+  داخل APK موجودند.
 
 ---
 
