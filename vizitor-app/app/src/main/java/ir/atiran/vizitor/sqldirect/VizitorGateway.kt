@@ -420,7 +420,7 @@ object VizitorGateway {
 
         // ── انبار اقلام: سنگین‌ترین انبارِ همان کالا (از ویو واقعی VW_InventoryAnbars) ──
         val stockRows = runCatching { data.stock() }.getOrDefault(emptyList())
-        val warehouseOf = stockRows.groupBy { it.shka }
+        val warehouseOf: Map<Long, Int> = stockRows.groupBy { it.shka }
             .mapValues { (_, rows) -> rows.maxByOrNull { it.quantity }?.warehouseRdf ?: DEFAULT_WAREHOUSE }
 
         val preview = PreInvoicePreview(
@@ -436,7 +436,7 @@ object VizitorGateway {
                     quantity = item.quantity,
                     unitPrice = item.unitPrice,
                     lineSum = sum,
-                    warehouseRdf = warehouseOf[item.productId] ?: DEFAULT_WAREHOUSE,
+                    warehouseRdf = warehouseOf[item.productId.toLong()] ?: DEFAULT_WAREHOUSE,
                 )
             },
             sumLineAll = cart.sumOf { (it.quantity * it.unitPrice).toLong() },
