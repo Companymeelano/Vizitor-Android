@@ -35,12 +35,26 @@ object SqldirectSync {
         val invoices: Int,
         val durationMs: Long,
         val warnings: List<String>,
+        // ── v2.18.0: دامنهٔ همگام‌سازی به «همهٔ فعالیت‌های ویزیتور» گسترده شد ──
+        /** ویزیت‌های ثبت‌شدهٔ امروزِ همین ویزیتور (dbo.Visit). */
+        val visitsToday: Int = 0,
+        /** تعداد مسیرهای تعریف‌شدهٔ همین ویزیتور (dbo.masir). */
+        val routeCount: Int = 0,
+        /** سهمیهٔ باقی‌ماندهٔ فاکتور (visitors.TedadFactorMojazMande). */
+        val quotaLeft: Int? = null,
+        /** اعتبار ویزیتور در ERP (visitors.eteb). */
+        val credit: Long? = null,
     ) {
         val summary: String
             get() {
                 val base = "همگام‌سازی انجام شد ✅ — $products کالا، $customers مشتری، " +
                     "$invoices فاکتور از سرور آتیران (${durationMs / 1000} ثانیه)"
-                return if (warnings.isEmpty()) base else base + " • هشدار: " + warnings.joinToString(" • ")
+                val extra = buildList {
+                    if (visitsToday > 0) add("$visitsToday ویزیت امروز")
+                    if (routeCount > 0) add("$routeCount مسیر تعریف‌شده")
+                }
+                val withExtra = if (extra.isEmpty()) base else base + " • " + extra.joinToString(" • ")
+                return if (warnings.isEmpty()) withExtra else withExtra + " • هشدار: " + warnings.joinToString(" • ")
             }
     }
 
@@ -60,6 +74,18 @@ object SqldirectSync {
     ): Report {
         val started = System.currentTimeMillis()
         val warnings = ArrayList<String>()
+
+        // ── v2.18.0: پیش از هر کوئری، اتصال تضمین می‌شود ─────────────────────
+        //  اگر برنامه بسته و باز شده باشد، به‌جای خطای «اتصال برقرار نیست»،
+        //  همان تنظیمات ذخیره‌شدهٔ گوشی دوباره وصل می‌شود.
+        if (!SqlConnectionManager.ensureConnected()) {
+            val why = (SqlConnectionManager.state.value as? ConnectionState.Error)?.message
+                ?: "اتصال برقرار نشد"
+            return Report(
+                products = 0, customers = 0, invoices = 0, durationMs = 0,
+                warnings = listOf("اتصال: $why"),
+            )
+        }
 
         // ── ۱) کالاها + موجودی + ۵ سطح قیمت ─────────────────────────────────
         var productCount = 0
@@ -174,12 +200,27 @@ object SqldirectSync {
             warnings += "کد ویزیتور این کاربر پیدا نشد؛ فاکتورها خوانده نشد"
         }
 
+        // ── ۴) فعالیت‌های امروز: ویزیت‌های ثبت‌شده + مسیرهای تعریف‌شده ────────
+        val visitsToday = runCatching { VizitorGateway.todayVisits(visitorRdf) }.getOrDefault(0)
+        val routes = runCatching { VizitorGateway.routesFor(visitorRdf) }.getOrDefault(emptyList())
+        val limits = runCatching { VizitorGateway.limits(userId, companyId) }.getOrDefault(
+            VizitorGateway.VisitorLimits()
+        )
+        if (routes.isEmpty() && visitorRdf != null) {
+            // نبود مسیر برای همهٔ ویزیتورها عادی است؛ فقط یک یادداشت کوتاه می‌آید
+            warnings += "مسیری برای این ویزیتور در dbo.masir تعریف نشده"
+        }
+
         return Report(
             products = productCount,
             customers = customerCount,
             invoices = invoiceCount,
             durationMs = System.currentTimeMillis() - started,
             warnings = warnings,
+            visitsToday = visitsToday,
+            routeCount = routes.size,
+            quotaLeft = limits.quotaLeft,
+            credit = limits.credit,
         )
     }
 }

@@ -36,10 +36,12 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Palette
@@ -123,7 +125,10 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit = {},
     onOpenReports: () -> Unit = {},
     onOpenManager: () -> Unit = {},
-    onOpenCatalog: () -> Unit = {}
+    onOpenCatalog: () -> Unit = {},
+    // ── v2.18.0: دو مقصد تازهٔ «اطلاع‌رسانی اولیه» و «همهٔ فعالیت‌ها» ──
+    onOpenBriefing: () -> Unit = {},
+    onOpenActivities: () -> Unit = {}
 ) {
     val todaySales by viewModel.todaySales.collectAsState()
     val followUp by viewModel.followUpCustomers.collectAsState()
@@ -241,6 +246,8 @@ fun DashboardScreen(
         // ── دسترسی سریع (v2.14.0) — ثبت ویزیت + گفتگوی ویزیتورها ───────────
         item {
             QuickAccessCard(
+                onBriefing = onOpenBriefing,
+                onActivities = onOpenActivities,
                 onVisit = onOpenVisits,
                 onChat = onOpenChat,
                 onCatalog = onOpenCatalog,
@@ -357,6 +364,8 @@ private fun ThemeDotsSwitch() {
  */
 @Composable
 private fun QuickAccessCard(
+    onBriefing: () -> Unit,
+    onActivities: () -> Unit,
     onVisit: () -> Unit,
     onChat: () -> Unit,
     onCatalog: () -> Unit,
@@ -374,6 +383,23 @@ private fun QuickAccessCard(
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // ── v2.18.0: دو کاشی تازه — اطلاع‌رسانی اولیه و مرکز فعالیت‌ها ──
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            QuickTile(
+                title = "اطلاع‌رسانی اولیه",
+                subtitle = "وضعیت و اختیارات شما",
+                icon = Icons.Filled.Verified,
+                modifier = Modifier.weight(1f),
+                onClick = onBriefing
+            )
+            QuickTile(
+                title = "همهٔ فعالیت‌ها",
+                subtitle = "منوی سه‌بعدی کارها",
+                icon = Icons.Filled.Dashboard,
+                modifier = Modifier.weight(1f),
+                onClick = onActivities
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             QuickTile(
                 title = "ثبت ویزیت",

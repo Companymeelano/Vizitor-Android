@@ -107,6 +107,47 @@ object SqlConnectionManager {
     /** آیا همین حالا یک اتصال سالم داریم؟ (برای تصمیم‌گیری در همگام‌سازی) */
     fun connected(): Boolean = _state.value.isReady
 
+    // ── v2.18.0: خودترمیمی اتصال ───────────────────────────────────────────
+    //  ایراد نسخه‌های قبل: `settings` فقط در همان اجرای برنامه (process) زنده
+    //  بود. اگر اندروید برنامه را می‌بست و کاربر بدون رفتن به صفحهٔ اتصال وارد
+    //  یک تب دیگر می‌شد، `settings` تهی بود و هر کوئری با پیام
+    //  «قبل از هر کوئری باید اتصال برقرار باشد» شکست می‌خورد — یعنی اتصالِ
+    //  ذخیره‌شده روی گوشی عملاً استفاده نمی‌شد. حالا هر کوئری می‌تواند خودش
+    //  از حافظهٔ امن (SecureDbStore) اتصال را برقرار کند.
+
+    /** تنظیمات ذخیره‌شدهٔ همین گوشی (اگر کاربر قبلاً ذخیره کرده باشد). */
+    private fun storedSettings(): DbSettings? =
+        runCatching { SecureDbStore.load() }.getOrNull()
+
+    /** تنظیمات فعال؛ اگر در این اجرا ست نشده باشد، از حافظهٔ امن خوانده می‌شود. */
+    private fun currentSettings(): DbSettings? =
+        settings ?: storedSettings()?.also { settings = it }
+
+    /**
+     * تضمین اتصال: نقطهٔ ورود واحد همهٔ بخش‌ها.
+     * اگر اتصال باز و سالم است true؛ وگرنه با تنظیمات ذخیره‌شده وصل می‌شود.
+     */
+    suspend fun ensureConnected(): Boolean {
+        if (_state.value.isReady) {
+            // اتصال «باز» است ولی ممکن است استخر کهنه/خالی شده باشد → یک ping سبک
+            val alive = withContext(Dispatchers.IO) {
+                runCatching {
+                    val c = borrow()
+                    try { ping(c) } finally { recycle(c) }
+                }.isSuccess
+            }
+            if (alive) return true
+        }
+        val s = currentSettings()
+        if (s == null) {
+            _state.value = ConnectionState.Error(
+                "هنوز تنظیمات اتصال روی این گوشی ذخیره نشده است — «تنظیم اتصال» را کامل کنید."
+            )
+            return false
+        }
+        return connect(s)
+    }
+
     /** درایوری که اتصال فعلی با آن برقرار شده (برای نمایش در کارت وضعیت). */
     @Volatile
     var activeDriver: String? = null
@@ -114,12 +155,30 @@ object SqlConnectionManager {
 
     /** برقراری اتصال + اعتبارسنجی با SELECT 1. (هرگز دو اتصال هم‌زمان ساخته نمی‌شود) */
     suspend fun connect(s: DbSettings): Boolean = withContext(Dispatchers.IO) {
-        if (connecting) return@withContext false
+        // ── v2.18.0 ──────────────────────────────────────────────────────────
+        //  الف) مسیر سریع: با همین تنظیمات همین حالا وصل هستیم ⇒ دوباره وصل نشو
+        //     (قبلاً هر فراخوانی، اتصال را می‌بست و از نو می‌ساخت: هم کند بود،
+        //      هم اگر همان لحظه کوئری در جریان بود، آن کوئری می‌شکست).
+        if (_state.value.isReady && settings?.masked() == s.masked() &&
+            settings?.password == s.password
+        ) return@withContext true
+        //  ب) اگر اتصال دیگری در جریان است، به‌جای برگرداندن falseِ گنگ، منتظر
+        //     نتیجهٔ همان اتصال می‌مانیم (منبع واحد وضعیت = state).
+        if (connecting) {
+            var waited = 0
+            while (connecting && waited < 40) { delay(100); waited++ }   // تا ۴ ثانیه
+            return@withContext _state.value.isReady
+        }
         connecting = true
         try {
             if (s.cleanHost.isBlank() || s.database.isBlank() || s.username.isBlank()) {
                 _state.value = ConnectionState.Error("آدرس سرور دیتابیس، نام دیتابیس یا نام کاربری خالی است.")
                 return@withContext false
+            }
+            // تنظیمات عوض شده ⇒ اتصال‌های قبلی به سرور/دیتابیس دیگری هستند؛ بسته شوند
+            if (settings?.masked() != s.masked()) {
+                drainPool()
+                activeDriver = null
             }
             _state.value = ConnectionState.Connecting
             try {
@@ -193,9 +252,10 @@ object SqlConnectionManager {
 
     /** سنجش سریع سلامت (برای دکمهٔ «تست اتصال» در تنظیمات). */
     suspend fun refresh(): ConnectionState = withContext(Dispatchers.IO) {
-        val s = settings ?: return@withContext ConnectionState.Disconnected
+        val startedAt = System.nanoTime()
+        // v2.18.0: اگر اتصال در این اجرا برقرار نشده، با تنظیمات ذخیره‌شده برقرارش کن
+        if (!ensureConnected()) return@withContext _state.value
         try {
-            val startedAt = System.nanoTime()
             val c = borrow()
             try {
                 ping(c)
@@ -208,6 +268,10 @@ object SqlConnectionManager {
         } catch (e: SQLException) {
             _state.value = ConnectionState.Error(friendlyError(e))
             ConnectionState.Error(friendlyError(e))
+        } catch (t: Throwable) {
+            val msg = describeThrowable(t)
+            _state.value = ConnectionState.Error(msg)
+            ConnectionState.Error(msg)
         }
     }
 
@@ -227,7 +291,15 @@ object SqlConnectionManager {
         withContext(Dispatchers.IO) { runWithRetry(block) }
 
     private suspend fun <T> runWithRetry(block: (Connection) -> T): T {
-        requireNotNull(settings) { "قبل از هر کوئری باید اتصال برقرار باشد" }
+        // v2.18.0: اگر در این اجرا اتصالی برقرار نشده باشد، از تنظیمات ذخیره‌شده
+        // استفاده می‌شود تا کوئری‌ها بعد از بسته‌شدن برنامه هم کار کنند.
+        val active = currentSettings()
+            ?: throw SqlConnectFailure(
+                faMessage = "اتصال دیتابیس برقرار نیست. یک‌بار از صفحهٔ «تنظیم اتصال» وارد شوید؛ " +
+                    "از آن به بعد، بخش‌های دیگر خودشان اتصال ذخیره‌شده را برقرار می‌کنند.",
+                details = "no saved DbSettings on device",
+            )
+        if (settings == null) settings = active
         var attempt = 0
         while (true) {
             attempt++
@@ -345,7 +417,10 @@ object SqlConnectionManager {
             killQuietly(c)
         }
         // استخر خالی: اتصال تازه (تا سقف POOL_MAX ساختن هم‌زمان محدود می‌شود)
-        val s = requireNotNull(settings) { "اتصال فعالی وجود ندارد" }
+        val s = currentSettings() ?: throw SqlConnectFailure(
+            faMessage = "اتصال دیتابیس برقرار نیست — تنظیمات اتصال روی گوشی پیدا نشد.",
+            details = "borrow(): no settings",
+        )
         val fresh = openOne(s).connection
         ping(fresh)
         return fresh

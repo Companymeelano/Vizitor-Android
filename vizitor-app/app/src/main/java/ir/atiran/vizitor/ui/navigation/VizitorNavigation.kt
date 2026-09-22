@@ -144,6 +144,10 @@ object Routes {
     const val WELCOME = "welcome"
     /** پنل مدیریت — فقط با نام کاربری و رمز شخصی مدیر در آتیران (v2.16.0) */
     const val MANAGER = "manager"
+    /** «اطلاع‌رسانی اولیه به ویزیتور» — پیش از شروع کار (v2.18.0) */
+    const val BRIEFING = "briefing"
+    /** مرکز «همهٔ فعالیت‌های ویزیتور» — منوی سه‌بعدی کارها (v2.18.0) */
+    const val ACTIVITIES = "activities"
 }
 
 data class TabItem(val route: String, val label: String, val icon: ImageVector, val iconRes: Int)
@@ -230,9 +234,19 @@ fun VizitorRoot(
         }
     }
 
-    // مقصد پس از ورود: اگر نقش «مدیریت» انتخاب شده باشد ⇒ پنل مدیریت
+    // آیا ویزیتور «اطلاع‌رسانی اولیه» این نسخه را دیده است؟ (v2.18.0)
+    val briefingSeen by viewModel.briefingSeen.collectAsState()
+
+    // مقصد پس از ورود:
+    //   اول بار ⇒ «اطلاع‌رسانی اولیه» (وضعیت اتصال، اختیارات، اهداف و مسیرها)
+    //   بارهای بعد ⇒ اگر نقش «مدیریت» انتخاب شده باشد پنل مدیریت، وگرنه پیشخوان
     val enterAfterLogin: () -> Unit = {
-        if (ir.atiran.vizitor.sqldirect.VizitorRoleIntent.wantsManagerPanel()) enterManager()
+        if (!briefingSeen) {
+            navController.navigate(Routes.BRIEFING) {
+                popUpTo(Routes.SPLASH) { inclusive = true }
+                launchSingleTop = true
+            }
+        } else if (ir.atiran.vizitor.sqldirect.VizitorRoleIntent.wantsManagerPanel()) enterManager()
         else enterPanel()
     }
 
@@ -356,6 +370,43 @@ fun VizitorRoot(
                     onOpenReports = { navController.navigate(Routes.REPORTS) },
                     onOpenCatalog = { navController.navigate(Routes.CATALOG) },
                     onOpenManager = { navController.navigate(Routes.MANAGER) },
+                    onOpenBriefing = { navController.navigate(Routes.BRIEFING) },
+                    onOpenActivities = { navController.navigate(Routes.ACTIVITIES) },
+                )
+            }
+            // ── «اطلاع‌رسانی اولیه به ویزیتور» (v2.18.0) ──
+            composable(Routes.BRIEFING) {
+                ir.atiran.vizitor.ui.screens.BriefingScreen(
+                    viewModel = viewModel,
+                    onStart = enterAfterLogin,
+                    onOpenActivities = { navController.navigate(Routes.ACTIVITIES) },
+                    onOpenVisits = { navController.navigate(Routes.VISITS) },
+                    onOpenCustomers = { navController.navigate(Routes.CUSTOMERS) },
+                    onOpenCatalog = { navController.navigate(Routes.CATALOG) },
+                    onOpenReports = { navController.navigate(Routes.REPORTS) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                )
+            }
+            // ── مرکز «همهٔ فعالیت‌های ویزیتور» (v2.18.0) ──
+            composable(Routes.ACTIVITIES) {
+                ir.atiran.vizitor.ui.screens.ActivitiesScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        if (navController.previousBackStackEntry != null) navController.popBackStack()
+                        else enterPanel()
+                    },
+                    onOpenBriefing = { navController.navigate(Routes.BRIEFING) },
+                    onOpenVisits = { navController.navigate(Routes.VISITS) },
+                    onOpenCustomers = { navController.navigate(Routes.CUSTOMERS) },
+                    onOpenCatalog = { navController.navigate(Routes.CATALOG) },
+                    onOpenCart = { navController.navigate(Routes.CART) },
+                    onOpenReports = { navController.navigate(Routes.REPORTS) },
+                    onOpenScanner = {
+                        if (cameraPermissionGranted.value) navController.navigate(Routes.SCANNER)
+                        else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    },
+                    onOpenChat = { navController.navigate(Routes.CHAT) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 )
             }
             // ── تب «ثبت ویزیت» — ثبت مراجعه در جدول واقعی dbo.Visit (v2.14.0) ──
