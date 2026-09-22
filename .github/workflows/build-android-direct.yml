@@ -46,16 +46,24 @@ jobs:
           echo "APKSIGNER=$APKSIGNER"
           echo "APKSIGNER=$APKSIGNER" >> "$GITHUB_ENV"
 
-      - name: ساخت کلید امضا برای این بیلد (فقط برای نصب مستقیم روی گوشی‌ها)
+      - name: کلید امضای پایدار پروژه (اگر در مخزن باشد همان استفاده می‌شود، وگرنه یک‌بار ساخته می‌شود)
+        # کلید ثابت ⇒ نسخه‌های بعدی روی همان نصبِ قبلی «به‌روزرسانی» می‌شوند
+        # (اگر هر بیلد کلید تازه بسازد، اندروید نصب روی نسخهٔ قبلی را رد می‌کند و
+        #  کاربر باید اول برنامه را حذف کند — و رمز SQL ذخیره‌شده هم پاک می‌شود).
         working-directory: android-app
         run: |
-          keytool -genkeypair -v -keystore vizitor-ci.jks -storetype JKS -storepass vizitorci \
-            -alias vizitor -keypass vizitorci -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Vizitor Direct, OU=Meelano Studio Design, O=Meelano, L=Tehran, C=IR"
+          if [ -f vizitor-ci.jks ]; then
+            echo "کلید پایدار موجود است — همان استفاده می‌شود (تغییر نمی‌کند)"
+          else
+            echo "کلید پایدار نبود — یک‌بار ساخته می‌شود و در مخزن ثبت خواهد شد"
+            keytool -genkeypair -v -keystore vizitor-ci.jks -storetype JKS \
+              -storepass vizitorci -alias vizitor -keypass vizitorci \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Vizitor Direct, OU=Meelano Studio Design, O=Meelano, L=Tehran, C=IR"
+          fi
           printf 'storeFile=vizitor-ci.jks\nstorePassword=vizitorci\nkeyAlias=vizitor\nkeyPassword=vizitorci\n' > keystore.properties
-          # اطمینان از اینکه هر دو فایل کنار ریشهٔ پروژهٔ اندروید (android-app/) هستند
           ls -l vizitor-ci.jks keystore.properties
-          keytool -list -keystore vizitor-ci.jks -storepass vizitorci | head -5
+          keytool -list -keystore vizitor-ci.jks -storepass vizitorci | head -6
 
       - name: ساخت APK (debug و release)
         working-directory: android-app
@@ -190,6 +198,8 @@ jobs:
             cp /tmp/cargo2/info "$R3"
             git add -f "$R1" "$R3"
             [ -f "$R2" ] && git add -f "$R2"
+            # کلید امضای پایدار هم یک‌بار در مخزن ثبت می‌شود تا بیلدهای بعدی همان امضا را داشته باشند
+            [ -f android-app/vizitor-ci.jks ] && git add -f android-app/vizitor-ci.jks
             git diff --cached --quiet && { echo "APK از قبل ثبت شده بود"; break; }
             git config user.name "vizitor-ci"
             git config user.email "ci@vizitor.local"
@@ -225,6 +235,12 @@ jobs:
             یا چسباندن متن کارت) → نام کاربری/رمز دیتابیس را یک‌بار وارد کنید → دیتابیس حسابداری را از
             فهرست `sys.databases` انتخاب یا دستی تایپ کنید → «اعمال تنظیمات و تست اتصال» → از این پس هر
             ویزیتور با نام کاربری و کلمهٔ عبور خودش در `dbo.sys_users` وارد می‌شود.
+
+            **کلید امضا:** کلید پایدار پروژه (`android-app/vizitor-ci.jks` در همین مخزن) — پس نسخه‌های
+            بعدی روی همین نصب به‌روزرسانی می‌شوند و نیازی به حذف برنامه نیست.
+
+            **دسترسی جایگزین:** اگر دانلود از این صفحه در شبکه‌تان بسته بود، خودِ APK امضاشده در
+            مخزن هم ثبت شده است: `android-app/dist/VizitorDirect-1.0.0.apk` (همراه `BUILD-INFO.txt`).
 
             رمز SQL فقط رمزنگاری‌شده (AES-GCM + Keystore) روی گوشی می‌ماند و هرگز نمایش داده نمی‌شود.
             طراحی و برنامه‌نویسی: **میلاد یقوبی** — گروه نرم‌افزاری **Meelano Studio Design**.
