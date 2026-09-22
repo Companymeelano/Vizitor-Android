@@ -1,0 +1,6 @@
+VizitorDirect-1.0.0.apk
+تاریخ ساخت: 2026-09-22 04:56:32 UTC
+کامیت: 418a9bcf688ececbfdd7e85d36bfb6d40a131563
+حجم: 7623415 بایت
+sha256: 78b9d8f4c7957d692f45a85da4143d40c7991489eb3331cb97d57335a2c52412
+امضا: بررسی‌شده با apksigner (طرح v2) — جزئیات در apk-report.txt
