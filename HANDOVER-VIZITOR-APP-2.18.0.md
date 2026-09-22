@@ -15,8 +15,17 @@
 
 | فایل | حجم | SHA‑256 |
 |---|---|---|
-| `vizitor-app/dist/Vizitor-2.18.0-direct.apk` (امضاشده) | در صفحهٔ ریلیز و فایل `.sha256` | در صفحهٔ ریلیز و فایل `.sha256` |
-| `Vizitor-2.18.0-direct-debug.apk` (نسخهٔ آزمون) | — | — |
+| `vizitor-app/dist/Vizitor-2.18.0-direct.apk` (امضاشده) | ۴۱٫۹۲۸٫۳۵۸ بایت (≈۴۰٫۰ مبی‌بایت) | `7a1b7ca03b6603f9c524e990e5cd69b6c696b4037a0d5c2e4ef045bb0300f9e1` |
+| `Vizitor-2.18.0-direct-debug.apk` (نسخهٔ آزمون) | ۵۳٫۰۳۴٫۵۹۳ بایت | — |
+
+- کامیت بیلد (CI): `c3fe97f` — تاریخ بیلد: ۲۰۲۶‑۰۹‑۲۲ ۱۲:۳۷:۰۷ UTC.
+- **بازرسی محتوای همین APK** (در CI و در بررسی همین تحویل): نام بسته `ir.atiran.vizitor`،
+  شمارهٔ ساخت ۲۱۸۱۴، نام نسخه `2.18.0-direct`، و وجود کلاس‌های تازه
+  (`VizitorGateway`, `BriefingScreen`, `ActivitiesScreen`, `Lux3DStage`, `Lux3DTile`, `Lux3DMenu`,
+  `Lux3DTable`, `Lux3DBarChart`, `Lux3DDonut`, `Lux3DStatOrb`, `ensureConnected`, `submitCart`,
+  `preInvoiceReference`) و رشته‌های فارسی تازه («اطلاع‌رسانی اولیه»، «فعالیت‌های ویزیتور»،
+  «مطالبات در خطر»، «مسیرهای تعریف‌شدهٔ شما»، «ویزیت‌های هفتهٔ شما»، «مسیر ثبت سند در آتیران»،
+  «آخرین سند پیش‌فاکتور»، «فعال‌کردن ثبت واقعی در آتیران»، «پیش‌نمایش سند») تأیید شد.
 
 - **کلید امضا تغییر نکرده:** `SHA-256 = 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a`
   (CN=Vizitor App Direct, O=Meelano, C=IR) → **به‌روزرسانی درجا** روی نسخهٔ نصب‌شده (۲٫۱۷ / ۲٫۱۶ / …).
