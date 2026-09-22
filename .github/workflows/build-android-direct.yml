@@ -12,7 +12,13 @@ on:
       - main
       - "arena/**"
     paths:
-      - "android-app/**"
+      # فقط کد و پیکربندی بیلد — تغییر README/مستندات نباید APK را بازسازی کند
+      - "android-app/vizitor-direct/**"
+      - "android-app/build.gradle.kts"
+      - "android-app/settings.gradle.kts"
+      - "android-app/gradle.properties"
+      - "android-app/gradle/**"
+      - "android-app/gradlew"
       - ".github/workflows/build-android-direct.yml"
 
 permissions:

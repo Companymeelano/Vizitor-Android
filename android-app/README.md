@@ -18,8 +18,20 @@
 APK ساخته شد و در صفحهٔ ریلیز همین مخزن قابل دانلود است:
 
 ```
-https://github.com/Companymeelano/Vizitor/releases/tag/vizitor-direct-v1.0.0
+https://github.com/Companymeelano/Vizitor-Android/releases/tag/vizitor-direct-v1.0.0
 ```
+
+> 🆕 **آخرین بیلد — ۲۰۲۶-۰۹-۲۲** (کامیت `6aae9e0`): با **کلید امضای پایدار پروژه**
+> (`android-app/vizitor-ci.jks`، همان کلید برای بیلدهای بعدی) امضا شده و خودِ فایل هم داخل
+> مخزن هست: [`dist/VizitorDirect-1.0.0.apk`](dist/VizitorDirect-1.0.0.apk).
+>
+> | فایل | حجم | sha256 |
+> |---|---|---|
+> | `VizitorDirect-1.0.0.apk` | ۷٬۶۲۳٬۴۱۵ بایت | `8a17ea650ab1883de359db18fc7ea04681623d1f87f62468ea5e3a9cdcf1051d` |
+> | `VizitorDirect-1.0.0-debug.apk` | ۱۰٬۷۱۴٬۳۵۰ بایت | `c0c2b82b6e1c7ee6dfef5ac2c79b1df3ed6c317d5cdba6dc7c41b2459f83bfd9` |
+>
+> (جدول قدیمی زیر مربوط به بیلد ۲۰۲۶-۰۹-۲۰ است؛ چون کلید آن بیلد با این یکی یکی نیست،
+> برای نصب تازه همان فایل تازه را بگذارید.)
 
 | فایل | حجم | sha256 | امضا |
 |---|---|---|---|
