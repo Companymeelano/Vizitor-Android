@@ -47,6 +47,73 @@ class VizitorViewModel(app: Application) : AndroidViewModel(app) {
         _priceLevel.value = level
     }
 
+    // ── همگام‌سازی دستی مشتریان (دکمهٔ «همگام‌سازی مشتریان» در تب مشتری) ────
+    private val _customerSync = MutableStateFlow(CustomerSyncState())
+    val customerSync: StateFlow<CustomerSyncState> = _customerSync.asStateFlow()
+
+    /**
+     * خواندن تازهٔ فهرست مشتریان از سرور و نوشتن در پایگاه‌دادهٔ محلی.
+     * مسیرها: مجوز کاربر (sys_cus) ← مشتریان خودِ ویزیتور (CUSTOMERS.vis_rdf) ←
+     * همهٔ مشتریان فعال. نتیجه با تعداد/مسیر/علت خطا به کاربر گفته می‌شود.
+     */
+    fun syncCustomersNow() {
+        if (_customerSync.value.busy) return
+        viewModelScope.launch {
+            val session = ir.atiran.vizitor.sqldirect.VizitorSession.current
+            val dbUser = session.erpUserId
+            if (dbUser == null) {
+                _customerSync.value = CustomerSyncState(
+                    busy = false, message = "اول وارد سامانه شوید، بعد فهرست مشتریان را بگیرید.", ok = false
+                )
+                showToast("برای همگام‌سازی مشتریان باید وارد سامانه شده باشید ⚠️")
+                return@launch
+            }
+            _customerSync.value = CustomerSyncState(busy = true, message = "در حال گرفتن فهرست مشتریان از سرور…")
+            if (!ir.atiran.vizitor.sqldirect.SqlConnectionManager.connected()) {
+                val saved = ir.atiran.vizitor.sqldirect.SecureDbStore.load()
+                if (saved == null || !ir.atiran.vizitor.sqldirect.SqlConnectionManager.connect(saved)) {
+                    val err = ir.atiran.vizitor.sqldirect.SqlConnectionManager.state.value
+                    val msg = (err as? ir.atiran.vizitor.sqldirect.ConnectionState.Error)?.message ?: "خطای نامشخص"
+                    _customerSync.value = CustomerSyncState(busy = false, message = "اتصال به سرور برقرار نشد: $msg", ok = false)
+                    showToast("اتصال به سرور برقرار نشد ❌")
+                    return@launch
+                }
+            }
+            val r = runCatching {
+                ir.atiran.vizitor.sqldirect.CustomerSync.fetch(
+                    userId = dbUser,
+                    companyId = session.companyId,
+                    visitorRdf = session.visitorRdf,
+                    limit = 3000,
+                )
+            }.getOrElse { e ->
+                ir.atiran.vizitor.sqldirect.CustomerSync.Result(
+                    emptyList(), "none", emptyList(), e.message ?: e.javaClass.simpleName
+                )
+            }
+            if (r.customers.isNotEmpty()) {
+                repo.replaceCustomers(r.customers)
+            }
+            val msg = when {
+                r.customers.isNotEmpty() -> "✅ ${r.customers.size} مشتری همگام شد — مسیر: ${r.sourceLabel}"
+                r.error != null -> "❌ مشتریان خوانده نشد: ${r.error}"
+                else -> "مشتری‌ای پیدا نشد. " + r.notes.joinToString(" • ")
+            }
+            _customerSync.value = CustomerSyncState(
+                busy = false, message = msg, ok = r.customers.isNotEmpty(), count = r.customers.size
+            )
+            showToast(if (r.customers.isNotEmpty()) "فهرست مشتریان به‌روز شد ✅ (${r.customers.size} مشتری)" else "مشتری‌ای برای این کاربر پیدا نشد ⚠️")
+        }
+    }
+
+    /** وضعیت همگام‌سازی مشتریان برای نمایش در تب مشتری. */
+    data class CustomerSyncState(
+        val busy: Boolean = false,
+        val message: String = "",
+        val ok: Boolean = true,
+        val count: Int = 0,
+    )
+
     /** سطح قیمت پیش‌فرض برای یک مشتری (بر اساس گروه؛ در نبود مشتری، تنظیم ویزیتور). */
     fun priceLevelFor(customer: CustomerEntity?): Int =
         customer?.let { repo.defaultPriceLevel(it.groupName) } ?: _priceLevel.value

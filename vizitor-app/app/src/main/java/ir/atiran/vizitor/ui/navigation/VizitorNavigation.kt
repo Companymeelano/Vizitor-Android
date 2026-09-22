@@ -102,6 +102,7 @@ import androidx.navigation.compose.rememberNavController
 import ir.atiran.vizitor.R
 import ir.atiran.vizitor.VizitorViewModel
 import ir.atiran.vizitor.perf.VizitorPerf
+import ir.atiran.vizitor.ui.components.AutoFitText
 import ir.atiran.vizitor.ui.components.dashboardBackdrop
 import ir.atiran.vizitor.ui.screens.CartScreen
 import ir.atiran.vizitor.ui.screens.CatalogScreen
@@ -109,6 +110,7 @@ import ir.atiran.vizitor.ui.screens.ChatScreen
 import ir.atiran.vizitor.ui.screens.CustomersScreen
 import ir.atiran.vizitor.ui.screens.DashboardScreen
 import ir.atiran.vizitor.ui.screens.DirectSqlScreen
+import ir.atiran.vizitor.ui.screens.ManagerScreen
 import ir.atiran.vizitor.ui.screens.ReportsScreen
 import ir.atiran.vizitor.ui.screens.ScannerScreen
 import ir.atiran.vizitor.ui.screens.SettingsScreen
@@ -140,22 +142,30 @@ object Routes {
     // صفحهٔ «تنظیمات ورود» — همان صفحهٔ اتصال در حالت تمام‌صفحه با بازگشت هوشمند
     // (از صفحهٔ اول ← برمی‌گردد به صفحهٔ اول؛ از تنظیمات ← برمی‌گردد به تنظیمات)
     const val WELCOME = "welcome"
+    /** پنل مدیریت — فقط با نام کاربری و رمز شخصی مدیر در آتیران (v2.16.0) */
+    const val MANAGER = "manager"
 }
 
 data class TabItem(val route: String, val label: String, val icon: ImageVector, val iconRes: Int)
 
+// v2.16.0 — نوار پایین خواناتر: آیکن‌های بزرگ‌تر، برچسب‌های درشت‌تر، ارتفاع بیشتر
+private val BAR_HEIGHT = 86.dp
+private val TAB_ICON_BOX = 50.dp
+private val TAB_IMAGE = 46.dp
+
 private val rightTabs = listOf(
-    TabItem(Routes.DASHBOARD, "پیشخوان", Icons.Filled.Dashboard, R.drawable.tab_dashboard),
+    TabItem(Routes.DASHBOARD, "خانه", Icons.Filled.Dashboard, R.drawable.tab_dashboard),
     TabItem(Routes.CATALOG, "ویترین", Icons.Filled.Storefront, R.drawable.tab_showcase),
-    // v2.14.0 — تب «ویزیت»: ثبت مراجعه به مشتری در dbo.Visit
-    TabItem(Routes.VISITS, "ویزیت", Icons.Filled.Route, R.drawable.tab_visit)
 )
 
 private val leftTabs = listOf(
     TabItem(Routes.CUSTOMERS, "مشتری", Icons.Filled.Person, R.drawable.tab_customer),
-    TabItem(Routes.REPORTS, "گزارشات", Icons.Filled.Receipt, R.drawable.tab_reports),
-    TabItem(Routes.SETTINGS, "تنظیمات", Icons.Filled.Settings, R.drawable.tab_settings)
+    TabItem(Routes.REPORTS, "گزارشات", Icons.Filled.Receipt, R.drawable.tab_reports)
 )
+
+// v2.16.0 — منو ساده شد: ۴ تب + دکمهٔ مرکزی سبد.
+// «ویزیت» و «تنظیمات» از کارت‌های دسترسی سریع پیشخوان و نوار بالای صفحه‌ها باز می‌شوند
+// (دیگر شش آیکن شلوغ در نوار پایین وجود ندارد و ویزیتور سردرگم نمی‌شود).
 
 @Composable
 fun VizitorRoot(
@@ -212,6 +222,20 @@ fun VizitorRoot(
         }
     }
 
+    // ورود به «پنل مدیریت» (نمودارها + جدول‌های گزارش کامل)
+    val enterManager: () -> Unit = {
+        navController.navigate(Routes.MANAGER) {
+            popUpTo(Routes.SPLASH) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
+    // مقصد پس از ورود: اگر نقش «مدیریت» انتخاب شده باشد ⇒ پنل مدیریت
+    val enterAfterLogin: () -> Unit = {
+        if (ir.atiran.vizitor.sqldirect.VizitorRoleIntent.wantsManagerPanel()) enterManager()
+        else enterPanel()
+    }
+
     // بازگشت هوشمند: اگر جایی برای بازگشت هست برگرد، وگرنه به پنل
     // (صفحهٔ اول ← برمی‌گردد به صفحهٔ اول؛ تنظیمات ← برمی‌گردد به تنظیمات)
     val settingsBack: () -> Unit = {
@@ -224,7 +248,7 @@ fun VizitorRoot(
     LaunchedEffect(serverSession.loggedIn, pendingQuickEnter) {
         if (pendingQuickEnter && serverSession.loggedIn) {
             pendingQuickEnter = false
-            enterPanel()
+            enterAfterLogin()
         }
     }
 
@@ -274,6 +298,9 @@ fun VizitorRoot(
             composable(Routes.SPLASH) {
                 SplashScreen(
                     onEnter = {
+                        ir.atiran.vizitor.sqldirect.VizitorRoleIntent.set(
+                            ir.atiran.vizitor.sqldirect.VizitorRoleIntent.Role.VISITOR
+                        )
                         // اگر اتصال تنظیم شده و اعتبارنامه ذخیره است: ورود سریع،
                         // بعد از ورود خودکار به پنل می‌رویم. در غیر این صورت،
                         // کاربر را مستقیم به صفحهٔ تنظیم اتصال می‌بریم.
@@ -289,6 +316,20 @@ fun VizitorRoot(
                     },
                     onSoon = { viewModel.showToast(it) },
                     serverSession = serverSession,
+                    onManager = {
+                        // نقش مدیریت: نام کاربری و رمز شخصی مدیر در آتیران
+                        ir.atiran.vizitor.sqldirect.VizitorRoleIntent.set(
+                            ir.atiran.vizitor.sqldirect.VizitorRoleIntent.Role.MANAGER
+                        )
+                        if (serverSession.loggedIn) {
+                            enterManager()
+                        } else if (serverSession.credentialsSaved) {
+                            pendingQuickEnter = true
+                            sqlViewModel.quickEnter()
+                        } else {
+                            navController.navigate(Routes.DIRECT_SQL)
+                        }
+                    },
                     onOpenServerConfig = { navController.navigate(Routes.WELCOME) },
                     onQuickEnter = {
                         if (serverSession.loggedIn) {
@@ -310,7 +351,11 @@ fun VizitorRoot(
                             launchSingleTop = true
                             restoreState = true
                         }
-                    }
+                    },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenReports = { navController.navigate(Routes.REPORTS) },
+                    onOpenCatalog = { navController.navigate(Routes.CATALOG) },
+                    onOpenManager = { navController.navigate(Routes.MANAGER) },
                 )
             }
             // ── تب «ثبت ویزیت» — ثبت مراجعه در جدول واقعی dbo.Visit (v2.14.0) ──
@@ -329,6 +374,24 @@ fun VizitorRoot(
             composable(Routes.CART) { CartScreen(viewModel) }
             composable(Routes.CUSTOMERS) { CustomersScreen(viewModel) }
             composable(Routes.REPORTS) { ReportsScreen(viewModel) }
+            // ── پنل مدیریت (نمودارها و جدول‌های گزارش کامل) — v2.16.0 ──
+            composable(Routes.MANAGER) {
+                ManagerScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        if (navController.previousBackStackEntry != null) navController.popBackStack()
+                        else navController.navigate(Routes.SPLASH) { popUpTo(Routes.SPLASH) { inclusive = true } }
+                    },
+                    onOpenSettings = { navController.navigate(Routes.WELCOME) },
+                    onLogout = {
+                        sqlViewModel.logout()
+                        navController.navigate(Routes.SPLASH) {
+                            popUpTo(Routes.MANAGER) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     viewModel = viewModel,
@@ -343,7 +406,7 @@ fun VizitorRoot(
                 DirectSqlScreen(
                     viewModel = sqlViewModel,
                     onBack = settingsBack,
-                    onEnterPanel = enterPanel,
+                    onEnterPanel = enterAfterLogin,
                 )
             }
             // اتصال مستقیم به SQL Server روی پورت ۱۴۳۳ (بدون API/IIS)
@@ -354,7 +417,7 @@ fun VizitorRoot(
                         if (navController.previousBackStackEntry != null) navController.popBackStack()
                         else enterPanel()
                     },
-                    onEnterPanel = enterPanel,
+                    onEnterPanel = enterAfterLogin,
                 )
             }
             composable(Routes.SCANNER) {
@@ -425,7 +488,7 @@ private fun VizitorBottomBar(
 
             // جایگاه FAB مرکزی — هم‌ارتفاع با تب‌ها تا کل نوار دقیقاً یک خط تراز شود
             androidx.compose.foundation.layout.Box(
-                modifier = Modifier.width(78.dp).height(74.dp),
+                modifier = Modifier.width(88.dp).height(BAR_HEIGHT),
                 contentAlignment = Alignment.Center
             ) { }
 
@@ -450,8 +513,8 @@ private fun VizitorBottomBar(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = (-30).dp)
-                .size(74.dp),
+                .offset(y = (-32).dp)
+                .size(TAB_ICON_BOX),
             contentAlignment = Alignment.Center
         ) {
             // حلقه مداری نور (رویه غیرکلیپ‌شده)
@@ -477,7 +540,7 @@ private fun VizitorBottomBar(
             // دایره اصلی دکمه
             Box(
                 modifier = Modifier
-                    .size(62.dp)
+                    .size(TAB_ICON_BOX - 4.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.linearGradient(listOf(NeonPurpleDark, NeonPurple))
@@ -490,7 +553,7 @@ private fun VizitorBottomBar(
                     containerColor = Color.Transparent,
                     elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp),
                     modifier = Modifier
-                        .size(62.dp)
+                        .size(TAB_ICON_BOX - 4.dp)
                         .align(Alignment.Center)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -498,7 +561,7 @@ private fun VizitorBottomBar(
                             Icons.Filled.ShoppingCart,
                             contentDescription = "سبد سفارش",
                             tint = Color.White,
-                            modifier = Modifier.size(27.dp)
+                            modifier = Modifier.size(34.dp)
                         )
                         val count = cartCount.sumOf { it.quantity }.toInt()
                         if (count > 0) {
@@ -536,7 +599,7 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
     Box(
         modifier = Modifier
             .weight(1f)
-            .height(74.dp)
+            .height(BAR_HEIGHT)
             .padding(horizontal = 3.dp, vertical = 6.dp)
             .clip(RoundedCornerShape(16.dp))
             .then(
@@ -567,8 +630,8 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 3.dp)
-                    .width(22.dp)
-                    .height(3.dp)
+                    .width(30.dp)
+                    .height(4.dp)
                     .clip(RoundedCornerShape(50))
                     .background(p.gold)
             )
@@ -578,13 +641,17 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
             // حلقه/سطح با رنگ‌های پالت، حالت غیرفعال کمی کم‌رنگ‌تر
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(TAB_ICON_BOX)
                     .clip(CircleShape)
                     .then(
                         if (selected)
-                            Modifier.border(1.5.dp, p.gold.copy(alpha = 0.85f), CircleShape)
+                            Modifier.border(2.dp, p.gold.copy(alpha = 0.9f), CircleShape)
                         else
-                            Modifier.border(1.dp, Color(0x22FFFFFF), CircleShape)
+                            Modifier.border(1.dp, Color(0x33FFFFFF), CircleShape)
+                    )
+                    .then(
+                        if (selected) Modifier.background(p.gold.copy(alpha = 0.10f))
+                        else Modifier
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -593,7 +660,7 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
                     contentDescription = tab.label,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(34.dp) // ثابت در هر دو حالت — بدون پرش اندازه
+                        .size(TAB_IMAGE)
                         .clip(CircleShape),
                     colorFilter = if (selected) null
                     else ColorFilter.colorMatrix(
@@ -602,14 +669,13 @@ private fun androidx.compose.foundation.layout.RowScope.BottomTab(
                 )
             }
             Spacer(Modifier.height(3.dp))
-            Text(
-                tab.label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal,
-                    fontSize = 9.5.sp
-                ),
+            AutoFitText(
+                text = tab.label,
                 color = if (selected) p.gold else TextSecondary,
-                maxLines = 1
+                fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                minimumSize = 9.sp,
+                maximumSize = 12.5.sp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

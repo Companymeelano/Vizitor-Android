@@ -35,7 +35,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Palette
@@ -106,7 +110,11 @@ private val DebtBarColors = listOf(Color(0xFFFF4D6D), Color(0xFFFF8FA3))
 fun DashboardScreen(
     viewModel: VizitorViewModel,
     onOpenChat: () -> Unit = {},
-    onOpenVisits: () -> Unit = {}
+    onOpenVisits: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onOpenReports: () -> Unit = {},
+    onOpenManager: () -> Unit = {},
+    onOpenCatalog: () -> Unit = {}
 ) {
     val todaySales by viewModel.todaySales.collectAsState()
     val followUp by viewModel.followUpCustomers.collectAsState()
@@ -158,7 +166,11 @@ fun DashboardScreen(
         item {
             QuickAccessCard(
                 onVisit = onOpenVisits,
-                onChat = onOpenChat
+                onChat = onOpenChat,
+                onCatalog = onOpenCatalog,
+                onReports = onOpenReports,
+                onSettings = onOpenSettings,
+                onManager = onOpenManager
             )
         }
 
@@ -270,32 +282,70 @@ private fun ThemeDotsSwitch() {
 @Composable
 private fun QuickAccessCard(
     onVisit: () -> Unit,
-    onChat: () -> Unit
+    onChat: () -> Unit,
+    onCatalog: () -> Unit,
+    onReports: () -> Unit,
+    onSettings: () -> Unit,
+    onManager: () -> Unit
 ) {
     val p = vizitorPalette
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(p.surface.copy(alpha = 0.85f))
             .border(1.dp, p.glassBorder, RoundedCornerShape(18.dp))
             .padding(10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        QuickTile(
-            title = "ثبت ویزیت",
-            subtitle = "مراجعه به مشتری + GPS",
-            icon = Icons.Filled.Flag,
-            modifier = Modifier.weight(1f),
-            onClick = onVisit
-        )
-        QuickTile(
-            title = "گفتگو",
-            subtitle = "اتاق ویزیتورها",
-            icon = Icons.Filled.Message,
-            modifier = Modifier.weight(1f),
-            onClick = onChat
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            QuickTile(
+                title = "ثبت ویزیت",
+                subtitle = "مراجعه + GPS",
+                icon = Icons.Filled.Flag,
+                modifier = Modifier.weight(1f),
+                onClick = onVisit
+            )
+            QuickTile(
+                title = "ویترین کالا",
+                subtitle = "قیمت و موجودی",
+                icon = Icons.Filled.Storefront,
+                modifier = Modifier.weight(1f),
+                onClick = onCatalog
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            QuickTile(
+                title = "گزارشات",
+                subtitle = "فاکتورهای من",
+                icon = Icons.Filled.Receipt,
+                modifier = Modifier.weight(1f),
+                onClick = onReports
+            )
+            QuickTile(
+                title = "گفتگو",
+                subtitle = "اتاق ویزیتورها",
+                icon = Icons.Filled.Message,
+                modifier = Modifier.weight(1f),
+                onClick = onChat
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            QuickTile(
+                title = "پنل مدیریت",
+                subtitle = "نمودار و گزارش کامل",
+                icon = Icons.Filled.Analytics,
+                modifier = Modifier.weight(1f),
+                onClick = onManager
+            )
+            QuickTile(
+                title = "تنظیمات و اتصال",
+                subtitle = "سرور، ورود، همگام‌سازی",
+                icon = Icons.Filled.Settings,
+                modifier = Modifier.weight(1f),
+                onClick = onSettings
+            )
+        }
     }
 }
 

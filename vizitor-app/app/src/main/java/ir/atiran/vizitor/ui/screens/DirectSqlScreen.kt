@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -70,7 +71,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -99,13 +99,15 @@ import ir.atiran.vizitor.sqldirect.ServerSession
 import ir.atiran.vizitor.sqldirect.VizitorSession
 import ir.atiran.vizitor.sqldirect.VisitorLoginRepository
 import ir.atiran.vizitor.sqldirect.VisitorOption
+import ir.atiran.vizitor.sqldirect.VizitorRoleIntent
 import ir.atiran.vizitor.ui.components.BtnTone
 import ir.atiran.vizitor.ui.components.GlowChip
 import ir.atiran.vizitor.ui.components.dashboardBackdrop
 import ir.atiran.vizitor.ui.components.GoldDivider
 import ir.atiran.vizitor.ui.components.AutoFitText
+import ir.atiran.vizitor.ui.components.GlamourButton
+import ir.atiran.vizitor.ui.components.GlamourTone
 import ir.atiran.vizitor.ui.components.GoldFlourish
-import ir.atiran.vizitor.ui.components.IdealButton
 import ir.atiran.vizitor.ui.components.MiniStat
 import ir.atiran.vizitor.ui.components.LuxBanner
 import ir.atiran.vizitor.ui.components.LuxChip
@@ -699,17 +701,19 @@ private fun LoginCard(
 ) {
     val p = vizitorPalette
     var showPass by remember { mutableStateOf(false) }
-    var advanced by remember { mutableStateOf(false) }
+    var visitorListOpen by remember { mutableStateOf(false) }
+    val isManager = VizitorRoleIntent.wantsManagerPanel()
 
     val filtered = remember(state.visitorOptions, state.visitorFilter) {
         VisitorLoginRepository.search(state.visitorOptions, state.visitorFilter)
     }
 
     PremiumPanel(
-        title = if (state.loggedIn) "ویزیتور وارد شده" else "انتخاب ویزیتور (dbo.sys_vis)",
-        hint = if (state.loggedIn) "وارد شده: ${state.loggedInUser}"
-        else "ویزیتور خود را از فهرست واقعی سرور انتخاب کنید",
-        icon = Icons.Filled.Person,
+        title = if (state.loggedIn) "ورود انجام شد ✅" else "ورود به سامانهٔ آتیران",
+        hint = if (state.loggedIn) "وارد شده: ${state.loggedInUser} - ${state.loggedInName}"
+        else if (isManager) "با نام کاربری و کلمهٔ عبور شخصی خودِ مدیر در آتیران"
+        else "با نام کاربری و کلمهٔ عبور خودتان در آتیران",
+        icon = if (isManager) Icons.Filled.WorkspacePremium else Icons.Filled.Person,
         step = 3,
         accent = if (state.loggedIn) p.accent else p.primary,
         inner = fit.inner,
@@ -717,200 +721,162 @@ private fun LoginCard(
         onHeaderClick = viewModel::toggleLogin,
         expanded = state.loginExpanded || !state.loggedIn,
         trailing = {
-            if (state.loggedIn) GlowChip(text = "فعال", color = p.accent)
-            else if (state.visitorOptions.isNotEmpty()) GlowChip(text = state.visitorOptions.size.toFaNumber(), color = p.gold)
+            when {
+                state.loggedIn -> GlowChip(text = "فعال", color = p.accent)
+                state.busy -> GlowChip(text = "در حال ورود", color = p.gold)
+            }
         }
     ) {
         AnimatedVisibility(visible = state.loginExpanded || !state.loggedIn) {
             Column {
-                state.selectedVisitorName.takeIf { it.isNotBlank() && !state.loggedIn }?.let {
-                    Text(
-                        "ویزیتور انتخاب‌شده: $it",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = p.gold
-                    )
-                    Spacer(Modifier.height(6.dp))
-                }
-                Text(
-                    "این برنامه ویزیتورها را مستقیم از جدول dbo.sys_vis می‌خواند؛ " +
-                        "نیازی به نام کاربری و کلمهٔ عبور کاربر آتیران نیست. " +
-                        "کافی است ویزیتور خودتان را انتخاب کنید.",
-                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
-                    color = p.textSecondary
-                )
-                Spacer(Modifier.height(10.dp))
-
-                IdealButton(
-                    label = when {
-                        state.visitorsLoading -> "در حال خواندن فهرست ویزیتورها…"
-                        state.visitorOptions.isEmpty() -> "خواندن فهرست ویزیتورها (sys_vis)"
-                        else -> "نمایش فهرست ویزیتورها (${state.visitorOptions.size} نفر)"
-                    },
-                    icon = Icons.Filled.People,
-                    enabled = !state.busy && !state.visitorsLoading,
-                    onClick = { viewModel.loadVisitorsForLogin(force = true) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                if (state.visitorsLoading) {
-                    Spacer(Modifier.height(8.dp))
-                    LinearProgressIndicator(
+                if (state.loggedIn) {
+                    // ── وضعیت ورود: خلاصه + رفتن به پنل ──
+                    KeyRow(label = "کاربر سامانه", value = state.loggedInUser.ifBlank { "—" })
+                    if (state.loggedInName.isNotBlank()) {
+                        KeyRow(label = "نام", value = state.loggedInName)
+                    }
+                    KeyRow(label = "مشتریان مجاز", value = state.allowedCustomers.toString())
+                    KeyRow(label = "کالاهای مجاز", value = state.allowedProducts.toString())
+                    Spacer(Modifier.height(12.dp))
+                    GlamourButton(
+                        label = if (isManager) "ورود به پنل مدیریت" else "ورود به پنل ویزیتور",
+                        subtitle = "همهٔ بخش‌ها با دادهٔ واقعی سرور فعال است",
+                        icon = Icons.Filled.Login,
+                        tone = GlamourTone.GOLD,
+                        height = 56.dp,
                         modifier = Modifier.fillMaxWidth(),
-                        color = p.gold,
-                        trackColor = p.gold.copy(alpha = 0.18f)
+                        onClick = onEnterPanel
                     )
-                }
-
-                if (state.visitorOptions.isNotEmpty() && state.visitorPickerOpen) {
-                    Spacer(Modifier.height(10.dp))
-                    PremiumField(
-                        value = state.visitorFilter,
-                        onValueChange = viewModel::onVisitorFilter,
-                        label = "جست‌وجو در ویزیتورها",
-                        hint = "نام، موبایل یا کد ویزیتور",
-                        icon = Icons.Filled.Search,
-                        minHeight = fit.fieldHeight,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    filtered.take(60).forEach { option ->
-                        VisitorPickTile(
-                            option = option,
-                            selected = state.selectedVisitorRdf == option.visitorRdf,
-                            busy = state.busy,
-                            onClick = { viewModel.enterAsVisitor(option) }
+                } else {
+                    // ── فرم سادهٔ ورود (فقط دو فیلد) ──
+                    if (isManager) {
+                        Text(
+                            "نقش انتخاب‌شده: مدیریت — گزارش کامل فروش، مشتریان و انبار با نمودار و جدول.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = p.gold
                         )
                         Spacer(Modifier.height(6.dp))
                     }
-                    if (filtered.isEmpty()) {
-                        Text(
-                            "ویزیتوری با این مشخصات پیدا نشد.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = p.textSecondary
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-                PremiumButton(
-                    text = if (state.loggedIn) "ورود به پنل" else "بررسی/اتصال سرور",
-                    subtitle = null,
-                    icon = if (state.loggedIn) Icons.Filled.Login else Icons.Filled.Storage,
-                    tone = if (state.loggedIn) BtnTone.PRIMARY else BtnTone.GLASS,
-                    height = fit.buttonHeight,
-                    textSize = fit.buttonText,
-                    enabled = !state.busy,
-                    loading = state.busy,
-                    onClick = { if (state.loggedIn) onEnterPanel() else viewModel.connectDatabase() },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(Modifier.height(6.dp))
-                TextButton(
-                    onClick = { advanced = !advanced },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
                     Text(
-                        if (advanced) "بستن ورود دستی آتیران ▲" else "ورود دستی با نام کاربری آتیران (اختیاری) ▼",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        "نام کاربری و کلمهٔ عبور خود را در سامانهٔ آتیران وارد کنید و دکمهٔ ورود را بزنید؛ " +
+                            "کالاها، مشتریان و فاکتورها خودکار خوانده می‌شوند.",
+                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
                         color = p.textSecondary
                     )
-                }
+                    Spacer(Modifier.height(10.dp))
 
-                AnimatedVisibility(visible = advanced) {
-                    Column {
-                        Text(
-                            "این مسیر فقط برای کاربران مدیریتی است: همان نام کاربری و کلمهٔ عبور dbo.sys_users.",
-                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
-                            color = p.textSecondary
+                    PremiumField(
+                        value = state.erpUser,
+                        onValueChange = viewModel::onErpUser,
+                        label = "نام کاربری",
+                        hint = "مثال: m.yaghoobi",
+                        icon = Icons.Filled.Person,
+                        minHeight = fit.fieldHeight,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(9.dp))
+                    PremiumField(
+                        value = state.erpPassword,
+                        onValueChange = viewModel::onErpPassword,
+                        label = "کلمهٔ عبور",
+                        hint = "رمز شما در سامانهٔ آتیران",
+                        icon = Icons.Filled.Key,
+                        minHeight = fit.fieldHeight,
+                        visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailing = {
+                            IconButton(onClick = { showPass = !showPass }) {
+                                Icon(
+                                    if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                    contentDescription = "نمایش/پنهان رمز",
+                                    tint = p.gold
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(9.dp))
+                    ToggleRow(
+                        label = "به‌خاطر سپردن",
+                        hint = "ورود سریع در اجرای بعدی — بدون تایپ مجدد",
+                        checked = state.rememberMe,
+                        onCheckedChange = viewModel::onRememberMe,
+                        icon = Icons.Filled.Key
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    GlamourButton(
+                        label = "ورود به سامانه",
+                        subtitle = "اتصال + ورود + دریافت کالا، مشتری و فاکتور",
+                        icon = Icons.Filled.Login,
+                        tone = GlamourTone.GOLD,
+                        height = 58.dp,
+                        enabled = !state.busy,
+                        loading = state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { viewModel.loginAndLoad() }
+                    )
+
+                    // ── مسیر جایگزین: انتخاب ویزیتور از فهرست واقعی dbo.sys_vis ──
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GlamourButton(
+                            label = if (visitorListOpen) "بستن فهرست ویزیتورها" else "فهرست ویزیتورها (sys_vis)",
+                            icon = Icons.Filled.People,
+                            tone = GlamourTone.GLASS,
+                            height = 46.dp,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                visitorListOpen = !visitorListOpen
+                                if (visitorListOpen) viewModel.loadVisitorsForLogin(force = state.visitorOptions.isEmpty())
+                            }
                         )
-                        Spacer(Modifier.height(10.dp))
-                        PremiumField(
-                            value = state.erpUser,
-                            onValueChange = viewModel::onErpUser,
-                            label = "نام کاربری شما در سامانه",
-                            hint = "مثال: m.yaghoobi",
-                            icon = Icons.Filled.Person,
-                            minHeight = fit.fieldHeight,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        PremiumField(
-                            value = state.erpPassword,
-                            onValueChange = viewModel::onErpPassword,
-                            label = "کلمهٔ عبور شما",
-                            hint = "رمز شما در سامانهٔ آتیران",
-                            icon = Icons.Filled.Key,
-                            minHeight = fit.fieldHeight,
-                            visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailing = {
-                                IconButton(onClick = { showPass = !showPass }) {
-                                    Icon(
-                                        if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                        contentDescription = "نمایش/پنهان رمز",
-                                        tint = p.gold
-                                    )
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        ToggleRow(
-                            label = "به‌خاطر سپردن",
-                            hint = "ورود سریع در اجرای بعدی — بدون تایپ مجدد",
-                            checked = state.rememberMe,
-                            onCheckedChange = viewModel::onRememberMe,
-                            icon = Icons.Filled.Key
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        PremiumButton(
-                            text = if (state.loggedIn) "ورود به پنل" else "ورود و همگام‌سازی",
-                            subtitle = if (state.loggedIn) null else "اتصال + ورود + دریافت کالا، مشتری و فاکتور",
-                            icon = Icons.Filled.Login,
-                            tone = BtnTone.PRIMARY,
-                            height = fit.buttonHeight,
-                            textSize = fit.buttonText,
-                            enabled = !state.busy,
-                            loading = state.busy,
-                            onClick = { if (state.loggedIn) onEnterPanel() else viewModel.loginAndLoad() },
-                            modifier = Modifier.fillMaxWidth()
+                        GlamourButton(
+                            label = if (state.connected) "سرور: وصل ✅" else "تنظیم اتصال سرور",
+                            icon = Icons.Filled.Storage,
+                            tone = GlamourTone.PURPLE,
+                            height = 46.dp,
+                            modifier = Modifier.weight(0.9f),
+                            onClick = { viewModel.connectDatabase() }
                         )
                     }
-                }
 
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.loggedIn) {
-                        PremiumButton(
-                            text = "به‌روزرسانی ویزیتورها و ستون‌ها",
-                            icon = Icons.Filled.Refresh,
-                            tone = BtnTone.GLASS,
-                            height = 48.dp,
-                            textSize = 12.5.sp,
-                            onClick = { viewModel.refreshVisitors() },
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(Modifier.width(9.dp))
-                        PremiumButton(
-                            text = "خروج",
-                            icon = Icons.Filled.ExitToApp,
-                            tone = BtnTone.GLASS,
-                            height = 48.dp,
-                            textSize = 12.5.sp,
-                            onClick = { viewModel.logout() },
-                            modifier = Modifier.width(118.dp)
-                        )
-                    } else {
-                        PremiumButton(
-                            text = "اتصال دیتابیس",
-                            icon = Icons.Filled.Storage,
-                            tone = BtnTone.GLASS,
-                            height = 48.dp,
-                            textSize = 12.5.sp,
-                            enabled = !state.busy,
-                            onClick = { viewModel.connectDatabase() },
+                    if (visitorListOpen) {
+                        Spacer(Modifier.height(10.dp))
+                        if (state.visitorsLoading) {
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = p.gold,
+                                trackColor = p.gold.copy(alpha = 0.18f)
+                            )
+                            Spacer(Modifier.height(6.dp))
+                        }
+                        PremiumField(
+                            value = state.visitorFilter,
+                            onValueChange = viewModel::onVisitorFilter,
+                            label = "جست‌وجو در ویزیتورها",
+                            hint = "نام، موبایل یا کد ویزیتور",
+                            icon = Icons.Filled.Search,
+                            minHeight = fit.fieldHeight,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(Modifier.height(8.dp))
+                        filtered.take(60).forEach { option ->
+                            VisitorPickTile(
+                                option = option,
+                                selected = state.selectedVisitorRdf == option.visitorRdf,
+                                busy = state.busy,
+                                onClick = { viewModel.enterAsVisitor(option) }
+                            )
+                            Spacer(Modifier.height(6.dp))
+                        }
+                        if (!state.visitorsLoading && filtered.isEmpty()) {
+                            Text(
+                                if (state.visitorOptions.isEmpty())
+                                    "فهرست ویزیتورها خالی است — ابتدا «تنظیم اتصال سرور» را بزنید."
+                                else "ویزیتوری با این مشخصات پیدا نشد.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = p.textSecondary
+                            )
+                        }
                     }
                 }
             }

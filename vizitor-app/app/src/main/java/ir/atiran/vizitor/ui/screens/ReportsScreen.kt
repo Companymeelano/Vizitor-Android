@@ -51,6 +51,8 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.CircularProgressIndicator
@@ -98,6 +100,7 @@ import ir.atiran.vizitor.ui.theme.NeonPurple
 import ir.atiran.vizitor.ui.theme.TextSecondary
 import ir.atiran.vizitor.ui.theme.ThemeManager
 import ir.atiran.vizitor.ui.components.MiniStat
+import ir.atiran.vizitor.ui.components.ReportRow
 import ir.atiran.vizitor.ui.components.TableHeader
 import ir.atiran.vizitor.ui.theme.VizitorPalette
 import ir.atiran.vizitor.ui.theme.vizitorPalette
@@ -111,6 +114,8 @@ import ir.atiran.vizitor.util.toFaTime
 fun ReportsScreen(viewModel: VizitorViewModel) {
     val invoices by viewModel.invoices.collectAsState()
     val serverInvoices by viewModel.serverInvoices.collectAsState()
+    val customers by viewModel.customers.collectAsState()
+    val products by viewModel.products.collectAsState()
     val palette = vizitorPalette
     val context = LocalContext.current
     var shareTarget by remember { mutableStateOf<InvoiceEntity?>(null) }
@@ -260,6 +265,115 @@ fun ReportsScreen(viewModel: VizitorViewModel) {
                             Text(
                                 "تخفیف: ${row.discount.toFaPrice()}",
                                 style = MaterialTheme.typography.bodySmall, color = TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── گزارش مشتریان (بدهی و خرید) ────────────────────────────────────
+        item {
+            TableHeader(
+                title = "گزارش مشتریان (بدهی و خرید)",
+                count = customers.size.toFaNumber() + " مشتری",
+                icon = Icons.Filled.People
+            )
+        }
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    if (customers.isEmpty()) {
+                        Text(
+                            "فهرست مشتریان خالی است — در تب «مشتری» دکمهٔ «همگام‌سازی مشتریان از سرور» را بزنید.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    } else {
+                        val debtors = customers.filter { it.debt > 0 }.sortedByDescending { it.debt }
+                        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                            MiniStat(
+                                label = "کل مشتریان",
+                                value = customers.size.toFaNumber(),
+                                tint = palette.accent,
+                                modifier = Modifier.weight(1f)
+                            )
+                            MiniStat(
+                                label = "بدهکار",
+                                value = debtors.size.toFaNumber(),
+                                tint = DangerRed,
+                                modifier = Modifier.weight(1f)
+                            )
+                            MiniStat(
+                                label = "جمع بدهی",
+                                value = debtors.sumOf { it.debt }.toFaPrice(),
+                                tint = palette.gold,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        if (debtors.isEmpty()) {
+                            Text("همهٔ مشتریان این ویزیتور تسویه هستند ✅", style = MaterialTheme.typography.bodySmall, color = NeonGreen)
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                debtors.take(10).forEachIndexed { i, c ->
+                                    ReportRow(
+                                        index = (i + 1).toFaNumber(),
+                                        title = c.name,
+                                        subtitle = "کد ${c.code.toFaDigits()}" +
+                                            (if (c.phone.isNotBlank()) " • ${c.phone.toFaDigits()}" else ""),
+                                        value = c.debt.toFaPrice(),
+                                        tint = DangerRed
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── خلاصهٔ ویترین (ارزش موجودی) ─────────────────────────────────────
+        item {
+            TableHeader(
+                title = "خلاصهٔ انبار و کالا",
+                count = products.size.toFaNumber() + " کالا",
+                icon = Icons.Filled.Inventory2
+            )
+        }
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    val stockValue = products.sumOf { it.price.coerceAtLeast(0) * it.stock.coerceAtLeast(0).toLong() }
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        MiniStat(
+                            label = "ارزش موجودی (ریال)",
+                            value = stockValue.toFaPrice(),
+                            tint = palette.gold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MiniStat(
+                            label = "موجود",
+                            value = products.count { it.stock > 0 }.toFaNumber(),
+                            tint = NeonGreen,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MiniStat(
+                            label = "ناموجود",
+                            value = products.count { it.stock <= 0.0 }.toFaNumber(),
+                            tint = DangerRed,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        products.sortedByDescending { it.price * it.stock.toLong() }.take(8).forEachIndexed { i, pr ->
+                            ReportRow(
+                                index = (i + 1).toFaNumber(),
+                                title = pr.name,
+                                subtitle = "${pr.category.ifBlank { pr.groupName }} • موجودی ${pr.stock.toFaNumber()} ${pr.unit}",
+                                value = (pr.price * pr.stock.toLong()).toFaPrice(),
+                                tint = palette.gold
                             )
                         }
                     }

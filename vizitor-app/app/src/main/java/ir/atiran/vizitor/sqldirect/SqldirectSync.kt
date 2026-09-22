@@ -115,44 +115,31 @@ object SqldirectSync {
             }
         }.onFailure { warnings += "کالا: ${it.message ?: it.javaClass.simpleName}" }
 
-        // ── ۲) مشتریان مجاز همین ویزیتور ────────────────────────────────────
+        // ── ۲) مشتریان (سه مسیر پله‌ای + سازگار با ستون‌های واقعی همین سرور) ──
         var customerCount = 0
         val customerNames = HashMap<String, String>()
         runCatching {
-            // مسیر اصلی: مشتریان مجاز کاربر از dbo.sys_cus
-            var customers = data.customersFor(userId = userId, companyId = companyId, limit = 2000)
-            // مسیر پشتیبان: اگر جدول مجوز برای این کاربر خالی بود، مشتریانِ خودِ ویزیتور
-            // (ستون واقعی CUSTOMERS.vis_rdf) خوانده می‌شوند — تا فهرست مشتریان خالی نماند.
-            if (customers.isEmpty() && visitorRdf != null) {
-                customers = data.customersForVisitor(visitorRdf = visitorRdf, companyId = companyId, limit = 2000)
+            val r = CustomerSync.fetch(
+                userId = userId,
+                companyId = companyId,
+                visitorRdf = visitorRdf,
+                limit = 3000,
+            )
+            r.notes.forEach { warnings += it }
+            if (r.error != null && r.customers.isEmpty()) {
+                warnings += "مشتریان: ${r.error}"
             }
-            if (customers.isNotEmpty()) {
-                val rows = customers.map { c ->
-                    // کلید نام: هم کد مشتری و هم شمارهٔ مشتری (SHMO) — چون فاکتورها SHMO را
-                    // در ستون shmo نگه می‌دارند و قبلاً فقط «کد» نگاشت می‌شد و نام‌ها خالی می‌ماند.
-                    val nameKey = c.name
-                    customerNames[c.shmo.toString()] = nameKey
-                    if (c.code.isNotBlank()) customerNames[c.code] = nameKey
-                    CustomerEntity(
-                        id = c.shmo,
-                        code = c.code.ifBlank { c.shmo.toString() },
-                        name = c.name,
-                        groupName = c.groupName.orEmpty(),
-                        city = c.cityRdf?.toString().orEmpty(),
-                        address = c.address,
-                        phone = c.phone,
-                        lat = c.lat ?: 0.0,
-                        lng = c.lng ?: 0.0,
-                        // وضعیت اعتباری از دادهٔ واقعی: لیست سیاه/غیرفعال بودن
-                        creditOk = (c.blackList ?: 0) != 1 && !c.active.equals("f", true),
-                        debt = c.debt,
-                    )
+            if (r.customers.isNotEmpty()) {
+                // کلید نام: هم شمارهٔ مشتری (SHMO) و هم کد مشتری — چون فاکتورها SHMO را
+                // در ستون shmo نگه می‌دارند و قبلاً فقط «کد» نگاشت می‌شد و نام‌ها خالی می‌ماند.
+                r.customers.forEach { c ->
+                    customerNames[c.id.toString()] = c.name
+                    if (c.code.isNotBlank()) customerNames[c.code] = c.name
                 }
                 db.customers().clear()
-                db.customers().upsertAll(rows)
-                customerCount = rows.size
-            } else {
-                warnings += "برای این ویزیتور مشتری مجازی در sys_cus و CUSTOMERS.vis_rdf پیدا نشد"
+                db.customers().upsertAll(r.customers)
+                customerCount = r.customers.size
+                if (r.source != "sys_cus") warnings += "مشتریان از مسیر «${r.sourceLabel}» خوانده شد"
             }
         }.onFailure { warnings += "مشتریان: ${it.message ?: it.javaClass.simpleName}" }
 

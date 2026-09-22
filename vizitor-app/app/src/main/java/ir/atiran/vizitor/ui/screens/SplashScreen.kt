@@ -114,9 +114,10 @@ private data class Role(
 )
 
 private val Roles = listOf(
+    // v2.16.0 — دو نقش اصلی فعال شدند (هر دو با نام کاربری و رمز خودِ کاربر در آتیران)
     Role("مامور فروش", "ویزیتور سیار", R.drawable.nut_visitor, true),
-    Role("مدیریت", "نظارت کل", R.drawable.nut_manager, false),
-    Role("مدیر فروش", "تیم فروش", R.drawable.nut_sales, false),
+    Role("مدیریت", "گزارش کامل + نمودار", R.drawable.nut_manager, true),
+    Role("مدیر فروش", "تیم فروش و نمودار", R.drawable.nut_sales, false),
     Role("حسابداری", "مالی و اسناد", R.drawable.nut_accountant, false),
     Role("انبار و پخش", "موجودی و ارسال", R.drawable.nut_warehouse, false),
     Role("کاربر فروشگاه", "فروش حضوری", R.drawable.role_shopkeeper, false)
@@ -129,6 +130,8 @@ fun SplashScreen(
     serverSession: ServerSession = ServerSession(),
     onOpenServerConfig: () -> Unit = {},
     onQuickEnter: () -> Unit = {},
+    /** ورود با نقش «مدیریت» — نام کاربری و رمز شخصی مدیر در آتیران. */
+    onManager: () -> Unit = onEnter,
 ) {
     val p = vizitorPalette
     // وضعیت اتصال/ورود از والد (منبع واحد: VizitorSession) می‌آید
@@ -224,8 +227,11 @@ fun SplashScreen(
                                     fit = fit,
                                     modifier = Modifier.weight(1f),
                                     onClick = {
-                                        if (role.active) onEnter()
-                                        else onSoon("بخش «${role.title}» به‌زودی فعال می‌شود 🚀")
+                                        when {
+                                            role.title == "مدیریت" -> onManager()
+                                            role.active -> onEnter()
+                                            else -> onSoon("بخش «${role.title}» به‌زودی فعال می‌شود 🚀")
+                                        }
                                     }
                                 )
                             }

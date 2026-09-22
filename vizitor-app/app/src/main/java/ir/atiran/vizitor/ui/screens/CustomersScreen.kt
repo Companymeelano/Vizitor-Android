@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Search
@@ -109,6 +110,8 @@ import ir.atiran.vizitor.ui.components.NeonGreenButton
 import ir.atiran.vizitor.ui.components.StatusChip
 import ir.atiran.vizitor.ui.components.goldBorder
 import ir.atiran.vizitor.ui.theme.AccentText
+import ir.atiran.vizitor.ui.components.GlamourButton
+import ir.atiran.vizitor.ui.components.GlamourTone
 import ir.atiran.vizitor.ui.components.MiniStat
 import ir.atiran.vizitor.ui.components.TableHeader
 import ir.atiran.vizitor.ui.theme.DangerRed
@@ -132,6 +135,7 @@ fun CustomersScreen(viewModel: VizitorViewModel) {
     var showAddCustomer by remember { mutableStateOf(false) }
     var statementCustomer by remember { mutableStateOf<CustomerEntity?>(null) }
     val invoices by viewModel.invoices.collectAsState()
+    val sync by viewModel.customerSync.collectAsState()
     val startVoice = rememberVoiceSearch(
         onResult = { query = it; viewModel.showToast("جستجوی صوتی مشتری: «$it»") },
         onUnavailable = { viewModel.showToast("ورودی صوتی روی این دستگاه در دسترس نیست 🎙️") }
@@ -190,6 +194,27 @@ fun CustomersScreen(viewModel: VizitorViewModel) {
                     Box(Modifier.weight(1f)) { CustomerSearchField(query) { query = it } }
                     Spacer(Modifier.width(8.dp))
                     MicButton(onClick = { startVoice() })
+                }
+                Spacer(Modifier.height(10.dp))
+                // ── همگام‌سازی مشتریان از سرور (سه مسیر پله‌ای در CustomerSync) ──
+                GlamourButton(
+                    label = if (sync.busy) "در حال گرفتن فهرست مشتریان…" else "همگام‌سازی مشتریان از سرور",
+                    subtitle = "اگر فهرست خالی یا قدیمی است، این دکمه را بزنید",
+                    icon = Icons.Filled.Sync,
+                    tone = GlamourTone.PURPLE,
+                    height = 54.dp,
+                    loading = sync.busy,
+                    enabled = !sync.busy,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { viewModel.syncCustomersNow() }
+                )
+                if (sync.message.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        sync.message,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (sync.ok) NeonGreen else DangerRed
+                    )
                 }
                 Spacer(Modifier.height(10.dp))
                 TableHeader(

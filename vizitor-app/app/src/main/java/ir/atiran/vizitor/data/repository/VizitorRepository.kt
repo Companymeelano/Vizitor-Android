@@ -87,6 +87,16 @@ class VizitorRepository(private val context: Context) {
         )
     }
 
+    /**
+     * جایگزینی کامل فهرست مشتریان با فهرست تازهٔ سرور (همگام‌سازی دستی از تب مشتری).
+     * فقط وقتی فهرست تازه خالی نباشد صدا زده می‌شود تا دادهٔ موجود از دست نرود.
+     */
+    suspend fun replaceCustomers(customers: List<CustomerEntity>) {
+        if (customers.isEmpty()) return
+        db.customers().clear()
+        db.customers().upsertAll(customers)
+    }
+
     /** تنظیم مستقیم تعداد قلم در سبد (ورود دستی عدد). */
     suspend fun setCartQty(productId: Int, qty: Double) {
         val item = db.cart().getAll().firstOrNull { it.productId == productId } ?: return

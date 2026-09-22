@@ -104,6 +104,9 @@ object SqlConnectionManager {
     private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
+    /** آیا همین حالا یک اتصال سالم داریم؟ (برای تصمیم‌گیری در همگام‌سازی) */
+    fun connected(): Boolean = _state.value.isReady
+
     /** درایوری که اتصال فعلی با آن برقرار شده (برای نمایش در کارت وضعیت). */
     @Volatile
     var activeDriver: String? = null
