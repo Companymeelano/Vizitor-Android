@@ -23,7 +23,7 @@
 2. داخل خودِ مخزن (اگر دسترسی به بخش ریلیز/Artifacts بسته باشد): [`android-app/dist/VizitorDirect-1.0.0.apk`](android-app/dist/VizitorDirect-1.0.0.apk)
    — همراه `BUILD-INFO.txt` و `VizitorDirect-1.0.0.apk.sha256`
 
-> نسخهٔ آزمون (`VizitorDirect-1.0.0-debug.apk` — ۱۰٬۷۱۴٬۳۵۰ بایت) هم در همان ریلیز هست و
+> نسخهٔ آزمون (`VizitorDirect-1.0.0-debug.apk` — ۱۰٬۷۱۴٬۳۵۸ بایت) هم در همان ریلیز هست و
 > **کنار** نسخهٔ اصلی نصب می‌شود (شناسهٔ بستهٔ جدا دارد)، پس می‌توانید هر دو را هم‌زمان روی یک گوشی داشته باشید.
 
 ---
