@@ -1,10 +1,10 @@
 گزارش بازرسی APK — ویزیتور مستقیم (اتصال مستقیم به SQL Server، پورت ۱۴۳۳)
-تاریخ ساخت: 2026-09-22 05:01:34 UTC   کامیت: 6aae9e0ea5079bfdfe1876c7d88bef88520d836b
+تاریخ ساخت: 2026-09-22 05:06:57 UTC   کامیت: d00f5a908683a2d7c851c12a0a2ad1b0f74d09ad
 ================================================================================
 
 ### dist/VizitorDirect-1.0.0-debug.apk
-حجم: 10714350 بایت
-c0c2b82b6e1c7ee6dfef5ac2c79b1df3ed6c317d5cdba6dc7c41b2459f83bfd9  dist/VizitorDirect-1.0.0-debug.apk
+حجم: 10714358 بایت
+3336b5060de31c6e7bca32f554c15bdae76968129773b5d8ff216a979ce39dbb  dist/VizitorDirect-1.0.0-debug.apk
 
 --- تأیید امضا (apksigner) ---
 Verifies
@@ -17,14 +17,14 @@ Verified using v4 scheme (APK Signature Scheme v4): false
 Verified for SourceStamp: false
 Number of signers: 1
 V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
-V2 Signer: certificate SHA-256 digest: d5b8429227c293abe8685240ec1c5c51d2d26ad039b51f6a46b727277545c283
-V2 Signer: certificate SHA-1 digest: 95fffb47dd8817b415c79d8c3e5cd84adfb8989f
-V2 Signer: certificate MD5 digest: d81f9364fd60b66abf489886b4aafc60
+V2 Signer: certificate SHA-256 digest: 07260810a5b8a078cef27feab6f2e492d1bc71632d4f4794dfa8f2359581d173
+V2 Signer: certificate SHA-1 digest: 6fb49037d250e1d7a6280cf60374b6034f1af9af
+V2 Signer: certificate MD5 digest: 41c36a266d5c6ab7c7d6a0c66b180279
 V2 Signer: key algorithm: RSA
 V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: 51b725f519df216c3c614d18055ca0b3a8bbf9d109e44acf7ae1c717296dcef3
-V2 Signer: public key SHA-1 digest: edfbfe18a0acf3dae02e8f4168c2f146a3ec9749
-V2 Signer: public key MD5 digest: 509dd002a38bb3e118898a430f46373d
+V2 Signer: public key SHA-256 digest: 8ef25bf0c6674f90a7c257923a5384fd6693416326dbc120ffb00810fea1d59f
+V2 Signer: public key SHA-1 digest: 8fdbcb76cfcaf9200c184746b4776cfe32ab8f61
+V2 Signer: public key MD5 digest: f4e3fde69201860069cb20d7c4fb9176
 
 --- فهرست داخل APK (نمونه) ---
 Archive:  dist/VizitorDirect-1.0.0-debug.apk
@@ -64,7 +64,7 @@ Archive:  dist/VizitorDirect-1.0.0-debug.apk
 
 ### dist/VizitorDirect-1.0.0.apk
 حجم: 7623415 بایت
-8a17ea650ab1883de359db18fc7ea04681623d1f87f62468ea5e3a9cdcf1051d  dist/VizitorDirect-1.0.0.apk
+44019a2ea9bc539e131f9a6bfbff2c2db521e544a356e86a8bc25a96638d11ea  dist/VizitorDirect-1.0.0.apk
 
 --- تأیید امضا (apksigner) ---
 Verifies
