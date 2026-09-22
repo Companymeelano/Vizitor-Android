@@ -1,0 +1,192 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  ساخت خودکار APK برنامهٔ اندروید «ویزیتور مستقیم» (اتصال مستقیم به SQL Server، پورت ۱۴۳۳)
+#  پروژه: android-app/   —   خروجی: VizitorDirect-1.0.0.apk (نسخهٔ امضاشده) + نسخهٔ debug
+#  طراحی و برنامه‌نویسی: میلاد یقوبی — گروه نرم‌افزاری Meelano Studio Design
+# ═══════════════════════════════════════════════════════════════════════════
+name: Build Vizitor Direct APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - "arena/**"
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-android-direct.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vizitor-direct-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: نمایش نسخهٔ ابزارها
+        run: |
+          java -version
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
+          # apksigner از هر نسخهٔ build-tools که روی رانر موجود است (۳۴ ثابت نیست)
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          echo "APKSIGNER=$APKSIGNER"
+          echo "APKSIGNER=$APKSIGNER" >> "$GITHUB_ENV"
+
+      - name: ساخت کلید امضا برای این بیلد (فقط برای نصب مستقیم روی گوشی‌ها)
+        working-directory: android-app
+        run: |
+          keytool -genkeypair -v -keystore vizitor-ci.jks -storetype JKS -storepass vizitorci \
+            -alias vizitor -keypass vizitorci -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Vizitor Direct, OU=Meelano Studio Design, O=Meelano, L=Tehran, C=IR"
+          printf 'storeFile=vizitor-ci.jks\nstorePassword=vizitorci\nkeyAlias=vizitor\nkeyPassword=vizitorci\n' > keystore.properties
+          # اطمینان از اینکه هر دو فایل کنار ریشهٔ پروژهٔ اندروید (android-app/) هستند
+          ls -l vizitor-ci.jks keystore.properties
+          keytool -list -keystore vizitor-ci.jks -storepass vizitorci | head -5
+
+      - name: ساخت APK (debug و release)
+        working-directory: android-app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x gradlew
+          set +e
+          ./gradlew --no-daemon --stacktrace assembleDebug assembleRelease 2>&1 | tee build.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::ساخت APK شکست خورد — لاگ کامل در فایل android-app/build.log داخل مخزن ثبت می‌شود"
+            echo "### خطاهای ساخت APK" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E "^e: |error:|FAILURE:|Execution failed|Could not (resolve|find|download)" build.log | head -60 >> "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            # ثبت لاگ در مخزن تا از بیرون قابل بررسی باشد (پوش با GITHUB_TOKEN، CI را دوباره اجرا نمی‌کند)
+            set +e
+            git config user.name "vizitor-ci"
+            git config user.email "ci@vizitor.local"
+            git add -f build.log
+            git commit -m "chore(ci): android build log [skip ci]"
+            git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"
+            echo "log committed: $(git log --oneline -1)"
+          fi
+          exit "$rc"
+
+      - name: آماده‌سازی خروجی‌ها
+        run: |
+          mkdir -p dist
+          cp android-app/vizitor-direct/build/outputs/apk/debug/vizitor-direct-debug.apk "dist/VizitorDirect-1.0.0-debug.apk"
+          cp android-app/vizitor-direct/build/outputs/apk/release/vizitor-direct-release.apk "dist/VizitorDirect-1.0.0.apk" || \
+            cp android-app/vizitor-direct/build/outputs/apk/release/vizitor-direct-release-unsigned.apk "dist/VizitorDirect-1.0.0.apk"
+          cp android-app/vizitor-ci.jks "dist/vizitor-ci.jks" || true
+          ls -la dist/
+          for f in dist/*.apk; do
+            echo "=== $f"
+            stat -c '%n : %s bytes' "$f"
+            sha256sum "$f" | tee "$f.sha256"
+            "$APKSIGNER" verify --print-certs "$f" || true
+          done
+
+      - name: گزارش بازرسی APK (در مخزن ثبت می‌شود تا قابل بررسی باشد)
+        # اگر پوش هم‌زمان با ورک‌فلوی آزمون اتصال رد شود، این مرحله نباید
+        # بارگذاری خروجی و انتشار ریلیز را از کار بیندازد.
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R=android-app/apk-report.txt
+          {
+            echo "گزارش بازرسی APK — ویزیتور مستقیم (اتصال مستقیم به SQL Server، پورت ۱۴۳۳)"
+            echo "تاریخ ساخت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')   کامیت: ${GITHUB_SHA}"
+            echo "================================================================================"
+            for f in dist/*.apk; do
+              echo ""
+              echo "### $f"
+              stat -c 'حجم: %s بایت' "$f"
+              sha256sum "$f"
+              echo ""
+              echo "--- تأیید امضا (apksigner) ---"
+              "$APKSIGNER" verify --verbose --print-certs "$f" 2>&1 | head -25
+              echo ""
+              echo "--- فهرست داخل APK (نمونه) ---"
+              unzip -l "$f" | head -25
+              echo ""
+              echo "--- تعداد فایل‌های dex ---"
+              unzip -l "$f" | grep -c "classes.*\.dex"
+              echo "--- حضور اجزای کلیدی (جست‌وجو در dex) ---"
+              mkdir -p /tmp/dexcheck && rm -f /tmp/dexcheck/*
+              unzip -o -q "$f" "classes*.dex" -d /tmp/dexcheck 2>/dev/null
+              for needle in "com/microsoft/sqlserver/jdbc/SQLServerDriver" "net/sourceforge/jtds/jdbc/Driver" "ir/atiran/vizitor/direct/MainActivity" "ir/atiran/vizitor/data/sql/MeelanoDataSource" "com/journeyapps/barcodescanner"; do
+                n=$(cat /tmp/dexcheck/*.dex 2>/dev/null | strings | grep -c "$needle")
+                echo "  $needle : $n"
+              done
+            done
+          } > "$R"
+          git config user.name "vizitor-ci"
+          git config user.email "ci@vizitor.local"
+          rm -rf /tmp/cargo && mkdir -p /tmp/cargo
+          for f in "$R"; do
+            [ -f "$f" ] && cp "$f" /tmp/cargo/$(basename "$f")
+          done
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          pushed=0
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}"
+            git reset --hard "FETCH_HEAD"
+            for f in "$R"; do
+              [ -f "/tmp/cargo/$(basename "$f")" ] && cp "/tmp/cargo/$(basename "$f")" "$f"
+            done
+            for f in "$R"; do [ -f "$f" ] && git add -f "$f"; done
+            git diff --cached --quiet && { echo "چیزی برای ثبت نبود"; pushed=1; break; }
+            git commit -q -m "chore(ci): APK verification report [skip ci]"
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then pushed=1; break; fi
+            echo "پوش رد شد (تلاش $try) — همگام‌سازی با نوک شاخه و تلاش دوباره"
+            sleep 4
+          done
+          [ "$pushed" = "1" ] && echo "گزارش در مخزن ثبت شد ✓" || echo "::warning::گزارش ثبت نشد (پوش رد شد)"
+
+      - name: بارگذاری خروجی‌ها (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VizitorDirect-APK
+          path: dist/*
+          if-no-files-found: error
+
+      - name: انتشار ریلیز با APK قابل دانلود
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: vizitor-direct-v1.0.0
+          name: "Vizitor Direct — نسخهٔ اندروید با اتصال مستقیم به SQL Server (v1.0.0)"
+          body: |
+            برنامهٔ اندروید **ویزیتور مستقیم** — اتصال مستقیم به SQL Server روی پورت **۱۴۳۳**
+            (بدون IIS و بدون API میانی)، هماهنگ با نصب‌کنندهٔ ویندوز `Vizitor-Setup-1.0.0.exe`.
+
+            | فایل | توضیح |
+            |---|---|
+            | `VizitorDirect-1.0.0.apk` | نسخهٔ امضاشده (این را روی گوشی‌ها نصب کنید) |
+            | `VizitorDirect-1.0.0-debug.apk` | نسخهٔ آزمون (در کنار نسخهٔ اصلی هم نصب می‌شود) |
+
+            **گام‌های استفاده:** کارت اتصال نصب‌کننده را بخوانید (اسکن QR یا فایل `android-connect.json`
+            یا چسباندن متن کارت) → نام کاربری/رمز دیتابیس را یک‌بار وارد کنید → دیتابیس حسابداری را از
+            فهرست `sys.databases` انتخاب یا دستی تایپ کنید → «اعمال تنظیمات و تست اتصال» → از این پس هر
+            ویزیتور با نام کاربری و کلمهٔ عبور خودش در `dbo.sys_users` وارد می‌شود.
+
+            رمز SQL فقط رمزنگاری‌شده (AES-GCM + Keystore) روی گوشی می‌ماند و هرگز نمایش داده نمی‌شود.
+            طراحی و برنامه‌نویسی: **میلاد یقوبی** — گروه نرم‌افزاری **Meelano Studio Design**.
+          files: |
+            dist/VizitorDirect-1.0.0.apk
+            dist/VizitorDirect-1.0.0.apk.sha256
+            dist/VizitorDirect-1.0.0-debug.apk

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  برنامه فقط با پروتکل بومی SQL Server (TDS روی پورت ۱۴۳۳) کار می‌کند؛
+  هیچ ترافیک HTTP لازم نیست، پس هیچ آدرس cleartext مجازی باز نمی‌شود.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

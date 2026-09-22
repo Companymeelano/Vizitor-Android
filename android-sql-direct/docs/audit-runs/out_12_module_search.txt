@@ -1,0 +1,27 @@
+# Raw paste from the operator, 2026-09-18 - part 8 (verbatim)
+# Route: "rah 7" (search every module for the line tables), database Meelano.
+
+name	type_desc
+
+CalcDetailsPishfactor	SQL_SCALAR_FUNCTION
+CloseTheFiscalYear	SQL_STORED_PROCEDURE
+Edit_sail_pish	SQL_STORED_PROCEDURE
+InvoiceTrigger	SQL_TRIGGER
+ListPishFactor	SQL_STORED_PROCEDURE
+pishfactor_body	VIEW
+RestoreToDefault	SQL_STORED_PROCEDURE
+subsailFactPish	VIEW
+trig_sst_pish	SQL_TRIGGER
+VW_InventoryAnbars	VIEW
+VW_Taraz_pish	VIEW
+VWDeatailspishFactorForush	VIEW
+
+# 12 modules mention subsailfact_pish / subsailtemp / SubSailSefaresh (procedures,
+# views, functions and triggers mixed). Two are triggers - and a trigger is exactly
+# what "nobody calls" means: it fires by itself when the ERP client writes a table.
+#   trig_sst_pish  - "sst" reads like sub-sail-temp, i.e. the bridge from
+#                    dbo.subsailtemp (the staging table with UserID) to the real
+#                    pre-invoice line table. Prime suspect for the missing writer.
+#   InvoiceTrigger - fires around invoicing (sailfact / sailfact_pish).
+# The two views pishfactor_body and subsailFactPish are the ERP's own way of reading
+# a pre-invoice with its lines - the reference for what a correct write looks like.

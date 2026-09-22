@@ -1,0 +1,250 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  ساخت و انتشار APK برنامهٔ «آتیران ویزیتور» با اتصال مستقیم SQL Server
+#
+#  این ورک‌فلو پروژهٔ کامل اندروید (پوشهٔ vizitor-app) را می‌سازد:
+#    • لایهٔ اتصال مستقیم روی پورت ۱۴۳۳ (mssql-jdbc + jTDS)
+#    • خواندن جدول/ستون‌های ویزیتورها (dbo.sys_vis → dbo.visitors)
+#    • صفحهٔ «اتصال مستقیم SQL» هماهنگ با کارت اتصال نصب‌کنندهٔ ویندوز
+#
+#  روی خطا، لاگ کامل بیلد در vizitor-app/build.log داخل مخزن ثبت می‌شود تا
+#  عیب‌یابی بدون دسترسی به لاگ Actions ممکن باشد.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Build Vizitor Android app (direct SQL)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a0a7c6-vizitor, arena/01a0c36c-vizitor]
+    paths:
+      # فقط کد و پیکربندی بیلد؛ تغییر README/مستندات نباید APK را بازسازی کند
+      - "vizitor-app/app/**"
+      - "vizitor-app/build.gradle.kts"
+      - "vizitor-app/settings.gradle.kts"
+      - "vizitor-app/gradle.properties"
+      - "vizitor-app/gradle/**"
+      - ".github/workflows/build-vizitor-app.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vizitor-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: نمایش نسخهٔ ابزارها
+        run: |
+          java -version
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          ls "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" || true
+
+      - name: آماده‌سازی کلید امضای پایدار
+        working-directory: vizitor-app
+        env:
+          KEY_B64: ${{ secrets.VIZITOR_APP_KEY_B64 }}
+          KEY_PASS: ${{ secrets.VIZITOR_APP_KEY_PASS }}
+        run: |
+          set -e
+          PASS="${KEY_PASS:-vizitorappci}"
+          if [ -n "${KEY_B64}" ]; then
+            echo "کلید اختصاصی از Secret مخزن خوانده شد ✓"
+            printf '%s' "${KEY_B64}" | base64 -d > app-key.p12
+            SRC=app-key.p12
+          else
+            echo "کلید امضای پایدار مخزن استفاده می‌شود (vizitor-app/vizitor-app-signing.p12)"
+            SRC=vizitor-app-signing.p12
+          fi
+          keytool -list -keystore "$SRC" -storetype PKCS12 -storepass "$PASS" | head -6
+          ALIAS=$(keytool -list -keystore "$SRC" -storetype PKCS12 -storepass "$PASS" \
+                    | grep -m1 "PrivateKeyEntry" | cut -d, -f1 | tr -d ' \r')
+          echo "alias=$ALIAS"
+          keytool -importkeystore -noprompt \
+            -srckeystore "$SRC" -srcstoretype PKCS12 -srcstorepass "$PASS" \
+            -destkeystore vizitor-app-ci.jks -deststoretype JKS -deststorepass "$PASS" -destkeypass "$PASS"
+          printf 'storeFile=vizitor-app-ci.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$PASS" "$ALIAS" "$PASS" > keystore.properties
+          cat keystore.properties
+          ls -l vizitor-app-ci.jks
+
+      - name: ساخت APK (debug و release)
+        working-directory: vizitor-app
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x gradlew
+          set +e
+          ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:assembleRelease 2>&1 | tee build.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::ساخت APK شکست خورد — لاگ کامل در vizitor-app/build.log ثبت می‌شود"
+            {
+              echo "لاگ شکست بیلد برنامهٔ ویزیتور — $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+              echo "=================================================================="
+              grep -aE "^e: |error:|FAILURE|Execution failed|> Task .*FAILED|What went wrong|Caused by" build.log | head -80
+              echo ""
+              echo "--- ۱۲۰ خط آخر ---"
+              tail -120 build.log
+            } > build-failure.txt
+            cat build-failure.txt
+            # خطاهای اصلی به‌صورت annotation ثبت می‌شوند تا از API قابل خواندن باشند
+            grep -aE "^e: |error:|FAILURE|Execution failed|What went wrong|Caused by|Unresolved" build.log | head -8 | while IFS= read -r ln; do
+              echo "::error::$(printf '%s' "$ln" | tr '\r\n' '  ' | cut -c1-900)"
+            done
+            # ثبت لاگ در مخزن (مسیرها نسبت به ریشهٔ مخزن محاسبه می‌شوند)
+            cd "$GITHUB_WORKSPACE"
+            git config user.name "vizitor-ci"
+            git config user.email "ci@vizitor.local"
+            rm -rf /tmp/cargo && mkdir -p /tmp/cargo
+            cp vizitor-app/build-failure.txt /tmp/cargo/
+            URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+            pushed=0
+            for try in 1 2 3; do
+              git fetch -q "$URL" "refs/heads/${GITHUB_REF_NAME}" || true
+              git reset --hard FETCH_HEAD
+              cp /tmp/cargo/build-failure.txt vizitor-app/build-failure.txt
+              git add -f vizitor-app/build-failure.txt
+              if git diff --cached --quiet; then
+                echo "::warning::چیزی برای ثبت نبود (مرحلهٔ add چیزی برنگرداند)"
+                break
+              fi
+              git commit -q -m "chore(ci): vizitor-app build failure log [skip ci]"
+              if git push "$URL" "HEAD:refs/heads/${GITHUB_REF_NAME}"; then pushed=1; break; fi
+              echo "پوش رد شد (تلاش $try)"
+              sleep 4
+            done
+            [ "$pushed" = "1" ] && echo "لاگ خطا در مخزن ثبت شد ✓" || echo "::warning::لاگ خطا در مخزن ثبت نشد"
+            exit "$rc"
+          fi
+
+      - name: آماده‌سازی خروجی‌ها
+        working-directory: vizitor-app
+        run: |
+          set -e
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/Vizitor-2.14.0-direct.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/Vizitor-2.14.0-direct-debug.apk"
+          cd dist && sha256sum *.apk > Vizitor-2.14.0-direct.apk.sha256
+          ls -l
+
+      - name: گزارش بازرسی APK (در مخزن ثبت می‌شود)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          BT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools"
+          APKSIGNER=$(ls -d "$BT"/*/apksigner 2>/dev/null | tail -1)
+          R=vizitor-app/apk-report.txt
+          {
+            echo "گزارش ساخت APK برنامهٔ آتیران ویزیتور با اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
+            echo "تاریخ: $(date -u '+%Y-%m-%d %H:%M:%S UTC')   کامیت: ${GITHUB_SHA}"
+            echo "=================================================================================="
+            echo ""
+            echo "--- خروجی بیلد (Gradle) ---"
+            tail -12 vizitor-app/build.log
+            echo ""
+            echo "### اثر انگشت گواهی امضا (ثابت بین بیلدها)"
+            keytool -list -v -keystore vizitor-app/vizitor-app-signing.p12 -storetype PKCS12 \
+              -storepass "${KEY_PASS:-vizitorappci}" 2>/dev/null | grep -E "Alias name|Valid from|SHA256:" | head -4
+            echo ""
+            for f in vizitor-app/dist/*.apk; do
+              echo "### $(basename "$f")"
+              stat -c 'حجم: %s بایت' "$f"
+              grep -a "$(basename "$f")" vizitor-app/dist/*.sha256 2>/dev/null
+              echo ""
+              echo "--- مشخصات نسخه و پکیج (aapt2) ---"
+              AAPT2=$(ls -d "$BT"/*/aapt2 2>/dev/null | tail -1)
+              [ -n "$AAPT2" ] && "$AAPT2" dump badging "$f" 2>/dev/null \
+                | grep -E "^package:|^application-label:|sdkVersion|targetSdkVersion|native-code" | head -6
+              echo ""
+              echo "--- تأیید امضا ---"
+              "$APKSIGNER" verify --verbose --print-certs "$f" 2>&1 | head -18
+              echo ""
+              echo "--- تعداد dex و حضور درایورهای SQL ---"
+              unzip -l "$f" | grep -c "classes.*\.dex"
+              mkdir -p /tmp/dexcheck && rm -f /tmp/dexcheck/*
+              unzip -o -q "$f" "classes*.dex" -d /tmp/dexcheck 2>/dev/null
+              for needle in "com/microsoft/sqlserver/jdbc/SQLServerDriver" "net/sourceforge/jtds/jdbc/Driver" \
+                            "ir/atiran/vizitor/sqldirect/VisitorRepository" "ir/atiran/vizitor/ui/screens/DirectSqlScreen" \
+                            "ir/atiran/vizitor/sqldirect/SqlDiagnostics" "ir/atiran/vizitor/sqldirect/SqlConnectionManager" \
+                            "ir/atiran/vizitor/sqldirect/DirectSql" "ir/atiran/vizitor/sqldirect/SecureDbStore" \
+                            "ir/atiran/vizitor/sqldirect/VisitRepository" "ir/atiran/vizitor/ui/screens/VisitScreen" \
+                            "ir/atiran/vizitor/sqldirect/VisitViewModel"; do
+                n=$(cat /tmp/dexcheck/*.dex 2>/dev/null | strings | grep -c "$needle")
+                echo "  $needle : $n"
+              done
+            done
+          } > "$R"
+          cat "$R"
+          git config user.name "vizitor-ci"
+          git config user.email "ci@vizitor.local"
+          rm -rf /tmp/cargo && mkdir -p /tmp/cargo && cp "$R" /tmp/cargo/
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}"
+            git reset --hard FETCH_HEAD
+            cp /tmp/cargo/apk-report.txt vizitor-app/apk-report.txt
+            for f in vizitor-app/apk-report.txt; do [ -f "$f" ] && git add -f "$f"; done
+            git diff --cached --quiet && { echo "چیزی برای ثبت نبود"; break; }
+            git commit -q -m "chore(ci): vizitor-app APK report [skip ci]"
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "گزارش ثبت شد ✓"; break; fi
+            sleep 4
+          done
+
+      - name: بارگذاری خروجی‌ها (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VizitorApp-Direct-APK
+          path: vizitor-app/dist/*
+          if-no-files-found: error
+
+      - name: انتشار ریلیز با APK قابل دانلود
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: vizitor-app-direct-2.14.0
+          name: "آتیران ویزیتور — نسخه ۲٫۱۴٫۰ (ثبت ویزیت) با اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
+          body: |
+            برنامهٔ اندروید **آتیران ویزیتور** با اتصال **مستقیم** به SQL Server روی پورت
+            **۱۴۳۳** — بدون IIS و بدون API میانی، هماهنگ با نصب‌کنندهٔ ویندوز.
+
+            | فایل | توضیح |
+            |---|---|
+            | `Vizitor-2.14.0-direct.apk` | نسخهٔ امضاشده (این را روی گوشی‌ها نصب کنید) — شناخته‌شده به `2.14.0-direct` (شمارهٔ ساخت ۲۱۸۱۰) |
+            | `Vizitor-2.14.0-direct-debug.apk` | نسخهٔ آزمون (در کنار نسخهٔ اصلی نصب می‌شود) |
+
+            **تازه در نسخهٔ ۲٫۱۴٫۰ — بخش «ثبت ویزیت» و فعال‌شدن همهٔ بخش‌ها بعد از ورود**
+            * **تب تازهٔ «ویزیت» در نوار پایین** — ثبت مراجعه به مشتری در جدول واقعی
+              `dbo.Visit` سامانهٔ آتیران: مشتری مجاز (از `dbo.sys_cus` با جست‌وجو)، مدت ویزیت،
+              توضیح، **موقعیت GPS** (اختیاری) و **تاریخ شمسی + ساعت** به همان قالب خود ERP.
+            * **بعد از وارد کردن اطلاعات ویزیتور (ورود از `dbo.sys_users`) همهٔ بخش‌ها فعال می‌شوند:**
+              پیشخوان، ویترین کالا (۵ سطح قیمت + موجودی)، ویزیت، مشتری، سبد → پیش‌فاکتور
+              (`dbo.add_sail_pish` + تریگر)، گزارشات (فاکتورهای واقعی `sailfact`/`sailfact_pish`) و تنظیمات.
+            * **ویزیت‌های اخیر + شمارش «امروز»** — مستقیم از `dbo.Visit` خوانده می‌شود
+              (نام مشتری با JOIN روی `dbo.CUSTOMERS`)؛ درج هم به حالت identity هم explicit کار می‌کند.
+            * **کارت «دسترسی سریع» در پیشخوان** — دو کاشی: ثبت ویزیت + گفتگوی ویزیتورها.
+            * **رفع خطاهای کلمپایل نسخهٔ لاکچری** (Luxury2/Premium) که بیلد ۲٫۱۳٫۸ را شکسته بود.
+            * **نصب‌کنندهٔ ویندوز به‌روز شد**: بخش «آماده‌سازی اتصال مستقیم اندروید» حالا
+              `GRANT INSERT ON dbo.Visit` را هم می‌دهد (فقط اگر جدول موجود باشد؛ غیرتلفیقی).
+            * اتصال روی پورت ۱۴۳۳ با درایورهای mssql-jdbc + jTDS، ذخیرهٔ رمزنگاری‌شدهٔ
+              تنظیمات (AES-GCM + Android Keystore) و ورود سریع با «به‌خاطر سپردن» — بدون تغییر.
+            * دو مرحلهٔ اعتبارنامه مثل خودِ سامانه: اول رمز «کاربر محدود دیتابیس» که نصب‌کننده
+              می‌سازد (`vizitor_android`)، بعد نام کاربری و کلمهٔ عبور خودِ ویزیتور
+              (ورود فقط با جدول واقعی `dbo.sys_users`).
+
+            طراحی و برنامه‌نویسی: **میلاد یقوبی** — گروه نرم‌افزاری **Meelano Studio Design**.
+          files: |
+            vizitor-app/dist/Vizitor-2.14.0-direct.apk
+            vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256
+            vizitor-app/dist/Vizitor-2.14.0-direct-debug.apk

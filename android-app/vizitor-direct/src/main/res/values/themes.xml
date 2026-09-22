@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- تم پایه: سرمه‌ای یکدست، هم‌رنگ پنل مدیریت و نصب‌کنندهٔ ویندوز -->
+    <style name="Theme.VizitorDirect" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/viz_navy</item>
+        <item name="android:statusBarColor">@color/viz_navy_dark</item>
+        <item name="android:navigationBarColor">@color/viz_navy_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:textColorPrimary">@color/viz_text</item>
+    </style>
+</resources>

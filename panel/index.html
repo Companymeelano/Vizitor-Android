@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سامانهٔ ویزیتور — پنل مدیریت</title>
+
+<style>
+  /* فونت وزیرمتن — محلی، بدون اینترنت (SIL OFL 1.1) */
+  @font-face{font-family:"Vazirmatn";src:url("fonts/Vazirmatn-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("fonts/Vazirmatn-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("fonts/Vazirmatn-SemiBold.woff2") format("woff2");font-weight:600;font-display:swap}
+  @font-face{font-family:"Vazirmatn";src:url("fonts/Vazirmatn-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+</style>
+
+<style>
+  :root{
+    --navy:#0b2138; --navy-soft:#102a45; --navy-soft2:#143254;
+    --line:rgba(150,195,240,.20); --line-2:rgba(227,185,103,.45);
+    --gold:#e3b967; --ice:#eef5fc; --ice-2:#c9dcef; --muted:#93aec9;
+    --ok:#4ecb83; --warn:#e3b967; --err:#ef7a68; --brand:#3f8fd8;
+    --s1:6px; --s2:10px; --s3:14px; --s4:20px; --s5:28px; --s6:36px;
+    --r-card:18px; --r-input:12px; --r-chip:11px;
+    --shadow:0 14px 30px rgba(0,0,0,.42), 0 1px 0 rgba(255,255,255,.05) inset;
+    --col:1180px;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--navy)}
+  body{margin:0; min-height:100vh; direction:rtl; background:var(--navy); color:var(--ice);
+    font-family:"Vazirmatn","Tahoma",system-ui,sans-serif; font-size:14px; line-height:1.9;
+    -webkit-font-smoothing:antialiased}
+  h1,h2,h3{margin:0; font-weight:700; line-height:1.6}
+  .container{max-width:var(--col); margin:0 auto; padding:var(--s5) var(--s4) var(--s6)}
+  .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:var(--s4); align-items:start}
+  .c3{grid-column:span 3} .c4{grid-column:span 4} .c6{grid-column:span 6} .c8{grid-column:span 8} .c12{grid-column:span 12}
+  @media (max-width:1080px){ .c3,.c4{grid-column:span 6} .c6,.c8{grid-column:span 12} }
+  @media (max-width:660px){ .c3,.c4,.c6,.c8{grid-column:span 12} .container{padding:var(--s4) var(--s3) var(--s5)} }
+
+  .card{position:relative; background:var(--navy-soft); border:1px solid var(--line);
+    border-radius:var(--r-card); padding:var(--s4); box-shadow:var(--shadow)}
+  .card.alt{background:var(--navy-soft2)}
+  .card > h2{display:flex; align-items:center; gap:var(--s2); font-size:15px; margin-bottom:var(--s3);
+    padding-bottom:var(--s2); border-bottom:1px solid var(--line)}
+  .card > h2 .ic{width:30px;height:30px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;
+    background:rgba(63,143,216,.18); border:1px solid var(--line); font-size:15px}
+  .card > h2 .sp{margin-inline-start:auto; font-size:11.5px; font-weight:500; color:var(--muted)}
+
+  .topbar{display:grid; grid-template-columns:auto 1fr auto; gap:var(--s3); align-items:center;
+    background:var(--navy-soft2); border:1px solid var(--line); border-radius:var(--r-card);
+    padding:var(--s3) var(--s4); box-shadow:var(--shadow); margin-bottom:var(--s4)}
+  .topbar .logo{width:56px;height:56px;display:block}
+  .topbar .title h1{font-size:19px}
+  .topbar .title p{color:var(--muted); font-size:12.5px; margin-top:2px}
+  .pill-row{display:flex; gap:var(--s1); flex-wrap:wrap; justify-content:flex-end}
+  .pill{font-size:11.5px; font-weight:500; padding:5px 11px; border-radius:999px;
+    background:rgba(63,143,216,.16); border:1px solid var(--line); color:var(--ice-2)}
+  .pill.gold{background:rgba(227,185,103,.14); border-color:var(--line-2); color:#ffe6b9}
+  .pill.ok{background:rgba(78,203,131,.14); border-color:rgba(78,203,131,.4); color:#c7f3d8}
+  .pill.err{background:rgba(239,122,104,.14); border-color:rgba(239,122,104,.45); color:#ffd6cf}
+  @media (max-width:760px){ .topbar{grid-template-columns:1fr; text-align:center} .pill-row{justify-content:center} }
+
+  .stat .val{font-size:26px; font-weight:700; color:var(--gold); line-height:1.2}
+  .stat .lbl{font-size:12.5px; color:var(--muted)}
+  .stat .sub{font-size:11.5px; color:var(--muted); margin-top:2px}
+
+  .field{margin-bottom:var(--s3)} .field:last-child{margin-bottom:0}
+  label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:var(--s1); font-weight:500}
+  input,select{width:100%; font-family:inherit; font-size:13.5px; color:var(--ice); padding:10px 13px;
+    border-radius:var(--r-input); background:#0a1e33; border:1px solid var(--line); outline:none;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.45); transition:border-color .18s, box-shadow .18s}
+  input:focus,select:focus{border-color:rgba(120,190,255,.65);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.4), 0 0 0 3px rgba(63,143,216,.22)}
+  .row{display:grid; gap:var(--s3)} .row.two{grid-template-columns:1fr 1fr} .row.host{grid-template-columns:1fr 110px}
+  @media (max-width:520px){ .row.two,.row.host{grid-template-columns:1fr} }
+
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:var(--s1);
+    font-family:inherit; font-size:13.5px; font-weight:600; color:#fff; padding:11px 18px; border:0;
+    border-radius:var(--r-input); cursor:pointer;
+    background:linear-gradient(180deg,#5aa3e8,var(--brand) 48%,#2a6cae);
+    box-shadow:0 4px 0 #1a4a78, 0 10px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.35);
+    transition:transform .07s ease, box-shadow .12s ease}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 #1a4a78, 0 6px 12px rgba(0,0,0,.35)}
+  .btn.gold{background:linear-gradient(180deg,#f2d392,var(--gold) 48%,#b98d2e); color:#2a1c02;
+    box-shadow:0 4px 0 #7a5a17, 0 10px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5)}
+  .btn.ghost{background:rgba(255,255,255,.06); border:1px solid var(--line); color:var(--ice);
+    box-shadow:0 4px 0 rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.10)}
+  .btn.block{width:100%} .btn[disabled]{opacity:.5; cursor:not-allowed; box-shadow:0 2px 0 rgba(0,0,0,.3)}
+  .btn-row{display:grid; gap:var(--s2); grid-template-columns:1fr auto}
+
+  .chips{display:flex; flex-wrap:wrap; gap:var(--s2); min-height:42px; align-content:flex-start}
+  .chip{font-size:12.5px; font-weight:500; padding:8px 13px; border-radius:var(--r-chip); cursor:pointer;
+    background:rgba(255,255,255,.05); border:1px solid var(--line); color:var(--ice-2);
+    box-shadow:0 3px 0 rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10);
+    transition:transform .12s ease, background .12s ease, color .12s ease}
+  .chip:hover{transform:translateY(-2px)}
+  .chip.on{background:linear-gradient(180deg,#f4dba8,var(--gold)); color:#2a1c02; font-weight:700;
+    border-color:#f7e3b6; box-shadow:0 3px 0 #7a5a17, 0 8px 16px rgba(227,185,103,.22)}
+  .chip .yes{color:#8ef0b8; font-size:11px} .chip.on .yes{color:#1c5c34}
+
+  .status{display:flex; align-items:center; gap:var(--s2); font-size:12.5px; margin-top:var(--s3);
+    padding-top:var(--s3); border-top:1px solid var(--line)}
+  .status .dot{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;flex:0 0 auto}
+  .status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.err{color:var(--err)} .status.idle{color:var(--muted)}
+
+  .kv{display:grid; grid-template-columns:1fr auto; gap:2px var(--s3); font-size:12.5px; margin:0}
+  .kv dt{color:var(--muted)} .kv dd{margin:0; font-weight:600; color:var(--ice); text-align:left}
+  .kv > *{padding:6px 0; border-bottom:1px dashed rgba(150,195,240,.14)}
+  .kv > *:last-child, .kv > *:nth-last-child(2){border-bottom:0}
+
+  .about{display:grid; grid-template-columns:auto 1fr; gap:var(--s4); align-items:center}
+  .about .emblem{width:84px;height:84px}
+  .about h3{font-size:16px; color:#ffe6b9; margin-bottom:var(--s1)}
+  .about p{font-size:13px} .about .line{margin-top:var(--s2); padding-top:var(--s2);
+    border-top:1px solid var(--line); font-size:12.5px; color:var(--muted)}
+  @media (max-width:520px){ .about{grid-template-columns:1fr; text-align:center; justify-items:center} }
+
+  .foot{margin-top:var(--s5); padding-top:var(--s4); border-top:1px solid var(--line);
+    text-align:center; font-size:12.5px; color:var(--muted)}
+  .foot b{color:var(--gold); font-weight:600}
+  .foot .note{font-size:11.5px; margin-top:var(--s1); color:#7b93ad}
+
+  .toast{position:fixed; inset-inline-start:var(--s4); bottom:var(--s4); z-index:9; background:var(--navy-soft2);
+    border:1px solid var(--line-2); border-radius:var(--r-input); padding:12px 16px; font-size:12.5px;
+    box-shadow:var(--shadow); opacity:0; transform:translateY(12px); transition:.25s ease; max-width:min(460px,80vw)}
+  .toast.show{opacity:1; transform:translateY(0)}
+  .toast.err{border-color:rgba(239,122,104,.6); color:#ffd6cf}
+  .loading{color:var(--muted); font-size:12.5px}
+  [hidden]{display:none !important}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <header class="topbar">
+    <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+      <defs>
+        <radialGradient id="gold" cx="34%" cy="26%">
+          <stop offset="0" stop-color="#ffeec4"/><stop offset="55%" stop-color="#e3b967"/><stop offset="100%" stop-color="#8d6a21"/>
+        </radialGradient>
+        <linearGradient id="disc" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1c5a8e"/><stop offset="100%" stop-color="#07182a"/>
+        </linearGradient>
+      </defs>
+      <circle cx="60" cy="60" r="55" fill="url(#gold)"/>
+      <circle cx="60" cy="60" r="44" fill="url(#disc)" stroke="rgba(150,205,250,.5)" stroke-width="1.6"/>
+      <ellipse cx="45" cy="37" rx="18" ry="9" fill="#fff" opacity=".18"/>
+      <path d="M38 41 L60 83 L82 41" fill="none" stroke="#fffbef" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <div class="title">
+      <h1 id="appName">سامانهٔ ویزیتور — پنل مدیریت</h1>
+      <p>اتصال مستقیم و امن برنامهٔ اندروید به SQL Server — بدون IIS و بدون API میانی</p>
+    </div>
+
+    <div class="pill-row">
+      <span class="pill" id="pillService">● در حال بررسی…</span>
+      <span class="pill" id="pillVersion">نسخه —</span>
+      <span class="pill" id="pillEngine">موتور —</span>
+      <span class="pill gold">Meelano Studio Design</span>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- KPI ها -->
+    <section class="card c3">
+      <h2><span class="ic">🗄</span> دیتابیس‌های سرور<span class="sp">sys.databases</span></h2>
+      <div class="stat"><div class="val" id="kpiDbCount">—</div><div class="lbl">دیتابیس قابل انتخاب</div>
+        <div class="sub" id="kpiDbSub">برای فهرست، دکمهٔ «دریافت فهرست» را بزنید</div></div>
+    </section>
+
+    <section class="card c3">
+      <h2><span class="ic">👣</span> ویزیتورها<span class="sp">visitors</span></h2>
+      <div class="stat"><div class="val" id="kpiVisitors">—</div><div class="lbl">رکورد ثبت‌شده</div>
+        <div class="sub" id="kpiVisitorsSub">نیازمند ورود مدیر (کارت پایین)</div></div>
+    </section>
+
+    <section class="card c3">
+      <h2><span class="ic">🧪</span> دیتابیس سامانه<span class="sp">config.json</span></h2>
+      <div class="stat"><div class="val" id="kpiDbState" style="font-size:19px">—</div>
+        <div class="lbl" id="kpiDbEngine">موتور نامشخص</div>
+        <div class="sub" id="kpiDbError"></div></div>
+    </section>
+
+    <section class="card c3">
+      <h2><span class="ic">🔑</span> فعال‌سازی<span class="sp">activation</span></h2>
+      <div class="stat"><div class="val" id="kpiActivated" style="font-size:19px">—</div>
+        <div class="lbl">وضعیت سامانه</div>
+        <div class="sub" id="kpiActivatedSub"></div></div>
+    </section>
+
+    <!-- اتصال به SQL -->
+    <section class="card c6">
+      <h2><span class="ic">🔌</span> اتصال به SQL Server<span class="sp">pورت ۱۴۳۳</span></h2>
+
+      <div class="row host field">
+        <div><label for="host">سرور (آی‌پی یا نام)</label><input id="host" value="localhost"></div>
+        <div><label for="port">پورت</label><input id="port" value="1433"></div>
+      </div>
+
+      <div class="row two field">
+        <div><label for="user">نام کاربری SQL</label><input id="user" placeholder="sa"></div>
+        <div><label for="pass">کلمهٔ عبور SQL</label>
+          <input id="pass" type="password" placeholder="برای اتصال حساب ویندوز، خالی بگذارید"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn block" id="btnTest" type="button">تست اتصال و شمردن دیتابیس‌ها</button>
+        <button class="btn ghost" id="btnSave" type="button">ذخیرهٔ تنظیمات</button>
+      </div>
+
+      <div class="status idle" id="sqlStatus"><span class="dot"></span>
+        <span>وضعیت اتصال: نامشخص — دکمهٔ «تست اتصال» را بزنید.</span></div>
+
+      <div class="status idle" style="border:0;padding-top:var(--s1);margin-top:var(--s1)">
+        <span class="loading">رمز ذخیره‌شده هرگز از سرور خوانده و نمایش داده نمی‌شود؛ فقط می‌دانیم «تنظیم شده» یا نه:
+          <b id="passSet" style="color:var(--ice-2)">—</b>. رمز در <code>config.json</code> روی همین سرور (پوشهٔ محافظت‌شدهٔ
+          C:\ProgramData\Vizitor) نگهداری می‌شود و به هیچ کلاینتی برگردانده نمی‌شود.</span>
+      </div>
+    </section>
+
+    <!-- انتخاب دیتابیس -->
+    <section class="card c6">
+      <h2><span class="ic">🗃</span> انتخاب دیتابیس برنامه<span class="sp">هیچ دیتابیسی اجباری نیست</span></h2>
+
+      <div class="field">
+        <label>فهرست دیتابیس‌های روی سرور</label>
+        <div class="chips" id="chips"><span class="loading">هنوز فهرستی گرفته نشده است.</span></div>
+      </div>
+
+      <div class="btn-row field">
+        <button class="btn ghost block" id="btnList" type="button">دریافت فهرست دیتابیس‌ها</button>
+        <button class="btn gold" id="btnUse" type="button">انتخاب و ذخیره</button>
+      </div>
+
+      <div class="field">
+        <label for="dbname">نام دیتابیس برنامه (تایپ دستی هم مجاز است)</label>
+        <input id="dbname" placeholder="نام دیتابیس حسابداری">
+      </div>
+
+      <div class="status idle" id="dbStatus"><span class="dot"></span><span>دیتابیس برنامه: مشخص نشده.</span></div>
+    </section>
+
+    <!-- سلامت سرویس + فعال‌سازی -->
+    <section class="card c4">
+      <h2><span class="ic">✅</span> سلامت سرویس<span class="sp">/api/health</span></h2>
+      <dl class="kv">
+        <dt>وضعیت کلی</dt><dd id="hStatus">—</dd>
+        <dt>دیتابیس سامانه</dt><dd id="hDb">—</dd>
+        <dt>زمان پاسخ</dt><dd id="hTime">—</dd>
+        <dt>مدت روشن بودن</dt><dd id="hUp">—</dd>
+        <dt>آدرس سرویس</dt><dd id="hUrl" style="font-size:11.5px">—</dd>
+      </dl>
+      <div class="btn-row" style="margin-top:var(--s3)">
+        <button class="btn ghost block" id="btnHealth" type="button">بررسی دوباره</button>
+      </div>
+    </section>
+
+    <section class="card c4">
+      <h2><span class="ic">🔐</span> فعال‌سازی سامانه<span class="sp">/api/activate</span></h2>
+      <div class="field">
+        <label for="actcode">کد فعال‌سازی</label>
+        <input id="actcode" placeholder="VIZ-XXXX-XXXX-XXXX">
+      </div>
+      <div class="btn-row">
+        <button class="btn block" id="btnActivate" type="button">ثبت کد فعال‌سازی</button>
+      </div>
+      <div class="status idle" id="actStatus"><span class="dot"></span><span>وضعیت: —</span></div>
+    </section>
+
+    <section class="card c4">
+      <h2><span class="ic">👤</span> ورود مدیر<span class="sp">/api/login</span></h2>
+      <div class="field">
+        <label for="admuser">نام کاربری</label><input id="admuser" placeholder="admin">
+      </div>
+      <div class="field">
+        <label for="admpass">کلمهٔ عبور</label><input id="admpass" type="password">
+      </div>
+      <div class="btn-row">
+        <button class="btn block" id="btnLogin" type="button">ورود و خواندن ویزیتورها</button>
+        <button class="btn ghost" id="btnLogout" type="button" hidden>خروج</button>
+      </div>
+      <div class="status idle" id="loginStatus"><span class="dot"></span>
+        <span>رمز فقط در همین صفحهٔ مرورگر (در حافظه) استفاده می‌شود و ذخیره نمی‌شود.</span></div>
+    </section>
+
+    <!-- آخرین ویزیتورها -->
+    <section class="card c12" id="visitorsCard" hidden>
+      <h2><span class="ic">📋</span> آخرین ویزیتورهای ثبت‌شده<span class="sp">/api/visitors</span></h2>
+      <div class="chips" id="visitorsList"></div>
+    </section>
+
+    <!-- شناسنامه -->
+    <section class="card alt c12">
+      <h2><span class="ic">🏅</span> شناسنامهٔ سامانه</h2>
+      <div class="about">
+        <svg class="emblem" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="55" fill="url(#gold)"/>
+          <circle cx="60" cy="60" r="44" fill="url(#disc)" stroke="rgba(150,205,250,.5)" stroke-width="1.6"/>
+          <ellipse cx="45" cy="37" rx="18" ry="9" fill="#fff" opacity=".18"/>
+          <path d="M38 41 L60 83 L82 41" fill="none" stroke="#fffbef" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <h3 id="aboutTitle">سامانهٔ ویزیتور</h3>
+          <p>طراحی و برنامه‌نویسی: <b>میلاد یقوبی</b> (Milad Yaghoobi)</p>
+          <p>گروه نرم‌افزاری: <b>Meelano Studio Design</b></p>
+          <div class="line">اتصال مستقیم به SQL Server روی پورت ۱۴۳۳ • رمزها فقط رمزنگاری‌شده روی دستگاه ویزیتور •
+            بدون IIS و بدون API میانی • فونت: وزیرمتن (SIL OFL 1.1)</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    طراحی و برنامه‌نویسی: <b>میلاد یقوبی</b> (Milad Yaghoobi) &nbsp;•&nbsp; گروه نرم‌افزاری: <b>Meelano Studio Design</b>
+    <div class="note">این پنل روی همان سرور (پورت ۹۵۹۵) اجرا می‌شود و فقط برای شبکهٔ محلی باز است.</div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var adminToken = null;   // فقط در حافظهٔ مرورگر؛ هیچ‌جا ذخیره نمی‌شود
+
+  // ── کمک‌تابع‌ها ───────────────────────────────────────────────────────────
+  function toast(message, isError) {
+    var el = $('toast');
+    el.textContent = message;
+    el.className = 'toast show' + (isError ? ' err' : '');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { el.className = 'toast'; }, 3200);
+  }
+
+  function api(path, options) {
+    var opts = options || {};
+    opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (adminToken) { opts.headers.Authorization = 'Bearer ' + adminToken; }
+    if (opts.body && typeof opts.body !== 'string') { opts.body = JSON.stringify(opts.body); }
+    return fetch(path, opts).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (data) {
+        if (!response.ok) { data.__http = response.status; }
+        return data;
+      });
+    });
+  }
+
+  function setStatus(element, kind, text) {
+    element.className = 'status ' + kind;
+    element.querySelector('span:last-child').textContent = text;
+  }
+
+  // ── وضعیت سرویس و تنظیمات ────────────────────────────────────────────────
+  function loadConfig() {
+    return api('/api/config').then(function (cfg) {
+      $('pillService').className = 'pill ok';
+      $('pillService').textContent = '● سرویس فعال';
+      $('pillVersion').textContent = 'نسخهٔ ' + (cfg.version || '—');
+      $('pillEngine').textContent = 'موتور ' + (cfg.db_engine === 'sqlserver' ? 'SQL Server' : (cfg.db_engine || '—'));
+      if (cfg.name) { $('appName').textContent = cfg.name + ' — پنل مدیریت'; $('aboutTitle').textContent = cfg.name + ' — نسخهٔ ' + cfg.version; }
+      $('hUrl').textContent = cfg.api_url || '—';
+      $('kpiActivated').textContent = cfg.activated ? 'فعال' : 'غیرفعال';
+      $('kpiActivatedSub').textContent = cfg.activated ? 'کد ثبت شده است' : 'برای فعال‌سازی کد را وارد کنید';
+      $('kpiDbEngine').textContent = cfg.db_engine || '—';
+      return cfg;
+    }).catch(function () {
+      $('pillService').className = 'pill err';
+      $('pillService').textContent = '● سرویس پاسخ نداد';
+    });
+  }
+
+  function loadHealth() {
+    var started = Date.now();
+    return api('/api/health').then(function (h) {
+      var dbOk = h.db && h.db.status === 'ok';
+      $('hStatus').textContent = 'سرویس: ' + (h.status === 'ok' ? 'سالم' : 'مشکل‌دار');
+      $('hDb').textContent = (h.db ? h.db.engine : '—') + ' — ' + (dbOk ? 'سالم' : 'خطا');
+      $('hTime').textContent = (Date.now() - started) + ' میلی‌ثانیه';
+      $('hUp').textContent = (h.uptime_sec || 0) + ' ثانیه';
+      $('kpiDbState').textContent = dbOk ? 'سالم' : 'خطا';
+      $('kpiDbError').textContent = dbOk ? '' : (h.db && h.db.error ? h.db.error : '');
+    }).catch(function () {
+      $('hStatus').textContent = 'سرویس پاسخ نداد';
+      $('kpiDbState').textContent = 'نامشخص';
+    });
+  }
+
+  function loadActivation() {
+    return api('/api/activate').then(function (state) {
+      $('kpiActivated').textContent = state.activated ? 'فعال' : 'غیرفعال';
+      setStatus($('actStatus'), state.activated ? 'ok' : 'warn',
+        state.activated ? 'سامانه فعال است.' : 'سامانه فعال نشده است — کد را وارد کنید.');
+    });
+  }
+
+  // ── اتصال SQL ────────────────────────────────────────────────────────────
+  function loadDbInfo() {
+    return api('/api/db/info').then(function (info) {
+      if (info.host) { $('host').value = info.host; }
+      if (info.port) { $('port').value = info.port; }
+      if (info.user) { $('user').value = info.user; }
+      $('passSet').textContent = info.password_set ? 'تنظیم شده' : 'تنظیم نشده';
+      if (info.database) {
+        $('dbname').value = info.database;
+        setStatus($('dbStatus'), 'ok', 'دیتابیس برنامه: ' + info.database);
+      }
+    }).catch(function () {
+      $('passSet').textContent = 'نامشخص';
+    });
+  }
+
+  function currentForm() {
+    return {
+      host: $('host').value.trim() || 'localhost',
+      port: $('port').value.trim() || '1433',
+      user: $('user').value.trim(),
+      password: $('pass').value,
+    };
+  }
+
+  function showDatabases(result) {
+    var box = $('chips');
+    box.innerHTML = '';
+    if (!result || !result.ok) {
+      var reason = result && (result.detail || result.error) ? (result.detail || result.error) : 'نامشخص';
+      box.innerHTML = '<span class="loading">فهرست گرفته نشد: ' + reason +
+        ' — می‌توانید نام دیتابیس را دستی بنویسید.</span>';
+      return;
+    }
+    (result.databases || []).forEach(function (db) {
+      var chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = db.name;
+      if (db.has_vizitor_tables) {
+        var mark = document.createElement('span');
+        mark.className = 'yes';
+        mark.textContent = ' ✓';
+        chip.appendChild(mark);
+      }
+      chip.title = (db.state || '') + ' — ' + (db.created || '');
+      chip.onclick = function () {
+        Array.prototype.forEach.call(box.children, function (c) { c.classList.remove('on'); });
+        chip.classList.add('on');
+        $('dbname').value = db.name;
+      };
+      box.appendChild(chip);
+    });
+    $('kpiDbCount').textContent = result.count || 0;
+    $('kpiDbSub').textContent = 'آخرین دریافت: همین حالا';
+  }
+
+  $('btnTest').onclick = function () {
+    setStatus($('sqlStatus'), 'warn', 'در حال تست اتصال…');
+    api('/api/db/test', { method: 'POST', body: currentForm() }).then(function (result) {
+      if (result.ok) {
+        setStatus($('sqlStatus'), 'ok', 'اتصال برقرار شد — ' + result.count + ' دیتابیس روی این سرور پیدا شد.');
+        showDatabases(result);
+      } else {
+        setStatus($('sqlStatus'), 'err', 'اتصال برقرار نشد: ' + (result.detail || result.error || 'نامشخص'));
+      }
+    }).catch(function () { setStatus($('sqlStatus'), 'err', 'خطا در ارتباط با سرویس پنل.'); });
+  };
+
+  $('btnSave').onclick = function () {
+    var form = currentForm();
+    api('/api/db/save', { method: 'POST', body: form }).then(function (result) {
+      if (result.ok) {
+        toast('تنظیمات اتصال ذخیره شد: ' + (result.saved || []).join('، '));
+        $('passSet').textContent = form.password ? 'تنظیم شده' : ($('passSet').textContent);
+        loadDbInfo();
+      } else {
+        toast('ذخیره نشد: ' + (result.detail || result.error || 'نامشخص'), true);
+      }
+    }).catch(function () { toast('خطا در ارتباط با سرویس پنل.', true); });
+  };
+
+  $('btnList').onclick = function () {
+    var box = $('chips');
+    box.innerHTML = '<span class="loading">در حال گرفتن فهرست…</span>';
+    api('/api/db/databases').then(function (result) {
+      showDatabases(result);
+      if (result.ok) { setStatus($('sqlStatus'), 'ok', 'اتصال برقرار است — ' + result.count + ' دیتابیس.'); }
+      else { setStatus($('sqlStatus'), 'err', 'فهرست گرفته نشد: ' + (result.detail || result.error || 'نامشخص')); }
+    }).catch(function () { box.innerHTML = '<span class="loading">خطا در ارتباط با سرویس پنل.</span>'; });
+  };
+
+  $('btnUse').onclick = function () {
+    var name = $('dbname').value.trim();
+    if (!name) { toast('نام دیتابیس را بنویسید یا از فهرست انتخاب کنید.', true); return; }
+    api('/api/db/save', { method: 'POST', body: { database: name } }).then(function (result) {
+      if (result.ok) {
+        setStatus($('dbStatus'), 'ok', 'دیتابیس برنامه: ' + name + ' (ذخیره شد)');
+        toast('دیتابیس «' + name + '» ذخیره شد.');
+      } else {
+        setStatus($('dbStatus'), 'err', 'ذخیره نشد: ' + (result.detail || result.error || 'نامشخص'));
+      }
+    });
+  };
+
+  // ── فعال‌سازی ────────────────────────────────────────────────────────────
+  $('btnActivate').onclick = function () {
+    var code = $('actcode').value.trim();
+    if (!code) { toast('کد فعال‌سازی را وارد کنید.', true); return; }
+    api('/api/activate', { method: 'POST', body: { code: code } }).then(function (result) {
+      if (result.activated) {
+        setStatus($('actStatus'), 'ok', 'سامانه فعال شد.');
+        toast('کد فعال‌سازی ثبت شد.');
+        loadConfig();
+      } else {
+        setStatus($('actStatus'), 'err', 'کد پذیرفته نشد' + (result.error === 'invalid_code' ? ' — کد با کد ثبت‌شدهٔ قبلی نمی‌خواند.' : '.'));
+      }
+    }).catch(function () { setStatus($('actStatus'), 'err', 'خطا در ارتباط با سرویس پنل.'); });
+  };
+
+  // ── ورود مدیر و خواندن ویزیتورها ─────────────────────────────────────────
+  $('btnLogin').onclick = function () {
+    var username = $('admuser').value.trim();
+    var password = $('admpass').value;
+    if (!username || !password) { toast('نام کاربری و رمز مدیر را وارد کنید.', true); return; }
+    api('/api/login', { method: 'POST', body: { username: username, password: password } }).then(function (result) {
+      $('admpass').value = '';
+      if (!result.ok || !result.token) {
+        setStatus($('loginStatus'), 'err', 'ورود ناموفق: ' + (result.error === 'bad_credentials' ? 'نام کاربری یا رمز نادرست است.' : (result.detail || result.error || 'نامشخص')));
+        return;
+      }
+      adminToken = result.token;
+      $('btnLogout').hidden = false;
+      setStatus($('loginStatus'), 'ok', 'وارد شدید: ' + (result.user ? result.user.username : username));
+      loadVisitors();
+    }).catch(function () { setStatus($('loginStatus'), 'err', 'خطا در ارتباط با سرویس پنل.'); });
+  };
+
+  $('btnLogout').onclick = function () {
+    adminToken = null;
+    $('btnLogout').hidden = true;
+    $('visitorsCard').hidden = true;
+    setStatus($('loginStatus'), 'idle', 'خارج شدید. برای خواندن داده‌ها دوباره وارد شوید.');
+  };
+
+  function loadVisitors() {
+    api('/api/visitors').then(function (result) {
+      if (!result.ok) {
+        setStatus($('loginStatus'), 'err', 'خواندن ویزیتورها ممکن نشد: ' + (result.detail || result.error || 'نامشخص'));
+        return;
+      }
+      $('kpiVisitors').textContent = result.count || 0;
+      $('kpiVisitorsSub').textContent = 'آخرین خواندن: همین حالا';
+      var box = $('visitorsList');
+      box.innerHTML = '';
+      if (!result.count) { box.innerHTML = '<span class="loading">هنوز ویزیتوری ثبت نشده است.</span>'; }
+      (result.visitors || []).forEach(function (visitor) {
+        var chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = (visitor.name || '—') + ' • ' + (visitor.created_at || '');
+        chip.title = (visitor.phone || '') + ' ' + (visitor.purpose || '') + ' ' + (visitor.host_name || '');
+        box.appendChild(chip);
+      });
+      $('visitorsCard').hidden = false;
+    });
+  }
+
+  // ── آغاز به کار ─────────────────────────────────────────────────────────
+  $('btnHealth').onclick = function () { loadHealth(); toast('بررسی سلامت به‌روزرسانی شد.'); };
+
+  loadConfig().then(loadActivation);
+  loadHealth();
+  loadDbInfo();
+  setInterval(function () { loadConfig(); loadHealth(); }, 30000);
+})();
+</script>
+</body>
+</html>

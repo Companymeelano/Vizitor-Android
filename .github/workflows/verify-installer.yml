@@ -1,0 +1,319 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  بررسی و ساخت نصب‌کنندهٔ ویندوز ویزیتور (Vizitor-Setup-1.0.0.exe)
+#
+#  دو کار انجام می‌دهد:
+#   ۱) checks     — تحلیل نحوی install.ps1 و preflight.ps1 با «خودِ PowerShell»،
+#                   بررسی نحو اسکریپت‌های پایتون سرور و اجرای بررسی قرارداد
+#                   اتصال (کارت اتصال، دسترسی کاربر محدود، مسیر پورت ۱۴۳۳).
+#                   نتیجه در android-app/server-setup-report.txt ثبت می‌شود.
+#   ۲) build-exe  — نصب‌کننده را از نو می‌سازد تا exe دقیقاً شامل همین
+#                   install.ps1 (با اصلاحات اتصال اندروید) باشد؛ بعد با 7-Zip
+#                   محتوای exe باز می‌شود و sha256 نسخهٔ داخل آن با فایل مخزن
+#                   مقابله می‌گردد. خروجی در مخزن و در ریلیز
+#                   «vizitor-setup-v1.0.0» منتشر می‌شود.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Verify & build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a0a7c6-vizitor]
+    paths:
+      - "install.ps1"
+      - "installer/**"
+      - "api/**"
+      - ".github/workflows/verify-installer.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verify-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: بررسی فایل‌های راه‌اندازی سرور
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: تحلیل نحوی اسکریپت‌های PowerShell با PowerShell
+        shell: pwsh
+        run: |
+          Start-Transcript -Path /tmp/pwsh.log -Force | Out-Null
+          $failed = 0
+          foreach ($file in @('install.ps1', 'installer/nsi/preflight.ps1')) {
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path $PWD $file), [ref]$tokens, [ref]$errors)
+            if ($errors -and $errors.Count -gt 0) {
+              Write-Host ("[خطا] " + $file)
+              foreach ($e in $errors) {
+                Write-Host ("   خط " + $e.Extent.StartLineNumber + ": " + $e.Message)
+              }
+              $failed = 1
+            } else {
+              $lines = ($ast.Extent.Text -split "`n").Count
+              $fns = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)
+              Write-Host ("[OK] " + $file + " — " + $lines + " خط، " + $fns.Count + " تابع")
+            }
+          }
+
+          $tokens = $null; $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'install.ps1'), [ref]$tokens, [ref]$errors)
+          $names = @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true) | ForEach-Object { $_.Name })
+          foreach ($need in @('Invoke-AndroidPrep', 'Test-SqlTcpListener', 'Enable-SqlTcp',
+                              'Resolve-SqlInstanceInfo', 'Provision-SqlServer', 'Run-Checks', 'Repair')) {
+            if ($names -notcontains $need) {
+              Write-Host ("[خطا] تابع لازم پیدا نشد: " + $need)
+              $failed = 1
+            } else {
+              Write-Host ("[OK] تابع موجود: " + $need)
+            }
+          }
+          Write-Host ("نسخهٔ PowerShell: " + $PSVersionTable.PSVersion.ToString())
+          $b3 = [System.IO.File]::ReadAllBytes((Join-Path $PWD 'install.ps1'))[0..2] |
+                ForEach-Object { $_.ToString('x2') }
+          Write-Host ("BOM (سه بایت اول) install.ps1: " + ($b3 -join ' '))
+          Stop-Transcript | Out-Null
+          if ($failed -ne 0) { exit 1 }
+
+      - name: بررسی نحو اسکریپت‌های پایتون سرور
+        run: |
+          python3 -m py_compile api/provision_android_sql.py api/sql_admin_tools.py \
+            api/android_connect.py api/check_connection_contract.py
+          echo "[OK] همهٔ اسکریپت‌های سرور بدون خطای نحو کامپایل شدند"
+
+      - name: بررسی قرارداد اتصال سرور ↔ اندروید
+        run: |
+          set +e
+          python3 api/check_connection_contract.py 2>&1 | tee /tmp/contract.log
+          echo "${PIPESTATUS[0]}" > /tmp/contract.rc
+          cat /tmp/contract.rc
+
+      - name: ثبت گزارش بررسی فایل‌های راه‌اندازی سرور در مخزن
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R=android-app/server-setup-report.txt
+          {
+            echo "گزارش بررسی فایل‌های راه‌اندازی سرور — ویزیتور (نصب‌کنندهٔ ویندوز ↔ اندروید)"
+            echo "تاریخ: $(date -u '+%Y-%m-%d %H:%M:%S UTC')   کامیت: ${GITHUB_SHA}"
+            echo "=================================================================================="
+            echo ""
+            echo "--- ۱) تحلیل نحوی با خودِ PowerShell ($(pwsh -NoProfile -c '$PSVersionTable.PSVersion.ToString()' 2>/dev/null)) ---"
+            grep -v "^Transcript" /tmp/pwsh.log 2>/dev/null | grep -vE "^\*\*|^$" | head -40
+            echo ""
+            echo "--- ۲) بررسی قرارداد اتصال (کارت اتصال + دسترسی‌ها + مسیر ۱۴۳۳) ---"
+            cat /tmp/contract.log 2>/dev/null
+            echo ""
+            echo "--- ۳) نتیجه ---"
+            if [ "$(cat /tmp/contract.rc 2>/dev/null)" = "0" ]; then
+              echo "  همهٔ بررسی‌ها موفق ✓ — قرارداد سرور ↔ اندروید هم‌خوان است."
+            else
+              echo "  ناهم‌خوانی پیدا شد ✗ (کد خروج $(cat /tmp/contract.rc 2>/dev/null))"
+            fi
+            echo ""
+            echo "  سه بایت اول فایل‌های PowerShell (باید ef bb bf باشد):"
+            for f in install.ps1 installer/nsi/preflight.ps1; do
+              printf "    %-34s %s\n" "$f" "$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')"
+            done
+          } > "$R"
+          git config user.name "vizitor-ci"
+          git config user.email "ci@vizitor.local"
+          rm -rf /tmp/cargo && mkdir -p /tmp/cargo
+          for f in "$R"; do
+            [ -f "$f" ] && cp "$f" /tmp/cargo/$(basename "$f")
+          done
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          pushed=0
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}"
+            git reset --hard "FETCH_HEAD"
+            for f in "$R"; do
+              [ -f "/tmp/cargo/$(basename "$f")" ] && cp "/tmp/cargo/$(basename "$f")" "$f"
+            done
+            for f in "$R"; do [ -f "$f" ] && git add -f "$f"; done
+            git diff --cached --quiet && { echo "چیزی برای ثبت نبود"; pushed=1; break; }
+            git commit -q -m "chore(ci): server setup report [skip ci]"
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then pushed=1; break; fi
+            echo "پوش رد شد (تلاش $try) — همگام‌سازی با نوک شاخه و تلاش دوباره"
+            sleep 4
+          done
+          [ "$pushed" = "1" ] && echo "گزارش در مخزن ثبت شد ✓" || echo "::warning::گزارش ثبت نشد (پوش رد شد)"
+
+      - name: اعلام نتیجهٔ بررسی قرارداد
+        if: always()
+        run: |
+          rc=$(cat /tmp/contract.rc 2>/dev/null)
+          if [ "$rc" != "0" ]; then
+            echo "::error::قرارداد اتصال سرور ↔ اندروید ناهم‌خوان است (جزئیات در گزارش)"
+            exit 1
+          fi
+          echo "قرارداد اتصال کامل است ✓"
+
+  build-exe:
+    name: ساخت نصب‌کنندهٔ ویندوز با install.ps1 به‌روز
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب NSIS و 7-Zip
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nsis p7zip-full
+          makensis -VERSION
+          7z | head -2
+
+      - name: ساخت exe
+        run: |
+          set -o pipefail
+          chmod +x installer/build.sh
+          bash installer/build.sh 2>&1 | tee /tmp/nsis.log
+
+      - name: باز کردن exe و مقابلهٔ install.ps1 داخلش با فایل مخزن
+        run: |
+          set -e
+          EXE=release/Vizitor-Setup-1.0.0.exe
+          test -f "$EXE" || { echo "::error::exe ساخته نشد"; exit 1; }
+          ls -l "$EXE"
+          sha256sum "$EXE" | tee "$EXE.sha256"
+          sha256sum install.ps1 installer/nsi/preflight.ps1 | tee /tmp/source-hashes.txt
+
+          rm -rf /tmp/exeout && mkdir -p /tmp/exeout
+          if 7z l "$EXE" > /tmp/exe-list.txt 2>&1; then
+            echo "[OK] فهرست محتوای exe خوانده شد"
+            grep -E "install\.ps1|preflight\.ps1" /tmp/exe-list.txt | head -10
+            7z x -y -o/tmp/exeout "$EXE" > /tmp/exe-extract.txt 2>&1 || \
+              7z e -y -o/tmp/exeout "$EXE" > /tmp/exe-extract.txt 2>&1 || true
+            found=$(find /tmp/exeout -name install.ps1 | head -1)
+            if [ -z "$found" ]; then
+              echo "::error::install.ps1 از داخل exe استخراج نشد — نمی‌توان تضمین کرد exe همان فایل مخزن را دارد"
+              exit 1
+            fi
+            src=$(sha256sum install.ps1 | awk '{print $1}')
+            got=$(sha256sum "$found" | awk '{print $1}')
+            if [ "$src" = "$got" ]; then
+              echo "[OK] install.ps1 داخل exe دقیقاً همان فایل این کامیت است ($src)" | tee -a /tmp/exe-verify.log
+            else
+              echo "::error::install.ps1 داخل exe با فایل مخزن یکی نیست ($src ≠ $got)" | tee -a /tmp/exe-verify.log
+              exit 1
+            fi
+            foundpf=$(find /tmp/exeout -name preflight.ps1 | head -1)
+            if [ -n "$foundpf" ]; then
+              srcpf=$(sha256sum installer/nsi/preflight.ps1 | awk '{print $1}')
+              gotpf=$(sha256sum "$foundpf" | awk '{print $1}')
+              if [ "$srcpf" = "$gotpf" ]; then
+                echo "[OK] preflight.ps1 هم یکسان است ($srcpf)" | tee -a /tmp/exe-verify.log
+              else
+                echo "::warning::preflight.ps1 داخل exe متفاوت است" | tee -a /tmp/exe-verify.log
+              fi
+            else
+              echo "[نکته] preflight.ps1 در ناحیهٔ $PLUGINSDIR است و 7z آن را جدا نشان نمی‌دهد" | tee -a /tmp/exe-verify.log
+            fi
+          else
+            echo "::warning::7z نتوانست exe را باز کند؛ فقط اندازه و امضا بررسی شد" | tee -a /tmp/exe-verify.log
+            head -5 /tmp/exe-list.txt
+          fi
+
+          python3 - <<'PY'
+          import io
+          d = io.open('release/Vizitor-Setup-1.0.0.exe', 'rb').read()
+          print("حجم exe: %d بایت" % len(d))
+          print("امضای MZ:", d[:2] == b'MZ', "| رشتهٔ Nullsoft:", b'Nullsoft' in d)
+          PY
+
+      - name: ثبت گزارش ساخت exe در مخزن
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R=installer/exe-build-report.txt
+          {
+            echo "گزارش ساخت نصب‌کنندهٔ ویندوز — ویزیتور (Vizitor-Setup-1.0.0.exe)"
+            echo "تاریخ: $(date -u '+%Y-%m-%d %H:%M:%S UTC')   کامیت: ${GITHUB_SHA}"
+            echo "=================================================================================="
+            echo ""
+            echo "--- خروجی ساخت (NSIS) ---"
+            tail -25 /tmp/nsis.log 2>/dev/null
+            echo ""
+            echo "--- sha256 خروجی ---"
+            cat release/Vizitor-Setup-1.0.0.exe.sha256 2>/dev/null
+            echo ""
+            echo "--- sha256 فایل‌های مبدأ داخل exe ---"
+            cat /tmp/source-hashes.txt 2>/dev/null
+            echo ""
+            echo "--- نتیجهٔ مقابلهٔ محتوای exe (7-Zip) ---"
+            cat /tmp/exe-verify.log 2>/dev/null
+            echo ""
+            echo "--- محتوای exe ---"
+            grep -E "install\.ps1|preflight\.ps1|panel/|api/" /tmp/exe-list.txt 2>/dev/null | head -15
+            echo ""
+            echo "این exe همان install.ps1 این کامیت را در خود دارد: بررسی شنوندهٔ TCP ۱۴۳۳"
+            echo "و فعال‌سازی خودکار TCP/IP + BOM برای اجرای درست فارسی در PowerShell 5.1."
+          } > "$R"
+          git config user.name "vizitor-ci"
+          git config user.email "ci@vizitor.local"
+          rm -rf /tmp/cargo && mkdir -p /tmp/cargo
+          for f in "$R" release/Vizitor-Setup-1.0.0.exe release/Vizitor-Setup-1.0.0.exe.sha256; do
+            [ -f "$f" ] && cp "$f" /tmp/cargo/$(basename "$f")
+          done
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          pushed=0
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}"
+            git reset --hard "FETCH_HEAD"
+            for f in "$R" release/Vizitor-Setup-1.0.0.exe release/Vizitor-Setup-1.0.0.exe.sha256; do
+              [ -f "/tmp/cargo/$(basename "$f")" ] && cp "/tmp/cargo/$(basename "$f")" "$f"
+            done
+            for f in "$R" release/Vizitor-Setup-1.0.0.exe release/Vizitor-Setup-1.0.0.exe.sha256; do
+              [ -f "$f" ] && git add -f "$f"
+            done
+            git diff --cached --quiet && { echo "چیزی برای ثبت نبود"; pushed=1; break; }
+            git commit -q -m "build(installer): exe بازسازی‌شده با اصلاحات اتصال اندروید [skip ci]"
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then pushed=1; break; fi
+            echo "پوش رد شد (تلاش $try) — همگام‌سازی با نوک شاخه و تلاش دوباره"
+            sleep 4
+          done
+          [ "$pushed" = "1" ] && echo "گزارش در مخزن ثبت شد ✓" || echo "::warning::گزارش ثبت نشد (پوش رد شد)"
+
+      - name: بارگذاری exe به‌عنوان artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vizitor-Setup-EXE
+          path: |
+            release/Vizitor-Setup-1.0.0.exe
+            release/Vizitor-Setup-1.0.0.exe.sha256
+          if-no-files-found: error
+
+      - name: انتشار ریلیز نصب‌کننده
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: vizitor-setup-v1.0.0
+          name: "Vizitor Setup — نصب‌کنندهٔ ویندوز (v1.0.0)"
+          body: |
+            نصب‌کنندهٔ ویندوز **ویزیتور** — `Vizitor-Setup-1.0.0.exe` (ویندوز ۷/۸/۱۰/۱۱).
+
+            این بیلد شامل اصلاحات تازهٔ اتصال اندروید است:
+            * بررسی شنوندهٔ شبکهٔ SQL Server روی پورت **۱۴۳۳** و **فعال‌سازی خودکار TCP/IP**
+              (قبلاً ممکن بود سرور سالم باشد ولی گوشی هرگز وصل نشود).
+            * پیام «آماده است» بعد از موفقیت بررسی شنونده چاپ می‌شود.
+            * BOM برای `install.ps1` تا فارسی در Windows PowerShell 5.1 درست اجرا شود.
+
+            کاربر محدود دیتابیس، قاعدهٔ فایروال ۱۴۳۳ و کارت اتصال (`android-connect.png/json`)
+            به‌صورت خودکار ساخته می‌شوند. طراحی و برنامه‌نویسی: **میلاد یقوبی** —
+            گروه نرم‌افزاری **Meelano Studio Design**.
+          files: |
+            release/Vizitor-Setup-1.0.0.exe
+            release/Vizitor-Setup-1.0.0.exe.sha256

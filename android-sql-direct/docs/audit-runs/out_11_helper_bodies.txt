@@ -1,0 +1,300 @@
+# Raw paste from the operator, 2026-09-18 - part 7 (verbatim)
+# Route: the direct SSMS statements of "rah 6" (sys.sql_modules.definition),
+# database Meelano. Below: the definitions, then the object list with character
+# lengths, then the per-database last-write check.
+
+## AddFromAtiranDetailsForVisitors   (955 chars)
+
+create PROCEDURE [dbo].[AddFromAtiranDetailsForVisitors]
+	@docID int,
+	@bed bigint,
+	@bes bigint,
+	@desc nvarchar(1000),
+	@TafsilID int,
+	@MoeinID int,
+	@shfacfo int,
+	@vis_rdf int,
+	@KindForosh int,
+	@LevelFiveID int=null,
+	@LevelSixID int=null
+AS
+BEGIN
+    
+	execute AddToFromAtiranDetails @docID,@bed,@bes,@desc,@TafsilID,@MoeinID,@shfacfo,@KindForosh,@LevelFiveID,@LevelSixID
+
+	declare @super int =(select supervisor_rdf from visitors where vis_rdf=@vis_rdf)
+	if(@super <> 0)
+	begin
+		declare @supervisorPer float = (select supervisor_per from visitors where vis_rdf=@vis_rdf)
+		set @bes = @bes * @supervisorPer
+		set @bed = @bed * @supervisorPer
+		set @TafsilID =(select CUSTOMERS.TafsilID from CUSTOMERS where Ecode_Vis=@super and kind != 8)
+		if(@bes > 0 or @bed > 0)
+		execute AddFromAtiranDetailsForVisitors @docID,@bed,@bes,@desc,@TafsilID,@MoeinID,@shfacfo,@super,@KindForosh,@LevelFiveID,@LevelSixID
+		
+	end
+END
+
+## Edit_sail_pish   (3134 chars)
+
+create  proc [dbo].[Edit_sail_pish] (@Shfacfo bigint,@date char(10),@shmo bigint,@barbari money,@tozih varchar(30),@vis_rdf int,
+                      @sumlineall money,@all money,@gainall money,@tafif money,
+                      @jamtakhgh money,@done_date char(10),@user varchar(30),@panevis varchar(80)='ذکر نشده',
+                      @rdf_sarbarg int,@rdf_tahbarg int,@modpar int,@ph_kh int,@mod int,@mod_darsad_vis int,
+                      @nah_par int,@sh_fac bigint,@ted_rooz int,@sysid int=1,@tax money,@avarez money , @Promotion money)
+as
+begin
+      if @mod=1
+        begin
+          begin transaction forosh
+		 declare @VisIDOld int =(select VisitID from sailfact_pish where shfacfo=@Shfacfo and active='t')
+		 update sailfact_pish set active='f',ismodify='t' where shfacfo=@Shfacfo
+		 update subsailfact_pish set active='f' where shfacfo=@Shfacfo
+		 declare @RDF__ int=(select MAX(rdf__) from sailfact_pish where shfacfo=@Shfacfo)+1
+ declare @man_m money
+ set @man_m=(select man from customers where shmo=@shmo)
+   
+if (@vis_rdf<>-1)
+begin  
+insert into sailfact_pish (rdf__,shfacfo,user__,[date],shmo,barbari,shfacthand,vis_rdf,sumlineall,
+                                [all],gainall,tafif,jamtakhgh,done_date,panevis,isret,ismodify,
+                                active,modpar,rdf_sarbarg,rdf_tahbarg,nah_par,mod_darsad_vis,man_gh,sh_f,user_f,date_f,ted_rooz,taeed,taeedUser,sysid,rejected,tax,avarez,VisitID,Promotion)
+                              values (@RDF__,@Shfacfo,@user,@date,@shmo,@barbari,@tozih,@vis_rdf,@sumlineall,
+                                @all,@gainall,@tafif,@jamtakhgh,@done_date,@panevis,0,0,
+                                't',@modpar,@rdf_sarbarg,@rdf_tahbarg,@nah_par,@mod_darsad_vis,@man_m,0,'--','--',@ted_rooz,0,'--',@sysid,0,@tax,@avarez,@VisIDOld,@Promotion)
+end                     
+if (@vis_rdf=-1)
+begin  
+insert into sailfact_pish (rdf__,shfacfo,user__,[date],shmo,barbari,shfacthand,vis_rdf,sumlineall,
+                                [all],gainall,tafif,jamtakhgh,done_date,panevis,isret,ismodify,
+                                active,modpar,rdf_sarbarg,rdf_tahbarg,nah_par,mod_darsad_vis,man_gh,sh_f,user_f,date_f,ted_rooz,taeed,taeedUser,sysid,rejected,tax,avarez,VisitID,Promotion)
+                              values (@RDF__,@Shfacfo,@user,@date,@shmo,@barbari,@tozih,@vis_rdf,@sumlineall,
+                                @all,@gainall,@tafif,@jamtakhgh,@done_date,@panevis,0,0,
+                                't',@modpar,@rdf_sarbarg,@rdf_tahbarg,@nah_par,@mod_darsad_vis,@man_m,0,'--','--',@ted_rooz,0,'--',@sysid,0,@tax,@avarez,@VisIDOld,@Promotion)
+end                     
+
+           commit transaction forosh
+        end
+if((select value from overal_setting where id=77)=1)
+begin
+update sailfact_pish set TaedHesabdari=1,UserTaedHesabdari='اتوماتيك',DateTaedHesabdari=@date where shfacfo=@Shfacfo and active='t'
+end
+if((select value from overal_setting where id=78)=1)
+begin
+update sailfact_pish set TaedForush=1,UserTaedForush='اتوماتيك',DateTaedForush=@date where shfacfo=@Shfacfo and active='t'
+end
+
+end
+
+## FixManCustomer   (599 chars)
+
+CREATE  proc [dbo].[FixManCustomer] (@shmo int)
+    as
+    set xact_abort on
+    begin transaction a
+
+        DECLARE @Man MONEY;
+
+        -- محاسبه مانده (بدهی - بستانکاری)
+        SELECT @Man = ISNULL(SUM(act_bed), 0) - ISNULL(SUM(act_bes), 0) FROM cust_act WHERE shmo = @Shmo AND (isActive <> 0 OR isActive IS NULL);
+
+        update CUSTOMERS set man=@man where SHMO =@shmo
+        if((select value from overal_setting where id=117)=1)
+        begin
+        exec FixTasvie @shmo
+        end
+
+        exec Fix_Sys_Mandeh_Customer @shmo
+    commit transaction a
+    return
+
+## SelectPriceAndTedvahForushVisitorhaByDate   (1066 chars)
+
+CREATE proc [dbo].[SelectPriceAndTedvahForushVisitorhaByDate]
+@FromDate nvarchar(10),
+@Todate nvarchar(10),
+@MasirRdf bigint,
+@CustGroup bigint,
+@KaGroup bigint
+as
+select  sum(VWForushKhales.kol_price_tafif)as'price',sum((VWForushKhales.tedvah_fel*inventory.mohvah)+VWForushKhales.tedjoz_fel)as'tedvah',visitors.vis_rdf,visitors.vis_name,masir.rdf_masir from VWForushKhales,inventory,kagroup,visitors,masir,CUSTOMERS,custgroup
+where visitors.vis_rdf=VWForushKhales.vis_rdf
+and VWForushKhales.shka=inventory.shka
+and( inventory.group_rdf=kagroup.group_rdf
+or inventory.group_rdf in(select group_rdf from kagroup where ParentGroupRdf=inventory.group_rdf))
+
+and VWForushKhales.shmo=CUSTOMERS.SHMO
+and masir.rdf_masir=CUSTOMERS.RDF_masir
+and CUSTOMERS.RDF_masir=@MasirRdf
+and CUSTOMERS.group_rdf=custgroup.group_rdf
+and custgroup.group_rdf=@CustGroup
+and kagroup.group_rdf=@KaGroup
+
+and VWForushKhales.act_date between @FromDate and @Todate
+group by
+visitors.vis_rdf,visitors.vis_name,masir.rdf_masir
+having sum(VWForushKhales.kol_price_tafif)>0
+
+## UpdateMojodiInventory   (1320 chars)
+
+    CREATE PROCEDURE [dbo].[UpdateMojodiInventory](@shka bigint)
+    AS
+    BEGIN
+    declare @DoVahedi int=(select value from overal_setting where id=8)
+    declare @kol decimal(18,3)
+    declare @mohvah int=(select mohvah from inventory where shka=@Shka)
+    declare @tedbastebandi decimal(18,3)=0
+    set @kol=(select sum((tedvah*@mohvah+tedjoz)*(case when act_id in(20,22,5,19,18,48,26,85,133) then -1 else 1 end)) from ka_act where shka=@Shka and active='t')
+    if(@DoVahedi=1)
+    begin
+        set @tedbastebandi=(select sum(isnull(tedbastebandi,0)*(case when act_id in(20,22,5,19,18,48,26,85,133) then -1 else 1 end)) from ka_act where shka=@shka and active='t' )
+        if @tedbastebandi is null
+            set @tedbastebandi=0
+    end
+    ---**********************
+    if @mohvah=1
+        begin
+            update inventory set mojkajoz=0,mojkavah=@kol,tedbastebandi=@tedbastebandi where shka=@shka
+        end
+    else
+        begin
+            if((@kol/@mohvah)>=0)
+            update inventory set mojkajoz=@kol%@mohvah,mojkavah=floor(@kol/@mohvah),tedbastebandi=@tedbastebandi  where shka=@shka
+            else
+            update inventory set mojkajoz=@kol%@mohvah,mojkavah=-floor(abs(@kol/@mohvah)),tedbastebandi=@tedbastebandi  where shka=@shka
+        end
+
+    END
+
+## UpdateMojodiInventoryAnbars   (1792 chars)
+
+    CREATE PROCEDURE [dbo].[UpdateMojodiInventoryAnbars](@shka bigint)
+    AS
+    BEGIN
+    declare @RDFanbar int
+
+    declare  cr2 cursor for select rdf_anbars from inventory_anbars  where shka=@shka
+    open cr2
+    fetch next from cr2 into @RDFanbar
+    while @@fetch_status=0
+    begin
+    declare @DoVahedi int=(select value from overal_setting where id=8)
+    declare @kol decimal(18,3)
+    declare @tedbastebandi decimal(18,3)=0
+    declare @mohvah int=(select mohvah from inventory where shka=@Shka)
+
+    set @kol=(select sum((tedvah*@mohvah+tedjoz)*(case when act_id in(20,22,5,19,18,48,26,85,133) then -1 else 1 end)) from ka_act where shka=@Shka and active='t' and RdfAnbar=@RDFanbar)
+    if @kol is null
+        set @kol=0
+
+    if(@DoVahedi=1)
+    begin
+        set @tedbastebandi=(select sum(isnull(tedbastebandi,0)*(case when act_id in(20,22,5,19,18,48,26,85,133) then -1 else 1 end)) from ka_act where shka=@shka and active='t'  and RdfAnbar=@RDFanbar)
+        if @tedbastebandi is null
+            set @tedbastebandi=0
+    end
+
+    ---**********************
+    if @mohvah=1
+        begin
+            update inventory_anbars set mojkajoz=0,mojkavah=@kol,tedbastebandi=@tedbastebandi where shka=@shka  and rdf_anbars=@RDFanbar
+        end
+    else
+        begin
+            if((@kol/@mohvah)>=0)
+            update inventory_anbars set mojkajoz=@kol%@mohvah,mojkavah=floor(@kol/@mohvah),tedbastebandi=@tedbastebandi  where shka=@shka and rdf_anbars=@RDFanbar
+            else
+            update inventory_anbars set mojkajoz=@kol%@mohvah,mojkavah=-floor(abs(@kol/@mohvah)),tedbastebandi=@tedbastebandi  where shka=@shka and rdf_anbars=@RDFanbar
+        end
+    fetch next from cr2 into @RDFanbar
+    end
+    deallocate cr2
+    END
+
+## UpdateMojodiInventoryAnbarsPS   (1773 chars)
+
+    CREATE PROCEDURE [dbo].[UpdateMojodiInventoryAnbarsPS](@shka bigint,@anbarID int,@PsID bigint)
+    AS
+    BEGIN
+    declare @DoVahedi int=(select value from overal_setting where id=8)
+    declare @PSSerial bit
+    set @PSSerial = (select WithProductionSerial from inventory where shka=@shka)
+
+    if (@PSSerial = 1)
+    begin
+    declare @kol decimal(18,3)
+    declare @tedbastebandi decimal(18,3)=0
+    declare @mohvah int=(select mohvah from inventory where shka=@Shka)
+
+    set @kol=(select sum((tedvah*@mohvah+tedjoz)*(case when act_id in(20,22,5,19,18,48,26,85,133) then -1 else 1 end)) from ka_act where shka=@Shka and active='t'  and RdfAnbar=@anbarID and ProductionSeriesID=@PsID)
+    if @kol is null
+        set @kol=0
+
+    if(@DoVahedi=1)
+    begin
+        set @tedbastebandi=(select sum(isnull(tedbastebandi,0)*(case when act_id in(20,22,5,19,18,48,26,85,133) then -1 else 1 end)) from ka_act where shka=@shka and active='t'   and RdfAnbar=@anbarID and ProductionSeriesID=@PsID)
+        if @tedbastebandi is null
+            set @tedbastebandi=0
+    end
+
+
+    ---**********************
+    if @mohvah=1
+        begin
+            update Inventory_Anbars_PS set mojkajoz=0,mojkavah=@kol where shka=@shka  and rdfAnbar=@anbarID and PSId=@PsID
+        end
+    else
+        begin
+            if((@kol/@mohvah)>=0)
+            update Inventory_Anbars_PS set mojkajoz=@kol%@mohvah,mojkavah=floor(@kol/@mohvah),tedbastebandi=@tedbastebandi where shka=@shka and rdfAnbar=@anbarID and PSId=@PsID
+            else
+            update Inventory_Anbars_PS set mojkajoz=@kol%@mohvah,mojkavah=-floor(abs(@kol/@mohvah)),tedbastebandi=@tedbastebandi  where shka=@shka and rdfAnbar=@anbarID and PsId=@PsID
+        end
+    end
+    END
+
+## VW_InventoryAnbars   (3055 chars)
+
+create view [dbo].VW_InventoryAnbars
+as
+select inventory_anbars.shka
+,inventory_anbars.rdf_anbars
+,inventory_anbars.name
+,inventory.tedbastebandi
+,inventory_anbars.mojkavah 
+,inventory_anbars.mojkajoz 
+--,((inventory_anbars.mojkavah*inventory.mohvah)+inventory_anbars.mojkajoz) as 'MojKol_fel'
+,case when inventory.mohvah=1 then (select ((inventory_anbars.mojkavah*inventory.mohvah)+inventory_anbars.mojkajoz)-ISNULL((SUM(TEDVAH)*inventory.mohvah)+sum(TEDJOZ),0)  from subsailfact_pish inner join sailfact_pish on sailfact_pish.shfacfo=subsailfact_pish.shfacfo and subsailfact_pish.rdf__=sailfact_pish.rdf__ where sailfact_pish.Rejected=0 and  sailfact_pish.active='t' and sailfact_pish.sh_f=0 and subsailfact_pish.rdf_anbar=inventory_anbars.rdf_anbars and subsailfact_pish.shka=inventory_anbars.shka ) 
+else 
+case when (select ((inventory_anbars.mojkavah*inventory.mohvah)+inventory_anbars.mojkajoz)-ISNULL((SUM(TEDVAH)*inventory.mohvah)+sum(TEDJOZ),0)  from subsailfact_pish inner join sailfact_pish on sailfact_pish.shfacfo=subsailfact_pish.shfacfo and subsailfact_pish.rdf__=sailfact_pish.rdf__ where sailfact_pish.Rejected=0 and  sailfact_pish.active='t' and sailfact_pish.sh_f=0 and subsailfact_pish.rdf_anbar=inventory_anbars.rdf_anbars and subsailfact_pish.shka=inventory_anbars.shka )/inventory.mohvah>=0
+
+then FLOOR((select ((inventory_anbars.mojkavah*inventory.mohvah)+inventory_anbars.mojkajoz)-ISNULL((SUM(TEDVAH)*inventory.mohvah)+sum(TEDJOZ),0)  from subsailfact_pish inner join sailfact_pish on sailfact_pish.shfacfo=subsailfact_pish.shfacfo and subsailfact_pish.rdf__=sailfact_pish.rdf__ where sailfact_pish.Rejected=0 and  sailfact_pish.active='t' and sailfact_pish.sh_f=0 and subsailfact_pish.rdf_anbar=inventory_anbars.rdf_anbars and subsailfact_pish.shka=inventory_anbars.shka )/inventory.mohvah) 
+
+else -FLOOR(abs((select ((inventory_anbars.mojkavah*inventory.mohvah)+inventory_anbars.mojkajoz)-ISNULL((SUM(TEDVAH)*inventory.mohvah)+sum(TEDJOZ),0)  from subsailfact_pish inner join sailfact_pish on sailfact_pish.shfacfo=subsailfact_pish.shfacfo and subsailfact_pish.rdf__=sailfact_pish.rdf__ where sailfact_pish.Rejected=0 and  sailfact_pish.active='t' and sailfact_pish.sh_f=0 and subsailfact_pish.rdf_anbar=inventory_anbars.rdf_anbars and subsailfact_pish.shka=inventory_anbars.shka )/inventory.mohvah)) end end as 'MojodiPish_vah'
+,case when inventory.mohvah=1 then 0 else (select ((inventory_anbars.mojkavah*inventory.mohvah)+inventory_anbars.mojkajoz)-ISNULL((SUM(TEDVAH)*inventory.mohvah)+sum(TEDJOZ),0)  from subsailfact_pish inner join sailfact_pish on sailfact_pish.shfacfo=subsailfact_pish.shfacfo and subsailfact_pish.rdf__=sailfact_pish.rdf__ where sailfact_pish.Rejected=0 and  sailfact_pish.active='t' and sailfact_pish.sh_f=0 and subsailfact_pish.rdf_anbar=inventory_anbars.rdf_anbars and subsailfact_pish.shka=inventory_anbars.shka ) % inventory.mohvah end as 'MojodiPish_joz'
+
+
+ from inventory_anbars inner join inventory on inventory.shka=inventory_anbars.shka 
+where inventory.active='t' 
+
+## Object list with character lengths (the same query with LEN(m.definition))
+
+name	type_desc	chars
+
+AddFromAtiranDetailsForVisitors	SQL_STORED_PROCEDURE	955
+Edit_sail_pish	SQL_STORED_PROCEDURE	3134
+FixManCustomer	SQL_STORED_PROCEDURE	599
+SelectPriceAndTedvahForushVisitorhaByDate	SQL_STORED_PROCEDURE	1066
+UpdateMojodiInventory	SQL_STORED_PROCEDURE	1320
+UpdateMojodiInventoryAnbars	SQL_STORED_PROCEDURE	1792
+UpdateMojodiInventoryAnbarsPS	SQL_STORED_PROCEDURE	1773
+VW_InventoryAnbars	VIEW	3055
+
+## Which database was written last
+
+db	last_write
+
+Meelano	NULL
+
+# Note: this is the whole list of non-system databases on the server the paste came
+# from - only Meelano. Atiran14050603 is not on that instance.

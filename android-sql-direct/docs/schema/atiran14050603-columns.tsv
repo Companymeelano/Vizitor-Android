@@ -1,0 +1,10 @@
+# Columns of three tables as they exist in the database **Atiran14050603**
+# (operator paste of 2026-09-18, SSMS "Script Table as > SELECT TOP 1000").
+# NOT verified for Meelano - do not let the Kotlin guard treat these as Meelano
+# columns until sql/08_which_db.sql says which database the ERP really writes to.
+# For reference, Meelano's own subsailfact_pish has 25 of these 26 columns
+# (PerPromotion is the difference) - see meelano-columns.tsv.
+# format: table<TAB>column1,column2,...
+dbo.subsailfact_pish	rdf__,shfacfo,SHKA,rdf_anbar,TEDVAH,TEDJOZ,VAHPRICE,JOZPRICE,BASTEBANDI,TEDBASTEBANDI,LINESUM,LINEGAIN,ISRET,PERTAFIF,RDF,jozgain,PERVIS,litakhma,active,amani,Pavarez,Avarez,Ptax,Tax,Mp,PerPromotion
+dbo.SubSailSefaresh	SubSailSefareshRowID,RowIDSefaresh,ExplainValueSefaresh,subSailRdf_,SubSailShfac,SubSailShka,SubSailRDFKhat
+dbo.subsailtemp	shfacfo,shka,rdf_anbar,tedvah,tedjoz,vahprice,jozprice,bastebandi,tedbastebandi,linesum,isret,pertafif,tafifAghlam,rdf,pervis,litakhma,mohvah,modpar,mod,rdf__,active,date,done_date,sahm_mod_par,naka,ted_kol,vah_nam,amani,invepgh,vah_w,sood_gh,vis_sahm,vis_rdf,time_,ptax,tax,avarez,PAvarez,sahmtaf,sysid,Gift,TafifLine,PerPromotion,PromotionValue,UserID,ProductionSeriesID,TEDVAHMain,TEDJOZMain,MultiPishFactor,TafifPos,TafifNaghd,VarietyID
