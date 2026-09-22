@@ -20,17 +20,17 @@ import ir.atiran.vizitor.R
 object ProductImages {
 
     /** ریشهٔ تصاویر در res/drawable-nodpi (عکس‌های استودیویی سبک‌سازی‌شده، ~۶۵ کیلوبایت هر کدام) */
-    @DrawableRes private const val PISTACHIO = R.drawable.goods_pistachio
-    @DrawableRes private const val ALMOND = R.drawable.goods_almond
-    @DrawableRes private const val WALNUT = R.drawable.goods_walnut
-    @DrawableRes private const val CASHEW = R.drawable.goods_cashew
-    @DrawableRes private const val RAISIN = R.drawable.goods_raisin
-    @DrawableRes private const val DATE = R.drawable.goods_date
-    @DrawableRes private const val FIG = R.drawable.goods_fig
-    @DrawableRes private const val SEEDS = R.drawable.goods_seeds
-    @DrawableRes private const val SAFFRON = R.drawable.goods_saffron
-    @DrawableRes private const val HONEY = R.drawable.goods_honey
-    @DrawableRes private const val MIXED = R.drawable.goods_mixed
+    @DrawableRes private val PISTACHIO = R.drawable.goods_pistachio
+    @DrawableRes private val ALMOND = R.drawable.goods_almond
+    @DrawableRes private val WALNUT = R.drawable.goods_walnut
+    @DrawableRes private val CASHEW = R.drawable.goods_cashew
+    @DrawableRes private val RAISIN = R.drawable.goods_raisin
+    @DrawableRes private val DATE = R.drawable.goods_date
+    @DrawableRes private val FIG = R.drawable.goods_fig
+    @DrawableRes private val SEEDS = R.drawable.goods_seeds
+    @DrawableRes private val SAFFRON = R.drawable.goods_saffron
+    @DrawableRes private val HONEY = R.drawable.goods_honey
+    @DrawableRes private val MIXED = R.drawable.goods_mixed
 
     /**
      * قواعد نام → تصویر پیش‌فرض (ترتیب مهم است: ترکیب‌های خاص قبل از واژه‌های عام).
