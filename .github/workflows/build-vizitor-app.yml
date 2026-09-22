@@ -138,7 +138,9 @@ jobs:
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/Vizitor-2.14.0-direct.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "dist/Vizitor-2.14.0-direct-debug.apk"
-          cd dist && sha256sum *.apk > Vizitor-2.14.0-direct.apk.sha256
+          # فقط سطر نسخهٔ اصلی در فایل .sha256 (نام فایل با نام همان APK یکی است)
+          cd dist && sha256sum Vizitor-2.14.0-direct.apk > Vizitor-2.14.0-direct.apk.sha256 \
+                    && sha256sum *.apk > SHA256SUMS.txt
           ls -l
 
       - name: گزارش بازرسی APK (در مخزن ثبت می‌شود)
@@ -225,7 +227,7 @@ jobs:
             echo "تاریخ ساخت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "کامیت: ${GITHUB_SHA}"
             echo "حجم: $(stat -c %s /tmp/cargo3/apk) بایت"
-            echo "sha256: $(cut -d' ' -f1 /tmp/cargo3/sha 2>/dev/null)"
+            echo "sha256: $(sha256sum /tmp/cargo3/apk | cut -d' ' -f1)"
             echo "امضا: بررسی‌شده با apksigner — جزئیات در vizitor-app/apk-report.txt"
           } > /tmp/cargo3/info
           URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
