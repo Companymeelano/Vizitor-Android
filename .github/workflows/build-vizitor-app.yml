@@ -14,14 +14,17 @@ name: Build Vizitor Android app (direct SQL)
 on:
   workflow_dispatch:
   push:
-    branches: [arena/01a0a7c6-vizitor, arena/01a0c36c-vizitor]
+    branches:
+      - main
+      - "arena/**"
     paths:
-      # فقط کد و پیکربندی بیلد؛ تغییر README/مستندات نباید APK را بازسازی کند
+      # فقط کد و پیکربندی بیلد؛ تغییر README/مستندات/خروجی‌ها نباید APK را بازسازی کند
       - "vizitor-app/app/**"
       - "vizitor-app/build.gradle.kts"
       - "vizitor-app/settings.gradle.kts"
       - "vizitor-app/gradle.properties"
       - "vizitor-app/gradle/**"
+      - "vizitor-app/gradlew"
       - ".github/workflows/build-vizitor-app.yml"
 
 permissions:
@@ -199,6 +202,48 @@ jobs:
             git diff --cached --quiet && { echo "چیزی برای ثبت نبود"; break; }
             git commit -q -m "chore(ci): vizitor-app APK report [skip ci]"
             if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "گزارش ثبت شد ✓"; break; fi
+            sleep 4
+          done
+
+      - name: ثبت APK امضاشده در مخزن (دسترسی از git/API، مستقل از artifact)
+        # میزبان‌های artifact/ریلیز گیت‌هاب ممکن است در شبکه‌های فیلترشده در دسترس نباشند؛
+        # پس خودِ APK امضاشده در مسیر vizitor-app/dist/ داخل مخزن هم ثبت می‌شود
+        # (پوش با GITHUB_TOKEN است و ورک‌فلوی تازه‌ای اجرا نمی‌کند).
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R1=vizitor-app/dist/Vizitor-2.14.0-direct.apk
+          R2=vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256
+          R3=vizitor-app/dist/BUILD-INFO.txt
+          rm -rf /tmp/cargo3 && mkdir -p /tmp/cargo3
+          cp vizitor-app/dist/Vizitor-2.14.0-direct.apk /tmp/cargo3/apk || exit 0
+          cp vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256 /tmp/cargo3/sha 2>/dev/null || true
+          {
+            echo "Vizitor-2.14.0-direct.apk  (آتیران ویزیتور — نسخه ۲٫۱۴٫۰ با اتصال مستقیم SQL)"
+            echo "تاریخ ساخت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "کامیت: ${GITHUB_SHA}"
+            echo "حجم: $(stat -c %s /tmp/cargo3/apk) بایت"
+            echo "sha256: $(cut -d' ' -f1 /tmp/cargo3/sha 2>/dev/null)"
+            echo "امضا: بررسی‌شده با apksigner — جزئیات در vizitor-app/apk-report.txt"
+          } > /tmp/cargo3/info
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}" || { sleep 4; continue; }
+            git reset --hard FETCH_HEAD
+            mkdir -p vizitor-app/dist
+            cp /tmp/cargo3/apk "$R1"
+            cp /tmp/cargo3/sha "$R2" 2>/dev/null || true
+            cp /tmp/cargo3/info "$R3"
+            git add -f "$R1" "$R3"
+            [ -f "$R2" ] && git add -f "$R2"
+            git diff --cached --quiet && { echo "APK از قبل ثبت شده بود"; break; }
+            git config user.name "vizitor-ci"
+            git config user.email "ci@vizitor.local"
+            git commit -q -m "chore(ci): APK امضاشدهٔ آتیران ویزیتور ۲٫۱۴٫۰ در مخزن [skip ci]"
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "APK در مخزن ثبت شد ✓"; break; fi
+            echo "پوش رد شد (تلاش $try) — تلاش دوباره"
             sleep 4
           done
 

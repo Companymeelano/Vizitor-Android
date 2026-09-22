@@ -1,0 +1,17 @@
+# Developed by Milano Technical Team, Milad Yaghoobi
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk.idsig
+keystore/
+*.jks
+server/vendor/
+worker/node_modules/
+worker/.wrangler/
+build.log

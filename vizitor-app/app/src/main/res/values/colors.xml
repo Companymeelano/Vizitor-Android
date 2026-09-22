@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Developed by Milano Technical Team, Milad Yaghoobi — PremiumUX Palette -->
+<resources>
+    <color name="dark_slate">#0B0E13</color>
+    <color name="dark_slate_surface">#12161D</color>
+    <color name="neon_purple">#B04BF8</color>
+    <color name="neon_green">#2BFF88</color>
+    <color name="gold">#FFD166</color>
+</resources>

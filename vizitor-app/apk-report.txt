@@ -1,0 +1,109 @@
+گزارش ساخت APK برنامهٔ آتیران ویزیتور با اتصال مستقیم SQL Server (پورت ۱۴۳۳)
+تاریخ: 2026-09-21 12:49:08 UTC   کامیت: 2c959dba04e5f4ec5f235a433ca4fecc1a7d5031
+==================================================================================
+
+--- خروجی بیلد (Gradle) ---
+}`
+
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 6m 39s
+93 actionable tasks: 89 executed, 4 from cache
+
+### اثر انگشت گواهی امضا (ثابت بین بیلدها)
+Alias name: vizitorapp
+Valid from: Sat Sep 19 12:14:00 UTC 2026 until: Mon Sep 11 12:14:00 UTC 2056
+	 SHA256: 5C:CA:D3:B6:01:49:6E:69:8B:AE:05:5A:07:29:E1:EF:0B:E5:1F:BA:86:C5:DB:07:54:CA:D0:55:D4:A6:AC:5A
+
+### Vizitor-2.14.0-direct-debug.apk
+حجم: 51868747 بایت
+9136309cad44631a44e74a71aa970e5e045f9cddf3abce616006276d7dc9345e  Vizitor-2.14.0-direct-debug.apk
+
+--- مشخصات نسخه و پکیج (aapt2) ---
+package: name='ir.atiran.vizitor.debug' versionCode='21810' versionName='2.14.0-direct-debug' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+targetSdkVersion:'35'
+application-label:'آتیران ویزیتور'
+native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
+
+--- تأیید امضا ---
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
+V2 Signer: certificate SHA-256 digest: d8cc97d060ca104407784bc0bce0d56453085566444588877a1ebf84c4b0fdae
+V2 Signer: certificate SHA-1 digest: 7375141c29cf1c54732f7bf443389b04e8adebdf
+V2 Signer: certificate MD5 digest: 17249ea46581be1780b6fbdb9c7b7577
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 2048
+V2 Signer: public key SHA-256 digest: a08aa9b2346dce3376f81307371e713e72df0131161bd529c1e155a28615d7e8
+V2 Signer: public key SHA-1 digest: d4c667972136403722f7a830aa8d231ed1bb8915
+V2 Signer: public key MD5 digest: cd300612ab6f9936a1e21f2d0b6936c8
+
+--- تعداد dex و حضور درایورهای SQL ---
+13
+  com/microsoft/sqlserver/jdbc/SQLServerDriver : 12
+  net/sourceforge/jtds/jdbc/Driver : 2
+  ir/atiran/vizitor/sqldirect/VisitorRepository : 7
+  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 95
+  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 4
+  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 12
+  ir/atiran/vizitor/sqldirect/DirectSql : 39
+  ir/atiran/vizitor/sqldirect/SecureDbStore : 3
+  ir/atiran/vizitor/sqldirect/VisitRepository : 7
+  ir/atiran/vizitor/ui/screens/VisitScreen : 92
+  ir/atiran/vizitor/sqldirect/VisitViewModel : 21
+### Vizitor-2.14.0-direct.apk
+حجم: 40927390 بایت
+0a2064bbbbf55fecd965c5d9c30c5454b1047d516cfbad74bb5f5aaa46a9a072  Vizitor-2.14.0-direct.apk
+
+--- مشخصات نسخه و پکیج (aapt2) ---
+package: name='ir.atiran.vizitor' versionCode='21810' versionName='2.14.0-direct' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+targetSdkVersion:'35'
+application-label:'آتیران ویزیتور'
+native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
+
+--- تأیید امضا ---
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: C=IR, L=Tehran, O=Meelano, OU=Meelano Studio Design, CN=Vizitor App Direct
+V2 Signer: certificate SHA-256 digest: 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a
+V2 Signer: certificate SHA-1 digest: 22ea4c920262c1b7f67ef0b3cd4803949a3dc80f
+V2 Signer: certificate MD5 digest: eb9f41e7d9837b131057073985811918
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 2048
+V2 Signer: public key SHA-256 digest: f9fc8712efcd80f04f977b884215b798454d78bb049f3e2df7756b82860e3354
+V2 Signer: public key SHA-1 digest: 8f1844d80be7af6312dc45ce6cff0be43c9b959e
+V2 Signer: public key MD5 digest: 1a0fa12aadcd0e00d0cd51e75d5d6774
+
+--- تعداد dex و حضور درایورهای SQL ---
+5
+  com/microsoft/sqlserver/jdbc/SQLServerDriver : 11
+  net/sourceforge/jtds/jdbc/Driver : 1
+  ir/atiran/vizitor/sqldirect/VisitorRepository : 6
+  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 93
+  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 3
+  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 11
+  ir/atiran/vizitor/sqldirect/DirectSql : 36
+  ir/atiran/vizitor/sqldirect/SecureDbStore : 2
+  ir/atiran/vizitor/sqldirect/VisitRepository : 6
+  ir/atiran/vizitor/ui/screens/VisitScreen : 90
+  ir/atiran/vizitor/sqldirect/VisitViewModel : 18
