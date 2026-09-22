@@ -208,26 +208,35 @@ jobs:
           done
 
       - name: ثبت APK امضاشده در مخزن (دسترسی از git/API، مستقل از artifact)
-        # میزبان‌های artifact/ریلیز گیت‌هاب ممکن است در شبکه‌های فیلترشده در دسترس نباشند؛
-        # پس خودِ APK امضاشده در مسیر vizitor-app/dist/ داخل مخزن هم ثبت می‌شود
-        # (پوش با GITHUB_TOKEN است و ورک‌فلوی تازه‌ای اجرا نمی‌کند).
+        # ⚠️ مهم: این گام فایل را از «خروجی خودِ Gradle» برمی‌دارد، نه از dist/؛
+        # چون گام‌های قبلی با git reset --hard، پوشهٔ dist/ را به نسخهٔ داخل گیت برمی‌گردانند
+        # و اگر از dist/ بخوانیم، APK بیلد قبلی ثبت/منتشر می‌شود.
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
+          REL=vizitor-app/app/build/outputs/apk/release/app-release.apk
+          DBG=vizitor-app/app/build/outputs/apk/debug/app-debug.apk
           R1=vizitor-app/dist/Vizitor-2.14.0-direct.apk
           R2=vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256
           R3=vizitor-app/dist/BUILD-INFO.txt
+          R4=vizitor-app/dist/SHA256SUMS.txt
           rm -rf /tmp/cargo3 && mkdir -p /tmp/cargo3
-          cp vizitor-app/dist/Vizitor-2.14.0-direct.apk /tmp/cargo3/apk || exit 0
-          cp vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256 /tmp/cargo3/sha 2>/dev/null || true
+          cp "$REL" /tmp/cargo3/apk || { echo "::warning::خروجی نسخهٔ اصلی پیدا نشد"; exit 0; }
+          HASH=$(sha256sum /tmp/cargo3/apk | cut -d' ' -f1)
+          printf '%s  Vizitor-2.14.0-direct.apk\n' "$HASH" > /tmp/cargo3/sha
+          : > /tmp/cargo3/sums
+          if [ -f "$DBG" ]; then
+            printf '%s  Vizitor-2.14.0-direct-debug.apk\n' "$(sha256sum "$DBG" | cut -d' ' -f1)" >> /tmp/cargo3/sums
+          fi
+          printf '%s  Vizitor-2.14.0-direct.apk\n' "$HASH" >> /tmp/cargo3/sums
           {
             echo "Vizitor-2.14.0-direct.apk  (آتیران ویزیتور — نسخه ۲٫۱۴٫۰ با اتصال مستقیم SQL)"
             echo "تاریخ ساخت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo "کامیت: ${GITHUB_SHA}"
             echo "حجم: $(stat -c %s /tmp/cargo3/apk) بایت"
-            echo "sha256: $(sha256sum /tmp/cargo3/apk | cut -d' ' -f1)"
+            echo "sha256: ${HASH}"
             echo "امضا: بررسی‌شده با apksigner — جزئیات در vizitor-app/apk-report.txt"
           } > /tmp/cargo3/info
           URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -236,18 +245,25 @@ jobs:
             git reset --hard FETCH_HEAD
             mkdir -p vizitor-app/dist
             cp /tmp/cargo3/apk "$R1"
-            cp /tmp/cargo3/sha "$R2" 2>/dev/null || true
+            cp /tmp/cargo3/sha "$R2"
+            cp /tmp/cargo3/sums "$R4"
             cp /tmp/cargo3/info "$R3"
-            git add -f "$R1" "$R3"
-            [ -f "$R2" ] && git add -f "$R2"
+            git add -f "$R1" "$R2" "$R3" "$R4"
             git diff --cached --quiet && { echo "APK از قبل ثبت شده بود"; break; }
             git config user.name "vizitor-ci"
             git config user.email "ci@vizitor.local"
             git commit -q -m "chore(ci): APK امضاشدهٔ آتیران ویزیتور ۲٫۱۴٫۰ در مخزن [skip ci]"
-            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "APK در مخزن ثبت شد ✓"; break; fi
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "APK در مخزن ثبت شد ✓ (sha256: $HASH)"; break; fi
             echo "پوش رد شد (تلاش $try) — تلاش دوباره"
             sleep 4
           done
+          # dist/ باید دقیقاً همان چیزی باشد که ثبت و منتشر می‌شود
+          cp /tmp/cargo3/apk "$R1"
+          cp /tmp/cargo3/sha "$R2"
+          cp /tmp/cargo3/sums "$R4"
+          cp /tmp/cargo3/info "$R3"
+          ls -l vizitor-app/dist/
+          echo "sha ثبت‌شده: $HASH"
 
       - name: بارگذاری خروجی‌ها (artifact)
         uses: actions/upload-artifact@v4
@@ -294,4 +310,5 @@ jobs:
           files: |
             vizitor-app/dist/Vizitor-2.14.0-direct.apk
             vizitor-app/dist/Vizitor-2.14.0-direct.apk.sha256
+            vizitor-app/dist/SHA256SUMS.txt
             vizitor-app/dist/Vizitor-2.14.0-direct-debug.apk
