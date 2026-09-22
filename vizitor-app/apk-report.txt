@@ -1,5 +1,5 @@
 گزارش ساخت APK برنامهٔ آتیران ویزیتور با اتصال مستقیم SQL Server (پورت ۱۴۳۳)
-تاریخ: 2026-09-22 09:16:57 UTC   کامیت: 624b71ed99ccd2774129b27f87dfaedff75bd26e
+تاریخ: 2026-09-22 10:48:02 UTC   کامیت: 57eab297da8fbb7cce4720485c26766580fa8301
 ==================================================================================
 
 --- خروجی بیلد (Gradle) ---
@@ -13,7 +13,7 @@
 > Task :app:lintVitalRelease
 > Task :app:assembleRelease
 
-BUILD SUCCESSFUL in 6m 36s
+BUILD SUCCESSFUL in 6m 43s
 93 actionable tasks: 89 executed, 4 from cache
 
 ### اثر انگشت گواهی امضا (ثابت بین بیلدها)
@@ -21,54 +21,11 @@ Alias name: vizitorapp
 Valid from: Sat Sep 19 12:14:00 UTC 2026 until: Mon Sep 11 12:14:00 UTC 2056
 	 SHA256: 5C:CA:D3:B6:01:49:6E:69:8B:AE:05:5A:07:29:E1:EF:0B:E5:1F:BA:86:C5:DB:07:54:CA:D0:55:D4:A6:AC:5A
 
-### Vizitor-2.15.0-direct.apk
-حجم: 41731746 بایت
-vizitor-app/dist/Vizitor-2.15.0-direct.apk.sha256:dc95ef311f66c76d6ed5c6039efc8bece0ec9ac0b6710a0ea46f86f039dbfeac  Vizitor-2.15.0-direct.apk
+### Vizitor-2.17.0-direct-debug.apk
+حجم: 52870753 بایت
 
 --- مشخصات نسخه و پکیج (aapt2) ---
-package: name='ir.atiran.vizitor' versionCode='21811' versionName='2.15.0-direct' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
-targetSdkVersion:'35'
-application-label:'آتیران ویزیتور'
-native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
-
---- تأیید امضا ---
-Verifies
-Verified using v1 scheme (JAR signing): false
-Verified using v2 scheme (APK Signature Scheme v2): true
-Verified using v3 scheme (APK Signature Scheme v3): false
-Verified using v3.1 scheme (APK Signature Scheme v3.1): false
-Verified using v3.2 scheme (APK Signature Scheme v3.2): false
-Verified using v4 scheme (APK Signature Scheme v4): false
-Verified for SourceStamp: false
-Number of signers: 1
-V2 Signer: certificate DN: C=IR, L=Tehran, O=Meelano, OU=Meelano Studio Design, CN=Vizitor App Direct
-V2 Signer: certificate SHA-256 digest: 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a
-V2 Signer: certificate SHA-1 digest: 22ea4c920262c1b7f67ef0b3cd4803949a3dc80f
-V2 Signer: certificate MD5 digest: eb9f41e7d9837b131057073985811918
-V2 Signer: key algorithm: RSA
-V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: f9fc8712efcd80f04f977b884215b798454d78bb049f3e2df7756b82860e3354
-V2 Signer: public key SHA-1 digest: 8f1844d80be7af6312dc45ce6cff0be43c9b959e
-V2 Signer: public key MD5 digest: 1a0fa12aadcd0e00d0cd51e75d5d6774
-
---- تعداد dex و حضور درایورهای SQL ---
-5
-  com/microsoft/sqlserver/jdbc/SQLServerDriver : 11
-  net/sourceforge/jtds/jdbc/Driver : 1
-  ir/atiran/vizitor/sqldirect/VisitorRepository : 6
-  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 104
-  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 3
-  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 11
-  ir/atiran/vizitor/sqldirect/DirectSql : 43
-  ir/atiran/vizitor/sqldirect/SecureDbStore : 2
-  ir/atiran/vizitor/sqldirect/VisitRepository : 6
-  ir/atiran/vizitor/ui/screens/VisitScreen : 90
-  ir/atiran/vizitor/sqldirect/VisitViewModel : 18
-### Vizitor-2.16.0-direct-debug.apk
-حجم: 52805217 بایت
-
---- مشخصات نسخه و پکیج (aapt2) ---
-package: name='ir.atiran.vizitor.debug' versionCode='21812' versionName='2.16.0-direct-debug' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='ir.atiran.vizitor.debug' versionCode='21813' versionName='2.17.0-direct-debug' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 targetSdkVersion:'35'
 application-label:'آتیران ویزیتور'
 native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
@@ -84,14 +41,14 @@ Verified using v4 scheme (APK Signature Scheme v4): false
 Verified for SourceStamp: false
 Number of signers: 1
 V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
-V2 Signer: certificate SHA-256 digest: c7977703d09134c8d28a8131ac06b6950b6a34eef0ebfd2244ffbd947f240684
-V2 Signer: certificate SHA-1 digest: 5c5cc0c4e2503d41d19a29052882f19dd7af5c8a
-V2 Signer: certificate MD5 digest: 7a525cfc13c71a638fca4b4f10a43527
+V2 Signer: certificate SHA-256 digest: d1b9f50d6d6c356c2056fe07c7adf0284750b07c8022672533bc88970ecf46c6
+V2 Signer: certificate SHA-1 digest: 0be4caa2a8695f14f4a16768f1f1743f092d2bcf
+V2 Signer: certificate MD5 digest: 73cd95d6416ecb123358ed5fde63f64e
 V2 Signer: key algorithm: RSA
 V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: d7665e48dccf52f229ff7b1b0310ae8b41a8a9d6f8dbe7e1f359d863c53c3715
-V2 Signer: public key SHA-1 digest: 0fd999d19e1cead588c07f00a7c331a36c5d1d47
-V2 Signer: public key MD5 digest: ee2a45c9bd3bec09935403dec02fdf9f
+V2 Signer: public key SHA-256 digest: b900f1340a90b888b0855ed4d42da3d2b0ad5c63e582c495aaa160756d90cd40
+V2 Signer: public key SHA-1 digest: 4b9be09e5d1c916ac6b835cae9868b31c88a1798
+V2 Signer: public key MD5 digest: 7861648c7cfaebe25a94722bef5c5f16
 
 --- تعداد dex و حضور درایورهای SQL ---
 15
@@ -106,12 +63,12 @@ V2 Signer: public key MD5 digest: ee2a45c9bd3bec09935403dec02fdf9f
   ir/atiran/vizitor/sqldirect/VisitRepository : 7
   ir/atiran/vizitor/ui/screens/VisitScreen : 92
   ir/atiran/vizitor/sqldirect/VisitViewModel : 21
-### Vizitor-2.16.0-direct.apk
-حجم: 41797286 بایت
-vizitor-app/dist/Vizitor-2.16.0-direct.apk.sha256:ca40f68571dd2b01d5e911928fae78b108b7ec4334244e22a159b3de5e523cbc  Vizitor-2.16.0-direct.apk
+### Vizitor-2.17.0-direct.apk
+حجم: 41830054 بایت
+24ef2f4540f867d54aa8685660fbc966d1e95b8d5e4441ac2328a9685d40c02a  Vizitor-2.17.0-direct.apk
 
 --- مشخصات نسخه و پکیج (aapt2) ---
-package: name='ir.atiran.vizitor' versionCode='21812' versionName='2.16.0-direct' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='ir.atiran.vizitor' versionCode='21813' versionName='2.17.0-direct' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 targetSdkVersion:'35'
 application-label:'آتیران ویزیتور'
 native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
