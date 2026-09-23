@@ -11,27 +11,27 @@
 |---|---|
 | فایل نسخهٔ اصلی | `Vizitor-2.20.0-direct.apk` |
 | حجم | ۴۲٬۰۹۲٬۱۹۴ بایت |
-| SHA-256 | `4607cac00991239ad2da6d5a038fc2afba57fc20c811448350e66a66ffc6339b` |
+| SHA-256 | `0f461b38369e5a4a12bfef77f16f81756dab9af823f9e6fbccf4637e4ef5d6b3` |
 | فایل نسخهٔ آزمون | `Vizitor-2.20.0-direct-debug.apk` — ۵۳٬۳۲۹٬۵۶۴ بایت |
 | نام بسته | `ir.atiran.vizitor` |
 | versionCode / versionName | **۲۱۹۱۶** / `2.20.0-direct` |
 | تأیید امضا | `apksigner verify` → **Verifies** (V1+V2) |
 | اثر انگشت گواهی امضا | `5ccad3b6…a6ac5a` — **همان کلید نسخه‌های قبلی** ⇒ به‌روزرسانی درجا روی گوشی‌های موجود |
-| کامیت بیلد | `c3ab80c` |
-| اجرای CI | `35833002762` (موفق) |
-| زمان بیلد | ۲۰۲۶-۰۹-۲۳ ۰۷:۴۸:۴۸ UTC |
+| کامیت بیلد | `8ef2898` |
+| اجرای CI | `35833833342` (موفق) |
+| زمان بیلد | ۲۰۲۶-۰۹-۲۳ ۰۷:۵۷:۵۸ UTC |
 
 ### بازرسی DEX نسخهٔ منتشرشده (روی همان فایل ریلیز)
 
 | نشانگر | تعداد |
 |---|---|
-| `ir.atiran.vizitor.sqldirect.MaSqlEngine` (موتور اتصال دقیق) | ۵۰ |
-| `ir.atiran.vizitor.sqldirect.MaMapping` (نگاشت بخش‌ها) | ۱۹ |
+| `ir.atiran.vizitor.sqldirect.MaSqlEngine` (موتور اتصال دقیق) | ۲۹ |
+| `ir.atiran.vizitor.sqldirect.MaMapping` (نگاشت بخش‌ها) | ۵ |
 | `ir.atiran.vizitor.sqldirect.MaSectionStore` | ۴ |
-| `ir.atiran.vizitor.ui.screens.manager.MaManagerScreen` | ۳۷۴ |
+| `ir.atiran.vizitor.ui.screens.manager.MaManagerScreen` | ۱۷۶ |
 | `net/sourceforge/jtds/jdbc/Driver` | ۱ |
 | `com/microsoft/sqlserver/jdbc/SQLServerDriver` | ۱۱ |
-| رشتهٔ «گزارش مدیریت» / «اتصال جداول» / «عیب‌یابی اتصال» | ۳ / ۶ / ۴ |
+| رشته‌های فارسی بخش تازه («گزارش مدیریت»، «اتصال جداول»، «عیب‌یابی اتصال»، «برترین‌ها»، «فقط-خواندنی»، «لمس برای انتخاب جدول») | ۳ / ۶ / ۴ / ۲ / ۲ / ۱ |
 
 ## ۲) مسیر دانلود
 
