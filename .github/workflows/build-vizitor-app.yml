@@ -502,6 +502,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -x
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           for i in 1 2 3; do
             ok=1
             for f in "vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk" \
@@ -519,6 +520,28 @@ jobs:
             [ "$ok" = "1" ] && { echo "همهٔ فایل‌ها ضمیمه شدند ✓"; break; }
             echo "تلاش $i ناموفق — تلاش دوباره"; sleep 5
           done
-          echo "--- وضعیت نهایی ریلیزها ---"
-          gh release view "vizitor-app-direct-$APP_VERSION" --json assets -q '.assets[].name' || true
-          gh release view "manager-reports-$APP_VERSION" --json assets -q '.assets[].name' || true
+          # فهرست نهایی دارایی‌ها را در مخزن ثبت می‌کنیم تا از بیرون قابل راستی‌آزمایی باشد
+          {
+            echo "فهرست دارایی‌های ریلیزها — نسخه $APP_VERSION"
+            echo "تاریخ: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo
+            echo "## ریلیز آتیران ویزیتور (vizitor-app-direct-$APP_VERSION)"
+            gh release view "vizitor-app-direct-$APP_VERSION" --json assets \
+              -q '.assets[] | "  \(.name) — \(.size) بایت"' || echo "  (خوانده نشد)"
+            echo
+            echo "## ریلیز گزارشات مدیر (manager-reports-$APP_VERSION)"
+            gh release view "manager-reports-$APP_VERSION" --json assets \
+              -q '.assets[] | "  \(.name) — \(.size) بایت"' || echo "  (خوانده نشد)"
+          } > vizitor-app/release-assets.txt
+          cat vizitor-app/release-assets.txt
+          git config user.name "vizitor-ci"
+          git config user.email "ci@vizitor.local"
+          git add -f vizitor-app/release-assets.txt
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}" || { sleep 4; continue; }
+            git reset --soft FETCH_HEAD || true
+            git diff --cached --quiet && { echo "فهرست دارایی‌ها از قبل ثبت شده بود"; break; }
+            git commit -q -m "chore(ci): فهرست دارایی‌های ریلیز $APP_VERSION [skip ci]" || true
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then echo "فهرست دارایی‌ها در مخزن ثبت شد ✓"; break; fi
+            sleep 4
+          done
