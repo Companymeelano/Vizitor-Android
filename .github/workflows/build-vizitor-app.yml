@@ -189,9 +189,17 @@ jobs:
                             "ir/atiran/vizitor/sqldirect/SqlDiagnostics" "ir/atiran/vizitor/sqldirect/SqlConnectionManager" \
                             "ir/atiran/vizitor/sqldirect/DirectSql" "ir/atiran/vizitor/sqldirect/SecureDbStore" \
                             "ir/atiran/vizitor/sqldirect/VisitRepository" "ir/atiran/vizitor/ui/screens/VisitScreen" \
-                            "ir/atiran/vizitor/sqldirect/VisitViewModel"; do
+                            "ir/atiran/vizitor/sqldirect/VisitViewModel" \
+                            "ir/atiran/vizitor/sqldirect/MaSqlEngine" "ir/atiran/vizitor/sqldirect/MaMapping" \
+                            "ir/atiran/vizitor/sqldirect/MaSectionStore" "ir/atiran/vizitor/ui/screens/manager/MaManagerScreen"; do
                 n=$(cat /tmp/dexcheck/*.dex 2>/dev/null | strings | grep -c "$needle")
                 echo "  $needle : $n"
+              done
+              echo ""
+              echo "--- رشته‌های فارسی بخش «گزارش مدیریت» در DEX (v2.20.0) ---"
+              for fa in "گزارش مدیریت" "اتصال جداول" "عیب‌یابی اتصال" "برترین‌ها" "فقط-خواندنی" "لمس برای انتخاب جدول"; do
+                n=$(cat /tmp/dexcheck/*.dex 2>/dev/null | grep -ac "$fa")
+                echo "  $fa : $n"
               done
             done
           } > "$R"
@@ -281,7 +289,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: vizitor-app-direct-${{ env.APP_VERSION }}
-          name: "آتیران ویزیتور — نسخه ${{ env.APP_VERSION }} (صفحهٔ اتصال ویزیتور و ارسال فاکتور دقیقاً به سبک گزارش طلایی مرجع) با اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
+          name: "آتیران ویزیتور — نسخه ${{ env.APP_VERSION }} (بخش «گزارش مدیریت» به سبک M•REPORT با اتصال کاملاً دقیق چهارحالته) + اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
           body: |
             برنامهٔ اندروید **آتیران ویزیتور** با اتصال **مستقیم** به SQL Server روی پورت
             **۱۴۳۳** — بدون IIS و بدون API میانی، هماهنگ با نصب‌کنندهٔ ویندوز.
