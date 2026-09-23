@@ -1,3 +1,3 @@
-2fefeda44af8881524d768f34b59399837ebc88ec7df508eba3d6225e03c8409  Vizitor-2.21.0-direct-debug.apk
-766b8c5122a58cb3b72f3c459633fb6f6fb474c22798c20a3f2ec40317e893d5  Vizitor-2.21.0-direct.apk
-41dc8d9af8b5afa970003146ca2865a9bd9e80df093d84fbe8ec2c1541ef91b4  MReport-2.21.0-direct.apk
+6109e14ab5f24e9de9e7bd3540cb2de8c5a4e1b630c89b1df3c925d0dd901110  Vizitor-2.21.0-direct-debug.apk
+89c377e4821b73dd8f8c82155f7e58bace502e6ea34113e193114ef84c4ea2ea  Vizitor-2.21.0-direct.apk
+248ffda5b9402b6c03c459a104c3bb1c0897ffceee253f6841842ad219e86cee  MReport-2.21.0-direct.apk
