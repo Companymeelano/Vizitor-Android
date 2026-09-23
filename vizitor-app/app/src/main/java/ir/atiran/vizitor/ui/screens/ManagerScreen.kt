@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Receipt
@@ -81,6 +82,7 @@ import ir.atiran.vizitor.ui.components.KpiCard
 import ir.atiran.vizitor.ui.components.ReportRow
 import ir.atiran.vizitor.ui.components.ShimmerGoldText
 import ir.atiran.vizitor.ui.manager.ManagerAnalytics
+import ir.atiran.vizitor.ui.components.MaGoldCta
 import ir.atiran.vizitor.ui.theme.DangerRed
 import ir.atiran.vizitor.ui.theme.Gold
 import ir.atiran.vizitor.ui.theme.NeonGreen
@@ -97,6 +99,8 @@ fun ManagerScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onLogout: () -> Unit,
+    /** v2.20.0 — ورود به «گزارش مدیریت» (اتصال دقیق چهارحالته + نگاشت جداول سرور) */
+    onOpenManagerStudio: () -> Unit = {},
 ) {
     val invoices by viewModel.invoices.collectAsState()
     val serverInvoices by viewModel.serverInvoices.collectAsState()
@@ -549,6 +553,17 @@ fun ManagerScreen(
                     }
                 }
             }
+        }
+
+        // ═════════════════ v2.20.0: «گزارش مدیریت» — اتصال دقیق به سرور ═════════════════
+        item {
+            MaGoldCta(
+                title = "گزارش مدیریت (M•REPORT)",
+                subtitle = "اتصال دقیق چهارحالته + نگاشت جدول‌های سرور + صفحه‌بندی و جست‌وجوی زنده",
+                icon = Icons.Filled.Insights,
+                badge = "جدید",
+                onClick = onOpenManagerStudio,
+            )
         }
 
         // ═════════════════ دسترسی سریع مدیر (کاشی‌های ابزار) ═════════════════

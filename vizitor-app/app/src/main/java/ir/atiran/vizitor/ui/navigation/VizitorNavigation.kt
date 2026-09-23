@@ -112,6 +112,7 @@ import ir.atiran.vizitor.ui.screens.DashboardScreen
 import ir.atiran.vizitor.ui.screens.DirectSqlScreen
 import ir.atiran.vizitor.ui.screens.MaConnectScreen
 import ir.atiran.vizitor.ui.screens.ManagerScreen
+import ir.atiran.vizitor.ui.screens.manager.MaManagerScreen
 import ir.atiran.vizitor.ui.screens.ReportsScreen
 import ir.atiran.vizitor.ui.screens.ScannerScreen
 import ir.atiran.vizitor.ui.screens.SettingsScreen
@@ -145,6 +146,8 @@ object Routes {
     const val WELCOME = "welcome"
     /** پنل مدیریت — فقط با نام کاربری و رمز شخصی مدیر در آتیران (v2.16.0) */
     const val MANAGER = "manager"
+    /** «گزارش مدیریت» M•REPORT — اتصال دقیق + نگاشت جداول سرور (v2.20.0) */
+    const val MANAGER_STUDIO = "manager-studio"
     /** «اطلاع‌رسانی اولیه به ویزیتور» — پیش از شروع کار (v2.18.0) */
     const val BRIEFING = "briefing"
     /** مرکز «همهٔ فعالیت‌های ویزیتور» — منوی سه‌بعدی کارها (v2.18.0) */
@@ -440,6 +443,7 @@ fun VizitorRoot(
             // ── پنل مدیریت (نمودارها و جدول‌های گزارش کامل) — v2.16.0 ──
             composable(Routes.MANAGER) {
                 ManagerScreen(
+                    onOpenManagerStudio = { navController.navigate(Routes.MANAGER_STUDIO) },
                     viewModel = viewModel,
                     onBack = {
                         if (navController.previousBackStackEntry != null) navController.popBackStack()
@@ -453,6 +457,15 @@ fun VizitorRoot(
                             launchSingleTop = true
                         }
                     },
+                )
+            }
+            // ── «گزارش مدیریت» (M•REPORT) — اتصال دقیق چهارحالته + گزارش‌های واقعی سرور (v2.20.0) ──
+            composable(Routes.MANAGER_STUDIO) {
+                MaManagerScreen(
+                    onBack = {
+                        if (navController.previousBackStackEntry != null) navController.popBackStack()
+                        else navController.navigate(Routes.DASHBOARD)
+                    }
                 )
             }
             composable(Routes.SETTINGS) {

@@ -38,8 +38,8 @@ android {
         //           پالت تازه (گزارش طلایی/شامپاین روشن)، کارت‌های فلزی، کاشی‌های شاخص،
         //           نمودار ستونی استوانه‌ای با بازتاب، نمودار روند دوسری، حلقهٔ سه‌بعدی
         //           درخشان، جدول «نبض کسب‌وکار»، کاشی‌های ابزار و فوتر برند MEELANO
-        versionCode = 21815
-        versionName = "2.19.0-direct"
+        versionCode = 21816
+        versionName = "2.20.0-direct"
         vectorDrawables { useSupportLibrary = true }
     }
 
