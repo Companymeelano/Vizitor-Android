@@ -22,6 +22,7 @@
  */
 package ir.atiran.vizitor.ui.screens.manager
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -90,6 +91,9 @@ import ir.atiran.vizitor.sqldirect.DbSettings
 import ir.atiran.vizitor.sqldirect.MaSection
 import ir.atiran.vizitor.sqldirect.MaSectionMap
 import ir.atiran.vizitor.sqldirect.MaSectionStore
+import ir.atiran.vizitor.sqldirect.MaServerProfile
+import ir.atiran.vizitor.sqldirect.MeelanoDataSource
+import ir.atiran.vizitor.sqldirect.SqlConnectionManager
 import ir.atiran.vizitor.sqldirect.MaMapping
 import ir.atiran.vizitor.sqldirect.MaSqlEngine
 import ir.atiran.vizitor.sqldirect.MaTable
@@ -150,25 +154,23 @@ private class MaStudioState {
     var msg by mutableStateOf<String?>(null)
     var msgOk by mutableStateOf(true)
 
-    // ── تنظیم اتصال (دو نشانی، مثل نسخهٔ مرجع: داخلی/اینترنت)
-    var hostExternal by mutableStateOf("")
-    var hostLocal by mutableStateOf("")
-    var useExternal by mutableStateOf(false)
-    var port by mutableStateOf("1433")
-    var database by mutableStateOf("")
-    var user by mutableStateOf("")
-    var pass by mutableStateOf("")
-    var remember by mutableStateOf(true)
-    var showPass by mutableStateOf(false)
-    var useTls by mutableStateOf(true)
-
-    // ── وضعیت اتصال
+    // ── اتصال هوشمند (مشخصات سرور در برنامه نمایش داده نمی‌شود)
     var connected by mutableStateOf(false)
+    var netLabel by mutableStateOf("در حال بررسی شبکه…")
+    var channelLabel by mutableStateOf("—")
     var modeLabel by mutableStateOf("—")
-    var targetLabel by mutableStateOf("—")
+    var targetLabel by mutableStateOf("سرور آتیران")
     var activeDb by mutableStateOf("")
     var serverName by mutableStateOf("")
     var serverVersion by mutableStateOf("")
+
+    // ── ورود کاربر (همان حساب برنامهٔ آتیران)
+    var erpUser by mutableStateOf("")
+    var erpPass by mutableStateOf("")
+    var rememberErp by mutableStateOf(true)
+    var showErpPass by mutableStateOf(false)
+    var loginBusy by mutableStateOf(false)
+    var welcome by mutableStateOf("")
 
     // ── داده
     var overview by mutableStateOf<MaOverview?>(null)
@@ -218,43 +220,30 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
 
     // ── کارهای شبکه‌ای: توابع سطح‌فایل (suspend) — وضعیت از st خوانده/نوشته می‌شود
 
-    // ── نخستین بار: خواندن تنظیمات + نگاشت ذخیره‌شده روی همین گوشی
+    // ── نخستین بار: نگاشت ذخیره‌شده + وضعیت اتصال/ورود (بدون هیچ مشخصات سرور)
     LaunchedEffect(Unit) {
         MaSectionStore.init(ctx)
         st.map = MaSectionStore.load()
-        val saved = SecureDbStore.load()
-        val (he, hl, useExt) = SecureDbStore.loadAddresses()
-        if (saved != null) {
-            st.hostExternal = if (he.isNotBlank()) he else saved.host
-            st.hostLocal = hl
-            st.useExternal = useExt
-            st.port = saved.port.toString()
-            st.database = saved.database
-            st.user = saved.username
-            st.pass = saved.password
-            st.useTls = saved.useEncryption
-        } else {
-            val (l, n, useNet) = MaSectionStore.loadMode()
-            st.hostLocal = l
-            st.hostExternal = n
-            st.useExternal = useNet
+        st.netLabel = MaServerProfile.netKind(ctx).label
+        st.connected = MaSqlEngine.isConnected
+        st.modeLabel = if (st.connected) "اتصال خودکار" else "—"
+        st.targetLabel = "سرور آتیران"
+        val erp = SecureDbStore.loadErp()
+        if (erp != null && erp.username.isNotBlank()) {
+            st.erpUser = erp.username
+            st.erpPass = erp.password
+            st.rememberErp = erp.remember
         }
-        if (exclusive) {
-            // پیش‌فرض‌های همان برنامهٔ مرجع (app-debug-40) تا اتصال یک‌کلیکی شود
-            if (st.hostExternal.isBlank()) st.hostExternal = "37.143.147.19"
-            if (st.hostLocal.isBlank()) st.hostLocal = "192.168.1.10"
-            if (st.port.isBlank() || st.port == "0") st.port = "1433"
-            if (st.database.isBlank()) st.database = "Atiran2"
-            if (st.user.isBlank()) st.user = "AdminAn"
-        }
+        SecureDbStore.loadVisitor()?.let { v -> st.welcome = v.name }
         if (MaSqlEngine.isConnected) {
-            st.connected = true
-            st.modeLabel = MaSqlEngine.modeLabel
-            st.targetLabel = MaSqlEngine.targetLabel
             studioOverview(st)
-        } else if (exclusive) {
-            // نسخهٔ انحصاری صفحهٔ دیگری ندارد: مستقیم روی «تنظیم اتصال» باز می‌شود
-            st.tab = "conn"
+        } else {
+            // اتصال خودکار: کاربر هیچ چیزی وارد نمی‌کند و هیچ نشانی‌ای نمی‌بیند
+            studioConnectSmart(ctx, st)
+            if (exclusive) {
+                // نسخهٔ انحصاری صفحهٔ دیگری ندارد: مستقیم روی «اتصال و ورود» باز می‌شود
+                st.tab = "conn"
+            }
         }
     }
 
@@ -292,7 +281,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
             title = if (exclusive) "گزارشات مدیر" else "گزارش مدیریت",
             eyebrow = "M•REPORT — اتاق فرمان مدیر",
             onBack = if (exclusive) hubBack else onBack,
-            chip = if (st.connected) "متصل — ${st.modeLabel}" else "وصل نشده — از «اتصال جداول»",
+            chip = if (st.connected) "متصل ✓" else "وصل نشده — «اتصال و ورود»",
             chipColor = if (st.connected) MaGreen else MaAmber,
         )
         MaNavStrip(
@@ -320,115 +309,34 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
             contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 44.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // ═══════════════ برگهٔ «تنظیم اتصال» ═══════════════
+            // ═══════════════ برگهٔ «اتصال و ورود» (هوشمند و مخفی) ═══════════════
             if (st.tab == "conn") {
                 item {
                     MaHeroTitle(
-                        title = "تنظیم اتصال سرور",
-                        subtitle = "دو نشانی مرجع (شبکهٔ داخلی / اینترنت) + کاوش چهارحالته " +
-                            "Microsoft و jTDS — همان موتور اتصال M•REPORT",
+                        title = "اتصال و ورود",
+                        subtitle = "همه‌چیز خودکار است — فقط نام کاربری و کلمهٔ عبور خودتان را وارد کنید.",
                     )
                 }
                 item {
-                    Column(Modifier.fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                if (st.useExternal) "نشانی اینترنت (بیرون از شبکهٔ اداره)" else "نشانی شبکهٔ داخلی",
-                                color = p.gold,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Switch(checked = st.useExternal, onCheckedChange = { st.useExternal = it })
-                        }
-                        Text(
-                            "با روشن‌بودن کلید، از نشانی اینترنتی سرور استفاده می‌شود؛ " +
-                                "خاموش باشد، نشانی داخلی شبکهٔ اداره.",
-                            color = p.textSecondary,
-                            fontSize = 11.sp,
-                        )
-                    }
-                }
-                item {
-                    MaField(
-                        label = "نشانی سرور (اینترنت)",
-                        value = st.hostExternal,
-                        onChange = { st.hostExternal = it },
-                        hint = "مثلاً 37.143.147.19 یا SERVER\\INSTANCE"
+                    MaDocCard(
+                        title = "اتصال هوشمند",
+                        subtitle = st.msg ?: "سرور گزارش‌ها خودکار پیدا می‌شود",
+                        rows = listOf(
+                            "شبکهٔ فعلی" to st.netLabel,
+                            "وضعیت" to if (st.connected) "متصل ✓" else "وصل نشده",
+                            "مسیر اتصال" to st.channelLabel,
+                            "کاربر" to st.welcome.ifBlank { "—" },
+                        ),
+                        note = "مشخصات سرور برای امنیت نمایش داده نمی‌شود و نیازی هم به وارد کردن آن نیست.",
                     )
-                }
-                item {
-                    MaField(
-                        label = "نشانی سرور (شبکهٔ داخلی)",
-                        value = st.hostLocal,
-                        onChange = { st.hostLocal = it },
-                        hint = "مثلاً 192.168.1.10",
-                        keyboard = KeyboardType.Number
-                    )
-                }
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            MaField("پورت", st.port, { st.port = it }, "1433", KeyboardType.Number)
-                        }
-                        Box(Modifier.weight(1.6f)) {
-                            MaField("نام دیتابیس", st.database, { st.database = it }, "مثلاً Atiran2")
-                        }
-                    }
-                }
-                item {
-                    MaField("نام کاربری", st.user, { st.user = it }, "کاربر SQL Server (نه ویندوز)")
-                }
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.weight(1f)) {
-                            MaField(
-                                label = "رمز عبور",
-                                value = st.pass,
-                                onChange = { st.pass = it },
-                                hint = "••••••••",
-                                keyboard = KeyboardType.Password,
-                                hidden = !st.showPass,
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        MaOrbButton(
-                            icon = if (st.showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            onClick = { st.showPass = !st.showPass },
-                            size = 40.dp,
-                            contentDescription = "نمایش رمز",
-                        )
-                    }
-                }
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "ذخیرهٔ رمز روی همین گوشی (رمزنگاری‌شده با کلید سخت‌افزاری)",
-                            color = p.textSecondary,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(checked = st.remember, onCheckedChange = { st.remember = it })
-                    }
-                }
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "تلاش اول با رمزنگاری TLS (اگر سرور پشتیبانی نکند، خودکار حالت بدون TLS و jTDS)",
-                            color = p.textSecondary,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Switch(checked = st.useTls, onCheckedChange = { st.useTls = it })
-                    }
                 }
                 item {
                     MaGoldCta(
-                        title = if (st.busy) "در حال اتصال…" else "اتصال به سرور",
-                        subtitle = "امتحان چهار حالت: Microsoft+TLS، Microsoft، jTDS، jTDS+TLS",
+                        title = if (st.busy) "در حال اتصال…" else "اتصال خودکار به سرور",
+                        subtitle = "با وای‌فای اداره مسیر داخلی و در غیر این صورت مسیر اینترنت انتخاب می‌شود",
                         icon = Icons.Filled.Cloud,
                         enabled = !st.busy,
-                        onClick = { scope.launch { studioConnect(st) } },
+                        onClick = { scope.launch { studioConnectSmart(ctx, st) } },
                     )
                 }
                 item {
@@ -438,9 +346,9 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                                 title = "آزمایش اتصال",
                                 value = if (st.connected) "سالم" else "—",
                                 icon = Icons.Filled.CheckCircle,
-                                subtitle = st.activeDb.ifBlank { "دیتابیس فعال" },
+                                subtitle = "بررسی سریع سرور",
                                 tint = MaGreen,
-                                onClick = { scope.launch { studioTest(st) } }
+                                onClick = { scope.launch { studioTest(ctx, st) } }
                             )
                         }
                         Box(Modifier.weight(1f)) {
@@ -448,26 +356,70 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                                 title = "عیب‌یابی اتصال",
                                 value = "گام‌به‌گام",
                                 icon = Icons.Filled.BugReport,
-                                subtitle = "TCP · TDS · TLS · ورود",
+                                subtitle = "بدون نمایش اطلاعات محرمانه",
                                 tint = MaAmber,
-                                onClick = { scope.launch { studioDiagnose(st) } }
+                                onClick = { scope.launch { studioDiagnose(ctx, st) } }
                             )
                         }
                     }
                 }
+                item { MaSectionHeader(title = "ورود کاربر آتیران") }
                 item {
-                    MaDocCard(
-                        title = "خلاصهٔ اتصال",
-                        subtitle = if (st.connected) "متصل — آخرین دریافت: ${st.targetLabel}" else "وصل نشده",
-                        rows = listOf(
-                            "حالت برنده" to st.modeLabel,
-                            "هدف اتصال" to st.targetLabel,
-                            "دیتابیس فعال" to st.activeDb.ifBlank { "—" },
-                            "نام سرور" to st.serverName.ifBlank { "—" },
-                            "نسخهٔ سرور" to st.serverVersion.ifBlank { "—" },
-                        ),
-                        note = READ_ONLY_NOTE,
+                    MaField(
+                        label = "نام کاربری",
+                        value = st.erpUser,
+                        onChange = { st.erpUser = it },
+                        hint = "همان نام کاربری برنامهٔ آتیران",
                     )
+                }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) {
+                            MaField(
+                                label = "کلمهٔ عبور",
+                                value = st.erpPass,
+                                onChange = { st.erpPass = it },
+                                hint = "••••••••",
+                                keyboard = KeyboardType.Password,
+                                hidden = !st.showErpPass,
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        MaOrbButton(
+                            icon = if (st.showErpPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            onClick = { st.showErpPass = !st.showErpPass },
+                            size = 40.dp,
+                            contentDescription = "نمایش رمز",
+                        )
+                    }
+                }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "به‌خاطر سپردن روی همین گوشی (رمزنگاری‌شده با کلید سخت‌افزاری)",
+                            color = p.textSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(checked = st.rememberErp, onCheckedChange = { st.rememberErp = it })
+                    }
+                }
+                item {
+                    MaGoldCta(
+                        title = if (st.loginBusy) "در حال ورود…" else "ورود و همگام‌سازی",
+                        subtitle = "ورود با حساب خودتان در سامانه و به‌روزرسانی گزارش‌ها از سرور",
+                        icon = Icons.Filled.Person,
+                        enabled = !st.loginBusy && !st.busy,
+                        onClick = { scope.launch { studioErpLogin(ctx, st) } },
+                    )
+                }
+                if (st.welcome.isNotBlank()) {
+                    item {
+                        Lux3DNote(
+                            "خوش آمدید ${st.welcome} — گزارش‌ها با حساب شما به‌روزرسانی می‌شود.",
+                            tone = MaGreen,
+                        )
+                    }
                 }
                 item { Lux3DNote(READ_ONLY_NOTE) }
             }
@@ -1065,11 +1017,10 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
             ),
             onPick = { key ->
                 val i = key.removePrefix("d").toIntOrNull()
-                val port = i?.let { steps.getOrNull(it)?.suggestedPort }
-                if (port != null) {
-                    st.port = port.toString()
+                val hasSuggest = i?.let { steps.getOrNull(it)?.suggestedPort } != null
+                if (hasSuggest) {
                     st.msgOk = true
-                    st.msg = "پورت $port تنظیم شد — دوباره «اتصال به سرور» را بزنید."
+                    st.msg = "مسیر جایگزین پیدا شد — دوباره «اتصال خودکار به سرور» را بزنید."
                     st.diag = null
                 }
             },
@@ -1097,75 +1048,134 @@ private suspend fun studioOverview(st: MaStudioState) {
 }
 
 /** اتصال چهارحالته به سرور + خواندن مشخصات سرور و سپس فهرست جدول‌ها. */
-private suspend fun studioConnect(st: MaStudioState) {
-    val cfg = buildCfg(st)
-    if (cfg == null) {
-        st.msgOk = false
-        st.msg = "آدرس سرور، نام دیتابیس و نام کاربری را کامل کنید."
-        return
-    }
+private suspend fun studioConnectSmart(ctx: Context, st: MaStudioState) {
     st.busy = true
-    val r = MaSqlEngine.connect(cfg)
+    st.netLabel = MaServerProfile.netKind(ctx).label
+    val r = MaServerProfile.connectSmart(ctx)
     st.connected = r.ok
+    st.channelLabel = r.channelLabel
+    st.modeLabel = if (r.ok) "اتصال خودکار" else "—"
+    st.targetLabel = "سرور آتیران"
+    st.msgOk = r.ok
+    st.msg = MaServerProfile.safe(r.message)
     if (r.ok) {
-        st.modeLabel = r.modeLabel
-        st.targetLabel = MaSqlEngine.targetLabel
-        SecureDbStore.save(if (st.remember) cfg else cfg.copy(password = ""))
-        SecureDbStore.saveAddresses(st.hostExternal, st.hostLocal, st.useExternal)
-        MaSectionStore.saveMode(st.hostLocal, st.hostExternal, st.useExternal)
-        val t = runCatching { MaSqlEngine.test(cfg) }.getOrNull()
-        st.activeDb = t?.first ?: ""
-        st.serverName = t?.second ?: ""
-        st.serverVersion = (t?.third ?: "").lineSequence().firstOrNull()?.trim() ?: ""
-        st.msgOk = true
-        st.msg = "اتصال برقرار شد — ${r.modeLabel} • ${MaSqlEngine.targetLabel}"
+        // مسیر داده‌های سامانه (ورود کاربر) هم روی همان تنظیمات مخفی فعال می‌شود
+        runCatching { MaServerProfile.ensureSqlConnection(ctx) }
+        val t = runCatching { MaSqlEngine.test(MaServerProfile.activeSettings(ctx)) }.getOrNull()
+        st.activeDb = MaServerProfile.safe(t?.first)
+        st.serverName = MaServerProfile.safe(t?.second)
+        st.serverVersion = MaServerProfile.safe((t?.third ?: "").lineSequence().firstOrNull()?.trim())
         st.busy = false
         studioOverview(st)
+        st.msg = "اتصال برقرار شد ✓ — گزارش‌ها از سرور خوانده شد"
     } else {
-        st.msgOk = false
-        st.msg = r.message
         st.busy = false
     }
 }
 
-/** آزمایش سبک اتصال (نام دیتابیس فعال و نام/نسخهٔ سرور). */
-private suspend fun studioTest(st: MaStudioState) {
-    val cfg = buildCfg(st) ?: run {
+/**
+ * ورود با حساب خودِ کاربر (همان نام کاربری و کلمهٔ عبور برنامهٔ آتیران) و سپس
+ * همگام‌سازی گزارش‌ها از سرور. هیچ مشخصاتی از سرور نمایش داده نمی‌شود.
+ */
+private suspend fun studioErpLogin(ctx: Context, st: MaStudioState) {
+    if (st.erpUser.isBlank() || st.erpPass.isBlank()) {
         st.msgOk = false
-        st.msg = "آدرس سرور، نام دیتابیس و نام کاربری را کامل کنید."
+        st.msg = "نام کاربری و کلمهٔ عبور خود را وارد کنید."
         return
     }
-    st.busy = true
-    runCatching { MaSqlEngine.test(cfg) }
-        .onSuccess { t ->
-            st.activeDb = t.first
-            st.serverName = t.second
-            st.serverVersion = t.third.lineSequence().firstOrNull()?.trim() ?: ""
-            st.connected = true
-            st.modeLabel = MaSqlEngine.modeLabel
-            st.targetLabel = MaSqlEngine.targetLabel
-            st.msgOk = true
-            st.msg = "دیتابیس فعال: ${t.first} • سرور: ${t.second}"
+    st.loginBusy = true
+    st.msgOk = true
+    st.msg = "در حال ورود به سامانه…"
+
+    if (!MaSqlEngine.isConnected) {
+        val r = MaServerProfile.connectSmart(ctx)
+        st.connected = r.ok
+        st.channelLabel = r.channelLabel
+        if (!r.ok) {
+            st.loginBusy = false
+            st.msgOk = false
+            st.msg = MaServerProfile.safe(r.message)
+            return
         }
-        .onFailure { st.msgOk = false; st.msg = MaSqlEngine.friendly(it) }
+    }
+    if (!MaServerProfile.ensureSqlConnection(ctx)) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = "اتصال به سرور برقرار نشد — شبکه را بررسی کنید."
+        return
+    }
+
+    val data = MeelanoDataSource(SqlConnectionManager)
+    val row = runCatching { data.login(st.erpUser.trim(), st.erpPass) }.getOrNull()
+    if (row == null) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = "نام کاربری یا کلمهٔ عبور درست نیست ❌ — همان حساب برنامهٔ آتیران را وارد کنید."
+        return
+    }
+    if (!row.active) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = "حساب «${row.username}» در سامانه غیرفعال است."
+        return
+    }
+    if (row.locked) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = "حساب «${row.username}» قفل است 🔒 — از سامانه بازش کنید."
+        return
+    }
+
+    val identity = runCatching { data.visitorIdentity(row.userId, row.companyId) }.getOrNull()
+    SecureDbStore.saveErp(row.username, st.erpPass, st.rememberErp)
+    st.erpUser = row.username
+    st.welcome = row.fullName.ifBlank { row.username }
+    if (identity != null && identity.visitorRdf != null) {
+        SecureDbStore.saveVisitor(
+            userId = row.userId,
+            companyId = row.companyId,
+            visitorRdf = identity.visitorRdf,
+            name = identity.displayName.ifBlank { st.welcome },
+        )
+    }
+    st.loginBusy = false
+    st.msgOk = true
+    st.msg = "ورود موفق ✓ ${st.welcome} — گزارش‌ها به‌روز شد"
+    studioOverview(st)
+}
+
+
+/** بررسی سریع اتصال و خواندن نسخهٔ سرور — بدون نمایش اطلاعات محرمانه. */
+private suspend fun studioTest(ctx: Context, st: MaStudioState) {
+    st.busy = true
+    runCatching { MaSqlEngine.test(MaServerProfile.activeSettings(ctx)) }
+        .onSuccess { t ->
+            st.activeDb = MaServerProfile.safe(t.first)
+            st.serverName = MaServerProfile.safe(t.second)
+            st.serverVersion = MaServerProfile.safe(t.third.lineSequence().firstOrNull()?.trim())
+            st.connected = true
+            st.modeLabel = "اتصال خودکار"
+            st.targetLabel = "سرور آتیران"
+            st.msgOk = true
+            st.msg = "ارتباط سالم است ✓"
+        }
+        .onFailure { st.msgOk = false; st.msg = MaServerProfile.safe(MaSqlEngine.friendly(it)) }
     st.busy = false
 }
 
-/** عیب‌یابی گام‌به‌گام اتصال. */
-private suspend fun studioDiagnose(st: MaStudioState) {
-    val cfg = buildCfg(st) ?: run {
-        st.msgOk = false
-        st.msg = "آدرس سرور، نام دیتابیس و نام کاربری را کامل کنید."
-        return
-    }
+/** عیب‌یابی گام‌به‌گام؛ همهٔ متن‌ها پوشانده می‌شوند (بدون نشانی/کاربر/رمز). */
+private suspend fun studioDiagnose(ctx: Context, st: MaStudioState) {
     st.diagBusy = true
     st.msg = null
-    st.diag = runCatching { MaSqlEngine.diagnose(cfg) }
-        .getOrElse { listOf(MaDiagStep(false, "عیب‌یابی ناموفق", MaSqlEngine.friendly(it))) }
+    st.diag = runCatching { MaSqlEngine.diagnose(MaServerProfile.activeSettings(ctx)) }
+        .getOrElse {
+            listOf(MaDiagStep(false, "عیب‌یابی ناموفق", MaServerProfile.safe(MaSqlEngine.friendly(it))))
+        }
+        .let { MaServerProfile.safeSteps(it) }
     st.diagBusy = false
 }
 
-/** دریافت یک صفحه از جدول بخش انتخاب‌شده (با جست‌وجوی اختیاری). */
+
 private suspend fun studioPage(st: MaStudioState, section: MaSection, index: Int, searchText: String) {
     val ref = st.map.refOf(section) ?: run { st.page = null; return }
     val (schema, table) = MaMapping.split(ref) ?: run { st.page = null; return }
@@ -1271,22 +1281,6 @@ private suspend fun studioReport(st: MaStudioState) {
 // ═══════════════════════════ کمکی‌ها ═══════════════════════════
 
 /** ساخت تنظیمات اتصال از فیلدهای صفحه (نشانی فعال، پورت، دیتابیس، کاربر، رمز). */
-private fun buildCfg(st: MaStudioState): DbSettings? {
-    val host = if (st.useExternal) st.hostExternal.trim() else st.hostLocal.trim().ifBlank { st.hostExternal.trim() }
-    if (host.isBlank() || st.database.isBlank() || st.user.isBlank()) return null
-    val port = st.port.trim().toIntOrNull() ?: 1433
-    return DbSettings(
-        host = host,
-        port = port,
-        database = st.database.trim(),
-        username = st.user.trim(),
-        password = st.pass,
-        useEncryption = st.useTls,
-        trustServerCert = true,
-        connectTimeoutSec = 12,
-        queryTimeoutSec = 30,
-    )
-}
 
 /** آیکن هر بخش گزارش. */
 private fun sectionIcon(s: MaSection) = when (s) {

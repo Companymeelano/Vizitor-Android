@@ -181,12 +181,19 @@ object MaSectionStore {
             ?.apply()
     }
 
+    /**
+     * خواندن دو نشانی + کلید انتخاب نشانی.
+     * اگر چیزی ذخیره نشده باشد، **پروفایل مخفی سرور** (v2.23.0) برگردانده می‌شود تا
+     * کاربر هیچ‌گاه مجبور به وارد کردن نشانی نباشد و چیزی هم روی صفحه نبیند.
+     */
     fun loadMode(): Triple<String, String, Boolean> {
-        val pr = p() ?: return Triple("", "", false)
+        val pr = p()
+        val l = pr?.getString(KEY_HOST_LOCAL, "") ?: ""
+        val n = pr?.getString(KEY_HOST_NET, "") ?: ""
         return Triple(
-            pr.getString(KEY_HOST_LOCAL, "") ?: "",
-            pr.getString(KEY_HOST_NET, "") ?: "",
-            pr.getBoolean(KEY_USE_NET, false),
+            l.ifBlank { MaServerProfile.hostLocal },
+            n.ifBlank { MaServerProfile.hostExternal },
+            pr?.getBoolean(KEY_USE_NET, false) ?: false,
         )
     }
 }

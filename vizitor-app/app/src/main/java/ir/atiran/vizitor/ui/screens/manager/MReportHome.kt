@@ -71,6 +71,8 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -80,6 +82,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,10 +91,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.atiran.vizitor.sqldirect.MaMapping
+import ir.atiran.vizitor.sqldirect.MaNetKind
+import ir.atiran.vizitor.sqldirect.MaServerProfile
+import ir.atiran.vizitor.sqldirect.MeelanoDataSource
+import ir.atiran.vizitor.sqldirect.SqlConnectionManager
 import ir.atiran.vizitor.sqldirect.MaPage
 import ir.atiran.vizitor.sqldirect.MaSectionMap
 import ir.atiran.vizitor.sqldirect.MaSectionStore
@@ -111,6 +120,7 @@ import ir.atiran.vizitor.ui.components.MaHeroTitle
 import ir.atiran.vizitor.ui.components.MaMetricCard
 import ir.atiran.vizitor.ui.components.MaNavItem
 import ir.atiran.vizitor.ui.components.MaNavStrip
+import ir.atiran.vizitor.ui.components.MaOrbButton
 import ir.atiran.vizitor.ui.components.MaPulseCard
 import ir.atiran.vizitor.ui.components.MaPulseRow
 import ir.atiran.vizitor.ui.components.MaRed
@@ -144,10 +154,20 @@ private class MaHomeState {
     var sheet by mutableStateOf(false)
     var tick by mutableStateOf(0)
 
-    // ── اتصال
+    // ── اتصال هوشمند (مشخصات سرور هرگز نمایش داده نمی‌شود)
     var connected by mutableStateOf(false)
+    var netLabel by mutableStateOf("در حال بررسی شبکه…")
+    var channelLabel by mutableStateOf("—")
     var modeLabel by mutableStateOf("—")
-    var targetLabel by mutableStateOf("—")
+    var targetLabel by mutableStateOf("سرور آتیران")
+
+    // ── ورود کاربر (همان حساب برنامهٔ آتیران)
+    var erpUser by mutableStateOf("")
+    var erpPass by mutableStateOf("")
+    var rememberErp by mutableStateOf(true)
+    var showErpPass by mutableStateOf(false)
+    var loginBusy by mutableStateOf(false)
+    var welcome by mutableStateOf("")
 
     // ── نگاشت بخش‌ها
     var map by mutableStateOf(MaSectionMap())
@@ -224,8 +244,9 @@ fun MReportHome(
     val p = vizitorPalette
     val ctx = LocalContext.current
     val st = remember { MaHomeState() }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(refreshSignal, st.tick) { maHomeLoad(st) }
+    LaunchedEffect(refreshSignal, st.tick) { maHomeLoad(st, ctx) }
 
     val alerts = maAlertRows(st)
 
@@ -242,7 +263,7 @@ fun MReportHome(
             onAlert = { st.tab = "alerts" },
             alertCount = alerts.size,
             onSearch = { onOpen("data") },
-            chip = if (st.connected) "متصل — ${st.modeLabel}" else "وصل نشده",
+            chip = if (st.connected) "متصل ✓" else "در حال اتصال…",
             chipColor = if (st.connected) MaGreen else MaAmber,
         )
         MaNavStrip(
@@ -276,7 +297,12 @@ fun MReportHome(
                 "treasury" -> homeTreasury(st, onOpen)
                 "reports" -> homeReports(st, ctx)
                 "alerts" -> homeAlerts(st, alerts, onOpen)
-                else -> homeOverview(st, onOpen)
+                else -> homeOverview(
+                    st = st,
+                    onOpen = onOpen,
+                    onConnect = { scope.launch { maConnectNow(st, ctx) } },
+                    onLogin = { scope.launch { maLogin(st, ctx) } },
+                )
             }
             item { MaHomeFooter() }
         }
@@ -328,6 +354,8 @@ fun MReportHome(
 private fun LazyListScope.homeOverview(
     st: MaHomeState,
     onOpen: (String) -> Unit,
+    onConnect: () -> Unit,
+    onLogin: () -> Unit,
 ) {
     item {
         MaHeroTitle(
@@ -339,19 +367,84 @@ private fun LazyListScope.homeOverview(
         val p = vizitorPalette
         if (!st.connected) {
             MaGoldCta(
-                title = "اتصال به دیتابیس",
-                subtitle = "پیش‌فرض‌های سرور آماده است — تنظیم اتصال و وصل شدن",
+                title = if (st.busy) "در حال اتصال…" else "اتصال خودکار به سرور",
+                subtitle = "سرور گزارش‌ها خودکار پیدا می‌شود — چیزی برای وارد کردن نیست",
                 icon = Icons.Filled.Cloud,
-                onClick = { onOpen("conn") },
-                badge = "شروع",
+                onClick = onConnect,
+                badge = "خودکار",
+                enabled = !st.busy,
             )
         } else {
             MaStatStrip(
                 items = listOf(
-                    Triple("وصل", "${st.modeLabel} • ${st.targetLabel}", MaGreen),
+                    Triple("وصل", st.targetLabel, MaGreen),
+                    Triple("مسیر", st.channelLabel, p.gold),
                     Triple("جدول‌ها", (st.tableCount ?: 0L).toFaNumber(), p.gold),
                 )
             )
+        }
+    }
+    // ── ورود کاربر آتیران: تنها چیزی که کاربر وارد می‌کند (نام کاربری و رمز خودش)
+    if (st.erpUser.isBlank()) {
+        item {
+            val p = vizitorPalette
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .metalPanel()
+                    .padding(14.dp),
+            ) {
+                Text(
+                    "ورود کاربر آتیران",
+                    color = p.gold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "با همان نام کاربری و کلمهٔ عبور برنامهٔ آتیران وارد شوید تا گزارش‌ها به نام شما به‌روز شود.",
+                    color = p.textSecondary,
+                    fontSize = 11.sp,
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = st.erpUser,
+                    onValueChange = { st.erpUser = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("نام کاربری", color = p.textSecondary, fontSize = 12.sp) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = st.erpPass,
+                        onValueChange = { st.erpPass = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("کلمهٔ عبور", color = p.textSecondary, fontSize = 12.sp) },
+                        singleLine = true,
+                        visualTransformation = if (st.showErpPass) VisualTransformation.None
+                        else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    MaOrbButton(
+                        icon = if (st.showErpPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        onClick = { st.showErpPass = !st.showErpPass },
+                        size = 40.dp,
+                        contentDescription = "نمایش رمز",
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                MaGoldCta(
+                    title = if (st.loginBusy) "در حال ورود…" else "ورود و همگام‌سازی",
+                    subtitle = "ورود با حساب خودتان و به‌روزرسانی گزارش‌ها از سرور",
+                    icon = Icons.Filled.Person,
+                    enabled = !st.loginBusy && !st.busy,
+                    onClick = onLogin,
+                )
+            }
         }
     }
     item { MaPulseCard(rows = maPulseRows(st)) }
@@ -1036,7 +1129,7 @@ private fun maSmartGroups(st: MaHomeState): List<MaSmartGroup> {
                 MaSmartTile(
                     "conn",
                     "اتصال و همگام‌سازی آتیران",
-                    "به‌روزرسانی خودکار — ${st.modeLabel}",
+                    "به‌روزرسانی خودکار گزارش‌ها",
                     Icons.Filled.Cloud,
                     MaGreen,
                 ),
@@ -1111,13 +1204,29 @@ private suspend fun <T> maTry(block: suspend () -> T?): T? = runCatching { block
  * خواندن همهٔ شاخص‌های خانه از سرور — فقط SELECT/کاتالوگ سیستم.
  * هر بخش جداگانه اجرا می‌شود تا خطای یک جدول، بقیهٔ گزارش را نخواباند.
  */
-private suspend fun maHomeLoad(st: MaHomeState) {
+private suspend fun maHomeLoad(st: MaHomeState, ctx: Context) {
     st.busy = true
-    st.msg = null
     st.map = MaSectionStore.load()
+    st.netLabel = MaServerProfile.netKind(ctx).label
+    st.targetLabel = "سرور آتیران"
+    val erp = SecureDbStore.loadErp()
+    if (erp != null && erp.username.isNotBlank()) {
+        st.erpUser = erp.username
+        if (st.erpPass.isBlank()) st.erpPass = erp.password
+        st.rememberErp = erp.remember
+    }
+    SecureDbStore.loadVisitor()?.let { v -> if (v.name.isNotBlank()) st.welcome = v.name }
+
+    // ── اتصال خودکار: کاربر هیچ چیزی وارد نمی‌کند
     st.connected = MaSqlEngine.isConnected
-    st.modeLabel = MaSqlEngine.modeLabel
-    st.targetLabel = MaSqlEngine.targetLabel
+    if (!st.connected && MaServerProfile.netKind(ctx) != MaNetKind.NONE) {
+        val r = MaServerProfile.connectSmart(ctx)
+        st.connected = r.ok
+        st.channelLabel = r.channelLabel
+        st.modeLabel = if (r.ok) "اتصال خودکار" else "—"
+        st.msgOk = r.ok
+        st.msg = MaServerProfile.safe(r.message)
+    }
 
     if (!st.connected) {
         st.custCount = null
@@ -1209,6 +1318,86 @@ private suspend fun maHomeLoad(st: MaHomeState) {
     st.msgOk = st.custCount != null || st.prodCount != null || st.salesSum != null
     st.msg = "اطلاعات از سرور خوانده شد — ${st.targetLabel}"
     st.busy = false
+}
+
+/** اتصال خودکار به سرور گزارش‌ها (دکمهٔ خانه) — بدون نمایش هیچ مشخصاتی. */
+private suspend fun maConnectNow(st: MaHomeState, ctx: Context) {
+    st.busy = true
+    st.netLabel = MaServerProfile.netKind(ctx).label
+    val r = MaServerProfile.connectSmart(ctx)
+    st.connected = r.ok
+    st.channelLabel = r.channelLabel
+    st.modeLabel = if (r.ok) "اتصال خودکار" else "—"
+    st.msgOk = r.ok
+    st.msg = MaServerProfile.safe(r.message)
+    st.busy = false
+    if (r.ok) maHomeLoad(st, ctx)
+}
+
+/**
+ * ورود با حساب خودِ کاربر (همان حساب برنامهٔ آتیران) و سپس همگام‌سازی گزارش‌ها.
+ * هیچ اطلاعاتی از سرور روی صفحه نمی‌آید.
+ */
+private suspend fun maLogin(st: MaHomeState, ctx: Context) {
+    if (st.erpUser.isBlank() || st.erpPass.isBlank()) {
+        st.msgOk = false
+        st.msg = "نام کاربری و کلمهٔ عبور خود را وارد کنید."
+        return
+    }
+    st.loginBusy = true
+    st.msgOk = true
+    st.msg = "در حال ورود به سامانه…"
+
+    if (!MaSqlEngine.isConnected) {
+        val r = MaServerProfile.connectSmart(ctx)
+        st.connected = r.ok
+        st.channelLabel = r.channelLabel
+        if (!r.ok) {
+            st.loginBusy = false
+            st.msgOk = false
+            st.msg = MaServerProfile.safe(r.message)
+            return
+        }
+    }
+    if (!MaServerProfile.ensureSqlConnection(ctx)) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = "اتصال به سرور برقرار نشد — شبکه را بررسی کنید."
+        return
+    }
+
+    val data = MeelanoDataSource(SqlConnectionManager)
+    val row = runCatching { data.login(st.erpUser.trim(), st.erpPass) }.getOrNull()
+    if (row == null) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = "نام کاربری یا کلمهٔ عبور درست نیست ❌ — همان حساب برنامهٔ آتیران را وارد کنید."
+        return
+    }
+    if (!row.active || row.locked) {
+        st.loginBusy = false
+        st.msgOk = false
+        st.msg = if (!row.active) "حساب «${row.username}» غیرفعال است."
+        else "حساب «${row.username}» قفل است 🔒 — از سامانه بازش کنید."
+        return
+    }
+
+    val identity = runCatching { data.visitorIdentity(row.userId, row.companyId) }.getOrNull()
+    SecureDbStore.saveErp(row.username, st.erpPass, st.rememberErp)
+    st.erpUser = row.username
+    st.welcome = row.fullName.ifBlank { row.username }
+    if (identity != null && identity.visitorRdf != null) {
+        SecureDbStore.saveVisitor(
+            userId = row.userId,
+            companyId = row.companyId,
+            visitorRdf = identity.visitorRdf,
+            name = identity.displayName.ifBlank { st.welcome },
+        )
+    }
+    st.loginBusy = false
+    st.msgOk = true
+    st.msg = "ورود موفق ✓ ${st.welcome} — در حال همگام‌سازی گزارش‌ها…"
+    st.tick += 1   // بارگذاری دوبارهٔ اطلاعات با حساب کاربر
 }
 
 /** جداکردن «schema.table» به دو تکه — یا null اگر قالب درست نباشد. */
@@ -1410,7 +1599,8 @@ private fun maAlertRows(st: MaHomeState): List<Pair<String, String>> {
 private fun maReportText(st: MaHomeState): String = buildString {
     appendLine("گزارش وضعیت مطالبات مشتریان — M•A Report")
     appendLine("دوره: کل دادهٔ موجود در دیتابیس • مشتریان")
-    appendLine("وضعیت اتصال: " + if (st.connected) "${st.modeLabel} • ${st.targetLabel}" else "وصل نشده")
+    appendLine("وضعیت اتصال: " + if (st.connected) "متصل ✓" else "وصل نشده")
+    if (st.welcome.isNotBlank()) appendLine("کاربر: ${st.welcome}")
     appendLine("──────────────")
     appendLine("تعداد مشتریان: ${st.custCount?.toFaNumber() ?: "—"}")
     appendLine("تعداد کالاها: ${st.prodCount?.toFaNumber() ?: "—"}")
