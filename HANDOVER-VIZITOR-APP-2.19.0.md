@@ -17,8 +17,19 @@
 
 | فایل | حجم | SHA‑256 |
 |---|---|---|
-| `vizitor-app/dist/Vizitor-2.19.0-direct.apk` (امضاشده) | پس از بیلد CI ثبت می‌شود | پس از بیلد CI ثبت می‌شود |
-| `Vizitor-2.19.0-direct-debug.apk` (نسخهٔ آزمون) | پس از بیلد CI ثبت می‌شود | — |
+| `vizitor-app/dist/Vizitor-2.19.0-direct.apk` (امضاشده) | ۴۲٫۰۱۰٫۲۷۸ بایت (≈۴۰٫۱ مبی‌بایت) | `d053e1c838bbe1540f3a8b81657098871a0ec89f568030abdf824be35b84822e` |
+| `Vizitor-2.19.0-direct-debug.apk` (نسخهٔ آزمون) | ۵۳٫۱۸۲٫۰۴۹ بایت | — |
+
+- کامیت بیلد (CI): `4b36487` — تاریخ بیلد: ۲۰۲۶‑۰۹‑۲۳ ۰۴:۴۹:۰۹ UTC · بیلد CI **موفق** (`35819504773`).
+- **بازرسی محتوای همین APK:** نام بسته `ir.atiran.vizitor` · `versionCode=21815` ·
+  `versionName=2.19.0-direct` · امضا **Verifies** با همان کلید قبلی؛ و وجود اجزای تازه
+  (`MaConnectScreen`, `MaChromeKt`, `MaTopBar`, `MaNavStrip`, `MaGoldCta`, `MaDocCard`,
+  `MaSmartSheet`, `MaSegmentPills`, `MaThinBar`, `MaOrbButton`, `MaMetricCard`,
+  `askAiAssistant`, `SqlDiagnostics`, `buildReport`, `refreshVisitors`, `InvoiceShare`)
+  و رشته‌های فارسی تازه («نبض اتصال ویزیتور»، «تنظیمات هوشمند»، «ارسال پیش‌فاکتور به آتیران»،
+  «ثبت واقعی در آتیران»، «دستیار هوشمند فروش»، «اجرای تشخیص کامل»، «فهرست ویزیتورها»،
+  «گزارش وضعیت اتصال ویزیتور»، «خروجی سند»، «سهمیه و اعتبار ویزیتور»،
+  «پیش‌فاکتور فروش آتیران»، «مشتریان مجاز»، «سلامت مسیر سند»، «کم‌موجود»).
 
 - **کلید امضا تغییر نکرده:** `SHA-256 = 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a`
   (CN=Vizitor App Direct, O=Meelano, C=IR) → **به‌روزرسانی درجا** روی نسخهٔ نصب‌شده (۲٫۱۴ تا ۲٫۱۸).
