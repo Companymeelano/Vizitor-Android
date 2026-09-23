@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.TableChart
@@ -80,6 +81,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -104,11 +106,14 @@ import ir.atiran.vizitor.sqldirect.MaOverview
 import ir.atiran.vizitor.sqldirect.MaDiagStep
 import ir.atiran.vizitor.sqldirect.SecureDbStore
 import ir.atiran.vizitor.ui.components.Lux3DBarChart
+import ir.atiran.vizitor.ui.components.Lux3DButton
+import ir.atiran.vizitor.ui.components.Lux3DCategoryBar
+import ir.atiran.vizitor.ui.components.Lux3DTone
+import ir.atiran.vizitor.ui.components.Lux3DTile
 import ir.atiran.vizitor.ui.components.Lux3DNote
 import ir.atiran.vizitor.ui.components.Lux3DTable
 import ir.atiran.vizitor.ui.components.MaAmber
 import ir.atiran.vizitor.ui.components.MaDocCard
-import ir.atiran.vizitor.ui.components.MaGoldCta
 import ir.atiran.vizitor.ui.components.MaGreen
 import ir.atiran.vizitor.ui.components.MaHeroTitle
 import ir.atiran.vizitor.ui.components.MaMetricCard
@@ -187,14 +192,40 @@ private class MaStudioState {
     var blocks by mutableStateOf<List<MaBlock>>(emptyList())
     var reportBusy by mutableStateOf(false)
     var roles by mutableStateOf<Map<String, MaTableRoles>>(emptyMap())
+
+    // ── سلامت سرور (صحت و سلامت اتصال)
+    var health by mutableStateOf<MaHealthReport?>(null)
+    var healthBusy by mutableStateOf(false)
 }
 
 private val STUDIO_TABS = listOf(
+    MaNavItem("conn", "اتصال و ورود", Icons.Filled.Cloud),
+    MaNavItem("health", "سلامت سرور", Icons.Filled.Speed),
     MaNavItem("overview", "نمای کلی", Icons.Filled.Dashboard),
     MaNavItem("data", "مرور داده‌ها", Icons.Filled.TableChart),
     MaNavItem("map", "اتصال جداول", Icons.Filled.Link),
-    MaNavItem("conn", "تنظیم اتصال", Icons.Filled.Settings),
     MaNavItem("report", "گزارش‌ها", Icons.Filled.Insights),
+)
+
+/** یک «دسته» از بخش‌های اتاق فرمان: چند برگه زیر یک عنوان روشن. */
+private data class MaCategory(
+    val key: String,
+    val label: String,
+    val caption: String,
+    val icon: ImageVector,
+    val tabs: List<String>,
+)
+
+/**
+ * دسته‌بندی تازهٔ بخش‌ها (خواستهٔ مدیر: «دسته‌بندی خیلی بهتر»):
+ *   ۱) اتصال و سلامت → سرور و ورود کاربر
+ *   ۲) داده و جداول   → نمای کلی، مرور داده، نگاشت جدول‌ها
+ *   ۳) گزارش و تحلیل  → خروجی نهایی مدیر
+ */
+private val STUDIO_CATEGORIES = listOf(
+    MaCategory("link", "اتصال و سلامت", "سرور و ورود", Icons.Filled.Cloud, listOf("conn", "health")),
+    MaCategory("data", "داده و جداول", "جداول سرور", Icons.Filled.Storage, listOf("overview", "data", "map")),
+    MaCategory("insight", "گزارش و تحلیل", "خروجی مدیر", Icons.Filled.Insights, listOf("report")),
 )
 
 private const val READ_ONLY_NOTE =
@@ -237,6 +268,8 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
         SecureDbStore.loadVisitor()?.let { v -> st.welcome = v.name }
         if (MaSqlEngine.isConnected) {
             studioOverview(st)
+            // سنجش خودکار سلامت سرور بلافاصله پس از اتصال (حالت سبک)
+            studioHealth(ctx, st, quick = true)
         } else {
             // اتصال خودکار: کاربر هیچ چیزی وارد نمی‌کند و هیچ نشانی‌ای نمی‌بیند
             studioConnectSmart(ctx, st)
@@ -284,11 +317,23 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
             chip = if (st.connected) "متصل ✓" else "وصل نشده — «اتصال و ورود»",
             chipColor = if (st.connected) MaGreen else MaAmber,
         )
+        // ── دستهٔ فعال (از روی برگهٔ بازشده) ──
+        val activeCat = STUDIO_CATEGORIES.firstOrNull { c -> c.tabs.contains(st.tab) }
+            ?: STUDIO_CATEGORIES.first()
+        Lux3DCategoryBar(
+            items = STUDIO_CATEGORIES.map { MaNavItem(it.key, it.label, it.icon) },
+            selectedKey = activeCat.key,
+            captions = STUDIO_CATEGORIES.associate { it.key to it.caption },
+            onSelect = { key ->
+                STUDIO_CATEGORIES.firstOrNull { it.key == key }?.let { c -> st.tab = c.tabs.first() }
+            },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+        )
         MaNavStrip(
-            items = STUDIO_TABS,
+            items = STUDIO_TABS.filter { t -> activeCat.tabs.contains(t.key) },
             selectedKey = st.tab,
             onSelect = { st.tab = it },
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
         )
         st.msg?.let { m ->
             Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)) {
@@ -331,7 +376,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     )
                 }
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = if (st.busy) "در حال اتصال…" else "اتصال خودکار به سرور",
                         subtitle = "با وای‌فای اداره مسیر داخلی و در غیر این صورت مسیر اینترنت انتخاب می‌شود",
                         icon = Icons.Filled.Cloud,
@@ -340,27 +385,36 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     )
                 }
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            MaMetricCard(
-                                title = "آزمایش اتصال",
-                                value = if (st.connected) "سالم" else "—",
-                                icon = Icons.Filled.CheckCircle,
-                                subtitle = "بررسی سریع سرور",
-                                tint = MaGreen,
-                                onClick = { scope.launch { studioTest(ctx, st) } }
-                            )
-                        }
-                        Box(Modifier.weight(1f)) {
-                            MaMetricCard(
-                                title = "عیب‌یابی اتصال",
-                                value = "گام‌به‌گام",
-                                icon = Icons.Filled.BugReport,
-                                subtitle = "بدون نمایش اطلاعات محرمانه",
-                                tint = MaAmber,
-                                onClick = { scope.launch { studioDiagnose(ctx, st) } }
-                            )
-                        }
+                    MaServerHealthStrip(
+                        report = st.health,
+                        busy = st.healthBusy,
+                        onRun = { scope.launch { studioHealth(ctx, st, quick = true) } },
+                    )
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Lux3DTile(
+                            title = "سلامت کامل",
+                            caption = "پنج دستهٔ بررسی",
+                            icon = Icons.Filled.Speed,
+                            tone = Lux3DTone.BLUE,
+                            onClick = { st.tab = "health" },
+                            modifier = Modifier.weight(1f),
+                        )
+                        Lux3DTile(
+                            title = "آزمایش اتصال",
+                            caption = if (st.connected) "هم‌اکنون سالم" else "بررسی سریع",
+                            icon = Icons.Filled.CheckCircle,
+                            onClick = { scope.launch { studioTest(ctx, st) } },
+                            modifier = Modifier.weight(1f),
+                        )
+                        Lux3DTile(
+                            title = "عیب‌یابی",
+                            caption = "گام‌به‌گام",
+                            icon = Icons.Filled.BugReport,
+                            onClick = { scope.launch { studioDiagnose(ctx, st) } },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
                 item { MaSectionHeader(title = "ورود کاربر آتیران") }
@@ -405,7 +459,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     }
                 }
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = if (st.loginBusy) "در حال ورود…" else "ورود و همگام‌سازی",
                         subtitle = "ورود با حساب خودتان در سامانه و به‌روزرسانی گزارش‌ها از سرور",
                         icon = Icons.Filled.Person,
@@ -424,6 +478,58 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                 item { Lux3DNote(READ_ONLY_NOTE) }
             }
 
+            // ═══════════════ برگهٔ «سلامت سرور» ═══════════════
+            if (st.tab == "health") {
+                item {
+                    MaHeroTitle(
+                        title = "سلامت سرور مورد اتصال",
+                        subtitle = "شبکه، اتصال، دیتابیس، خواندن داده و امنیت — همه در یک نگاه و " +
+                            "کاملاً فقط-خواندنی.",
+                    )
+                }
+                item {
+                    MaServerHealthCard(
+                        report = st.health,
+                        busy = st.healthBusy,
+                        onRun = { scope.launch { studioHealth(ctx, st, quick = false) } },
+                    )
+                }
+                item {
+                    MaServerHealthStrip(
+                        report = st.health,
+                        busy = st.healthBusy,
+                        onRun = { scope.launch { studioHealth(ctx, st, quick = true) } },
+                    )
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Lux3DTile(
+                            title = "اتصال خودکار",
+                            caption = "دوباره وصل شو",
+                            icon = Icons.Filled.Cloud,
+                            tone = Lux3DTone.GOLD,
+                            onClick = { scope.launch { studioConnectSmart(ctx, st) } },
+                            modifier = Modifier.weight(1f),
+                        )
+                        Lux3DTile(
+                            title = "عیب‌یابی",
+                            caption = "گام‌به‌گام",
+                            icon = Icons.Filled.BugReport,
+                            onClick = { scope.launch { studioDiagnose(ctx, st) } },
+                            modifier = Modifier.weight(1f),
+                        )
+                        Lux3DTile(
+                            title = "داده‌ها",
+                            caption = "نمای کلی",
+                            icon = Icons.Filled.Storage,
+                            onClick = { st.tab = "overview" },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                item { Lux3DNote(READ_ONLY_NOTE) }
+            }
+
             // ═══════════════ برگهٔ «نمای کلی» ═══════════════
             if (st.tab == "overview") {
                 item {
@@ -431,6 +537,13 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                         title = "نمای کلی دیتابیس",
                         subtitle = "جدول‌های واقعی سرور، شمار رکورد هر جدول و حجم دیتابیس — " +
                             "همه فقط-خواندنی",
+                    )
+                }
+                item {
+                    MaServerHealthStrip(
+                        report = st.health,
+                        busy = st.healthBusy,
+                        onRun = { scope.launch { studioHealth(ctx, st, quick = true) } },
                     )
                 }
                 item {
@@ -448,7 +561,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     )
                 }
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = if (st.busy) "در حال دریافت…" else "دریافت فهرست جداول سرور",
                         subtitle = if (st.connected) "متصل به ${st.targetLabel}" else "اول باید اتصال برقرار شود",
                         icon = Icons.Filled.Refresh,
@@ -562,7 +675,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                 }
                 val ref = st.map.refOf(st.section)
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = when {
                             ref == null -> "این بخش جدول ندارد"
                             st.busy -> "در حال دریافت…"
@@ -685,7 +798,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     )
                 }
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = if (st.busy) "در حال تشخیص…" else "تشخیص خودکار جداول",
                         subtitle = "جست‌وجو با نام‌های حدسی فارسی/انگلیسی در فهرست جدول‌های سرور",
                         icon = Icons.Filled.Search,
@@ -781,7 +894,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     )
                 }
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = "وصل‌کردن جدول دستی به بخش «${st.section.label}»",
                         subtitle = "نام کامل جدول را در کادر بالا بنویسید (اسکیما.جدول)",
                         icon = Icons.Filled.Link,
@@ -829,7 +942,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                     )
                 }
                 item {
-                    MaGoldCta(
+                    Lux3DButton(
                         title = if (st.reportBusy) "در حال ساخت گزارش…" else "ساخت گزارش از سرور",
                         subtitle = if (st.map.mappedCount == 0) "اول جدول‌ها را در «اتصال جداول» وصل کنید"
                         else "${st.map.mappedCount.toFaNumber()} بخش متصل — آمادهٔ گزارش",
@@ -1144,6 +1257,27 @@ private suspend fun studioErpLogin(ctx: Context, st: MaStudioState) {
     studioOverview(st)
 }
 
+
+/**
+ * «صحت و سلامت سرور مورد اتصال» — پنج دستهٔ بررسی با کوئری فقط-خواندنی و کاوش
+ * شبکه، سپس یک نمرهٔ سلامت از ۱۰۰. هیچ نشانی/کاربر/رمزی روی صفحه نمی‌آید.
+ */
+private suspend fun studioHealth(ctx: Context, st: MaStudioState, quick: Boolean = false) {
+    st.healthBusy = true
+    st.msg = null
+    val report = runCatching { MaServerHealth.probe(ctx, quick) }.getOrNull()
+    st.healthBusy = false
+    if (report == null) {
+        st.msgOk = false
+        st.msg = "سنجش سلامت سرور انجام نشد — یک‌بار دیگر تلاش کنید."
+        return
+    }
+    st.health = report
+    st.connected = MaSqlEngine.isConnected
+    st.netLabel = MaServerProfile.netKind(ctx).label
+    st.msgOk = report.score >= 60
+    st.msg = "سلامت سرور: نمرهٔ ${report.score.toFaNumber()} از ۱۰۰ — ${report.headline}"
+}
 
 /** بررسی سریع اتصال و خواندن نسخهٔ سرور — بدون نمایش اطلاعات محرمانه. */
 private suspend fun studioTest(ctx: Context, st: MaStudioState) {

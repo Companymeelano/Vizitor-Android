@@ -1,6 +1,6 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- *  گزارشات مدیر — «M•A Report» | خانهٔ نسخهٔ انحصاری (v2.23.0)
+ *  گزارشات مدیر — «M•A Report» | خانهٔ نسخهٔ انحصاری (v2.24.0)
  *  Developed by Meelano Studio Design — Milad Yaghoobi
  *  ─────────────────────────────────────────────────────────────────────────
  *  این فایل، خانهٔ برنامهٔ انحصاری را **کاملاً مشابه** برنامهٔ مرجع
@@ -110,6 +110,8 @@ import ir.atiran.vizitor.sqldirect.SecureDbStore
 import ir.atiran.vizitor.sqldirect.SqlConnectionManager
 import kotlinx.coroutines.launch
 import ir.atiran.vizitor.ui.components.LineTrendChart
+import ir.atiran.vizitor.ui.components.Lux3DButton
+import ir.atiran.vizitor.ui.components.Lux3DTone
 import ir.atiran.vizitor.ui.components.Lux3DBarChart
 import ir.atiran.vizitor.ui.components.Lux3DDonut
 import ir.atiran.vizitor.ui.components.Lux3DNote
@@ -174,6 +176,10 @@ private class MaHomeState {
 
     // ── نگاشت بخش‌ها
     var map by mutableStateOf(MaSectionMap())
+
+    // ── سلامت سرور (صحت و سلامت اتصال — حالت سبک)
+    var health by mutableStateOf<MaHealthReport?>(null)
+    var healthBusy by mutableStateOf(false)
 
     // ── شاخص‌های واقعی (null = خوانده نشد)
     var custCount by mutableStateOf<Long?>(null)
@@ -305,6 +311,7 @@ fun MReportHome(
                     onOpen = onOpen,
                     onConnect = { scope.launch { maConnectNow(st, ctx) } },
                     onLogin = { scope.launch { maLogin(st, ctx) } },
+                    onHealth = { scope.launch { maHealthNow(st, ctx) } },
                 )
             }
             item { MaHomeFooter() }
@@ -359,6 +366,7 @@ private fun LazyListScope.homeOverview(
     onOpen: (String) -> Unit,
     onConnect: () -> Unit,
     onLogin: () -> Unit,
+    onHealth: () -> Unit,
 ) {
     item {
         MaHeroTitle(
@@ -369,13 +377,14 @@ private fun LazyListScope.homeOverview(
     item {
         val p = vizitorPalette
         if (!st.connected) {
-            MaGoldCta(
+            Lux3DButton(
                 title = if (st.busy) "در حال اتصال…" else "اتصال خودکار به سرور",
                 subtitle = "سرور گزارش‌ها خودکار پیدا می‌شود — چیزی برای وارد کردن نیست",
                 icon = Icons.Filled.Cloud,
                 onClick = onConnect,
                 badge = "خودکار",
                 enabled = !st.busy,
+                busy = st.busy,
             )
         } else {
             MaStatStrip(
@@ -386,6 +395,14 @@ private fun LazyListScope.homeOverview(
                 )
             )
         }
+    }
+    // ── صحت و سلامت سرور مورد اتصال (سنجش سبک و بی‌کلیک) ──
+    item {
+        MaServerHealthStrip(
+            report = st.health,
+            busy = st.healthBusy,
+            onRun = onHealth,
+        )
     }
     // ── ورود کاربر آتیران: تنها چیزی که کاربر وارد می‌کند (نام کاربری و رمز خودش)
     if (st.erpUser.isBlank()) {
@@ -440,11 +457,13 @@ private fun LazyListScope.homeOverview(
                     )
                 }
                 Spacer(Modifier.height(10.dp))
-                MaGoldCta(
+                Lux3DButton(
                     title = if (st.loginBusy) "در حال ورود…" else "ورود و همگام‌سازی",
                     subtitle = "ورود با حساب خودتان و به‌روزرسانی گزارش‌ها از سرور",
                     icon = Icons.Filled.Person,
+                    tone = Lux3DTone.GREEN,
                     enabled = !st.loginBusy && !st.busy,
+                    busy = st.loginBusy,
                     onClick = onLogin,
                 )
             }
@@ -1207,6 +1226,12 @@ private suspend fun <T> maTry(block: suspend () -> T?): T? = runCatching { block
  * خواندن همهٔ شاخص‌های خانه از سرور — فقط SELECT/کاتالوگ سیستم.
  * هر بخش جداگانه اجرا می‌شود تا خطای یک جدول، بقیهٔ گزارش را نخواباند.
  */
+private suspend fun maHealthNow(st: MaHomeState, ctx: Context) {
+    st.healthBusy = true
+    st.health = runCatching { MaServerHealth.probe(ctx, quick = true) }.getOrNull()
+    st.healthBusy = false
+}
+
 private suspend fun maHomeLoad(st: MaHomeState, ctx: Context) {
     st.busy = true
     st.map = MaSectionStore.load()
@@ -1229,6 +1254,10 @@ private suspend fun maHomeLoad(st: MaHomeState, ctx: Context) {
         st.modeLabel = if (r.ok) "اتصال خودکار" else "—"
         st.msgOk = r.ok
         st.msg = MaServerProfile.safe(r.message)
+    }
+    if (st.connected) {
+        // سنجش سبک سلامت سرور (شبکه + اتصال) — بقیهٔ کارت با دکمهٔ خودش انجام می‌شود
+        st.health = runCatching { MaServerHealth.probe(ctx, quick = true) }.getOrNull()
     }
 
     if (!st.connected) {
