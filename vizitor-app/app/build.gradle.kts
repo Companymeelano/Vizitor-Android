@@ -65,7 +65,7 @@ android {
         create("mreport") {
             dimension = "edition"
             applicationId = "ir.atiran.mreport"
-            versionName = "2.23.0-report"
+            versionName = "2.24.0-report"
             buildConfigField("boolean", "MR_EDITION", "true")
         }
     }
