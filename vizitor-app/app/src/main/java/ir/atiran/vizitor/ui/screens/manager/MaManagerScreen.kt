@@ -715,9 +715,11 @@ fun MaManagerScreen(onBack: () -> Unit) {
                     )
                 }
                 MaSection.values().forEach { section ->
+                    // v2.20.0: این دو مقدار باید در سطح خودِ بخش باشند تا هر دو آیتم
+                    // لیست (کارت بخش + کاشی‌های جدول) به آن‌ها دسترسی داشته باشند.
+                    val ref = st.map.refOf(section)
+                    val suggested = suggestTables(section, tableList)
                     item {
-                        val ref = st.map.refOf(section)
-                        val suggested = suggestTables(section, tableList)
                         MaDocCard(
                             title = section.label,
                             subtitle = ref ?: "وصل نشده — از «اتصال جداول» انتخاب کنید",
