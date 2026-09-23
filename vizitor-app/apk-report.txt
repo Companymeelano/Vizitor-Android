@@ -1,11 +1,11 @@
 گزارش ساخت APK برنامهٔ آتیران ویزیتور با اتصال مستقیم SQL Server (پورت ۱۴۳۳)
-تاریخ: 2026-09-23 09:01:58 UTC   کامیت: 98d220298f8cc186a052d3cfddd83bcba0b3b866
+تاریخ: 2026-09-23 10:12:06 UTC   کامیت: 87414c7058a91de9a082f8508f6b9247899c7d5c
 ==================================================================================
 
 --- خروجی بیلد (Gradle) ---
-  double max;
 }`
 
+> Task :app:lintVitalAnalyzeMreportRelease
 > Task :app:compileMreportReleaseArtProfile
 > Task :app:packageMreportRelease
 > Task :app:createMreportReleaseApkListingFileRedirect
@@ -13,7 +13,7 @@
 > Task :app:lintVitalMreportRelease
 > Task :app:assembleMreportRelease
 
-BUILD SUCCESSFUL in 7m 36s
+BUILD SUCCESSFUL in 7m 34s
 144 actionable tasks: 131 executed, 13 from cache
 
 ### اثر انگشت گواهی امضا (ثابت بین بیلدها)
@@ -68,21 +68,28 @@ V2 Signer: public key MD5 digest: 1a0fa12aadcd0e00d0cd51e75d5d6774
   ir/atiran/vizitor/sqldirect/MaMapping : 5
   ir/atiran/vizitor/sqldirect/MaSectionStore : 4
   ir/atiran/vizitor/ui/screens/manager/MaManagerScreen : 176
+  ir/atiran/vizitor/ui/screens/manager/MReportHome : 0
 
---- رشته‌های فارسی بخش «گزارش مدیریت» در DEX (v2.20.0) ---
+--- رشته‌های فارسی بخش «گزارش مدیریت» و خانهٔ «M•A Report» در DEX ---
   گزارش مدیریت : 3
   اتصال جداول : 6
   عیب‌یابی اتصال : 4
   برترین‌ها : 2
   فقط-خواندنی : 2
   لمس برای انتخاب جدول : 1
-### Vizitor-2.21.0-direct-debug.apk
-حجم: 53329564 بایت
+  نبض کسب‌وکار : 1
+  پرونده مشتریان : 0
+  خزانه : 1
+  اعلان‌ها : 0
+  M•A Report : 1
+### MReport-2.22.0-direct.apk
+حجم: 42141350 بایت
+vizitor-app/dist/MReport-2.22.0-direct.apk.sha256:8f46d564f5bbdf63256df88c798f022b703c8bcdc0df333883696602191a4daa  MReport-2.22.0-direct.apk
 
 --- مشخصات نسخه و پکیج (aapt2) ---
-package: name='ir.atiran.vizitor.debug' versionCode='21817' versionName='2.21.0-direct-debug' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+package: name='ir.atiran.mreport' versionCode='21818' versionName='2.22.0-report' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
 targetSdkVersion:'35'
-application-label:'آتیران ویزیتور'
+application-label:'گزارشات مدیر'
 native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
 
 --- تأیید امضا ---
@@ -95,41 +102,47 @@ Verified using v3.2 scheme (APK Signature Scheme v3.2): false
 Verified using v4 scheme (APK Signature Scheme v4): false
 Verified for SourceStamp: false
 Number of signers: 1
-V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
-V2 Signer: certificate SHA-256 digest: 494200cdefab50a77d1c868e7c9c3b2df8d2283472af8d958893c1ca6facc3bc
-V2 Signer: certificate SHA-1 digest: 4ce1a62bb63cbb213cca09e1d6ace2308f4b5755
-V2 Signer: certificate MD5 digest: 38c55ab1b866d1f97984e3d385e738b8
+V2 Signer: certificate DN: C=IR, L=Tehran, O=Meelano, OU=Meelano Studio Design, CN=Vizitor App Direct
+V2 Signer: certificate SHA-256 digest: 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a
+V2 Signer: certificate SHA-1 digest: 22ea4c920262c1b7f67ef0b3cd4803949a3dc80f
+V2 Signer: certificate MD5 digest: eb9f41e7d9837b131057073985811918
 V2 Signer: key algorithm: RSA
 V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: fd98ddb748542f9110f09ed3dd09eb48b2352db57f83192035cce74941396b37
-V2 Signer: public key SHA-1 digest: 77b7e46eb27be28de4a536481aec5134d2905dc8
-V2 Signer: public key MD5 digest: 6b1d6895c746d426679551453d426192
+V2 Signer: public key SHA-256 digest: f9fc8712efcd80f04f977b884215b798454d78bb049f3e2df7756b82860e3354
+V2 Signer: public key SHA-1 digest: 8f1844d80be7af6312dc45ce6cff0be43c9b959e
+V2 Signer: public key MD5 digest: 1a0fa12aadcd0e00d0cd51e75d5d6774
 
 --- تعداد dex و حضور درایورهای SQL ---
-16
-  com/microsoft/sqlserver/jdbc/SQLServerDriver : 12
-  net/sourceforge/jtds/jdbc/Driver : 2
-  ir/atiran/vizitor/sqldirect/VisitorRepository : 7
-  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 98
-  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 5
-  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 15
-  ir/atiran/vizitor/sqldirect/DirectSql : 47
-  ir/atiran/vizitor/sqldirect/SecureDbStore : 4
-  ir/atiran/vizitor/sqldirect/VisitRepository : 7
-  ir/atiran/vizitor/ui/screens/VisitScreen : 92
-  ir/atiran/vizitor/sqldirect/VisitViewModel : 21
-  ir/atiran/vizitor/sqldirect/MaSqlEngine : 31
-  ir/atiran/vizitor/sqldirect/MaMapping : 7
-  ir/atiran/vizitor/sqldirect/MaSectionStore : 6
+5
+  com/microsoft/sqlserver/jdbc/SQLServerDriver : 11
+  net/sourceforge/jtds/jdbc/Driver : 1
+  ir/atiran/vizitor/sqldirect/VisitorRepository : 6
+  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 96
+  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 3
+  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 13
+  ir/atiran/vizitor/sqldirect/DirectSql : 44
+  ir/atiran/vizitor/sqldirect/SecureDbStore : 2
+  ir/atiran/vizitor/sqldirect/VisitRepository : 6
+  ir/atiran/vizitor/ui/screens/VisitScreen : 90
+  ir/atiran/vizitor/sqldirect/VisitViewModel : 18
+  ir/atiran/vizitor/sqldirect/MaSqlEngine : 29
+  ir/atiran/vizitor/sqldirect/MaMapping : 5
+  ir/atiran/vizitor/sqldirect/MaSectionStore : 4
   ir/atiran/vizitor/ui/screens/manager/MaManagerScreen : 178
+  ir/atiran/vizitor/ui/screens/manager/MReportHome : 165
 
---- رشته‌های فارسی بخش «گزارش مدیریت» در DEX (v2.20.0) ---
+--- رشته‌های فارسی بخش «گزارش مدیریت» و خانهٔ «M•A Report» در DEX ---
   گزارش مدیریت : 3
-  اتصال جداول : 2
-  عیب‌یابی اتصال : 3
-  برترین‌ها : 2
-  فقط-خواندنی : 2
+  اتصال جداول : 7
+  عیب‌یابی اتصال : 4
+  برترین‌ها : 4
+  فقط-خواندنی : 3
   لمس برای انتخاب جدول : 1
+  نبض کسب‌وکار : 1
+  پرونده مشتریان : 1
+  خزانه : 2
+  اعلان‌ها : 1
+  M•A Report : 3
 ### Vizitor-2.21.0-direct.apk
 حجم: 42092198 بایت
 vizitor-app/dist/Vizitor-2.21.0-direct.apk.sha256:634d4471091ee7ebab4b6b4feb27f490b19915cb5542bf0f6b723ae21fa36499  Vizitor-2.21.0-direct.apk
@@ -177,11 +190,138 @@ V2 Signer: public key MD5 digest: 1a0fa12aadcd0e00d0cd51e75d5d6774
   ir/atiran/vizitor/sqldirect/MaMapping : 5
   ir/atiran/vizitor/sqldirect/MaSectionStore : 4
   ir/atiran/vizitor/ui/screens/manager/MaManagerScreen : 176
+  ir/atiran/vizitor/ui/screens/manager/MReportHome : 0
 
---- رشته‌های فارسی بخش «گزارش مدیریت» در DEX (v2.20.0) ---
+--- رشته‌های فارسی بخش «گزارش مدیریت» و خانهٔ «M•A Report» در DEX ---
   گزارش مدیریت : 3
   اتصال جداول : 6
   عیب‌یابی اتصال : 4
   برترین‌ها : 2
   فقط-خواندنی : 2
   لمس برای انتخاب جدول : 1
+  نبض کسب‌وکار : 1
+  پرونده مشتریان : 0
+  خزانه : 1
+  اعلان‌ها : 0
+  M•A Report : 1
+### Vizitor-2.22.0-direct-debug.apk
+حجم: 53411484 بایت
+
+--- مشخصات نسخه و پکیج (aapt2) ---
+package: name='ir.atiran.vizitor.debug' versionCode='21818' versionName='2.22.0-direct-debug' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+targetSdkVersion:'35'
+application-label:'آتیران ویزیتور'
+native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
+
+--- تأیید امضا ---
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
+V2 Signer: certificate SHA-256 digest: 65942c61641d047f1e6e5c78bd0cea4c52f5ebb463013b4b5928dc30ab66d30a
+V2 Signer: certificate SHA-1 digest: a4ada406aa20dd1582987aac9e8a2d356ad3b6dd
+V2 Signer: certificate MD5 digest: c2ea24098cd966fbae0bfc819ed59d34
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 2048
+V2 Signer: public key SHA-256 digest: 66a1b08697b087e1919205d1a14283a13b196cabc3619c81cd4391d031d8b727
+V2 Signer: public key SHA-1 digest: bf11aab526dc437c2f0c9f2f2609d345e04d41bd
+V2 Signer: public key MD5 digest: 613412bd65f9262445dd3f8f304fe66d
+
+--- تعداد dex و حضور درایورهای SQL ---
+16
+  com/microsoft/sqlserver/jdbc/SQLServerDriver : 12
+  net/sourceforge/jtds/jdbc/Driver : 2
+  ir/atiran/vizitor/sqldirect/VisitorRepository : 7
+  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 98
+  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 5
+  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 15
+  ir/atiran/vizitor/sqldirect/DirectSql : 47
+  ir/atiran/vizitor/sqldirect/SecureDbStore : 4
+  ir/atiran/vizitor/sqldirect/VisitRepository : 7
+  ir/atiran/vizitor/ui/screens/VisitScreen : 92
+  ir/atiran/vizitor/sqldirect/VisitViewModel : 21
+  ir/atiran/vizitor/sqldirect/MaSqlEngine : 31
+  ir/atiran/vizitor/sqldirect/MaMapping : 7
+  ir/atiran/vizitor/sqldirect/MaSectionStore : 6
+  ir/atiran/vizitor/ui/screens/manager/MaManagerScreen : 180
+  ir/atiran/vizitor/ui/screens/manager/MReportHome : 166
+
+--- رشته‌های فارسی بخش «گزارش مدیریت» و خانهٔ «M•A Report» در DEX ---
+  گزارش مدیریت : 3
+  اتصال جداول : 3
+  عیب‌یابی اتصال : 3
+  برترین‌ها : 3
+  فقط-خواندنی : 3
+  لمس برای انتخاب جدول : 1
+  نبض کسب‌وکار : 1
+  پرونده مشتریان : 1
+  خزانه : 3
+  اعلان‌ها : 1
+  M•A Report : 4
+### Vizitor-2.22.0-direct.apk
+حجم: 42141346 بایت
+vizitor-app/dist/Vizitor-2.22.0-direct.apk.sha256:05afea22e8fd6b5633fed1f158e5206a68afe8942eecb3094079e640be305a7a  Vizitor-2.22.0-direct.apk
+
+--- مشخصات نسخه و پکیج (aapt2) ---
+package: name='ir.atiran.vizitor' versionCode='21818' versionName='2.22.0-direct' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+targetSdkVersion:'35'
+application-label:'آتیران ویزیتور'
+native-code: 'arm64-v8a' 'armeabi-v7a' 'x86' 'x86_64'
+
+--- تأیید امضا ---
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: C=IR, L=Tehran, O=Meelano, OU=Meelano Studio Design, CN=Vizitor App Direct
+V2 Signer: certificate SHA-256 digest: 5ccad3b601496e698bae055a0729e1ef0be51fba86c5db0754cad055d4a6ac5a
+V2 Signer: certificate SHA-1 digest: 22ea4c920262c1b7f67ef0b3cd4803949a3dc80f
+V2 Signer: certificate MD5 digest: eb9f41e7d9837b131057073985811918
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 2048
+V2 Signer: public key SHA-256 digest: f9fc8712efcd80f04f977b884215b798454d78bb049f3e2df7756b82860e3354
+V2 Signer: public key SHA-1 digest: 8f1844d80be7af6312dc45ce6cff0be43c9b959e
+V2 Signer: public key MD5 digest: 1a0fa12aadcd0e00d0cd51e75d5d6774
+
+--- تعداد dex و حضور درایورهای SQL ---
+5
+  com/microsoft/sqlserver/jdbc/SQLServerDriver : 11
+  net/sourceforge/jtds/jdbc/Driver : 1
+  ir/atiran/vizitor/sqldirect/VisitorRepository : 6
+  ir/atiran/vizitor/ui/screens/DirectSqlScreen : 96
+  ir/atiran/vizitor/sqldirect/SqlDiagnostics : 3
+  ir/atiran/vizitor/sqldirect/SqlConnectionManager : 13
+  ir/atiran/vizitor/sqldirect/DirectSql : 44
+  ir/atiran/vizitor/sqldirect/SecureDbStore : 2
+  ir/atiran/vizitor/sqldirect/VisitRepository : 6
+  ir/atiran/vizitor/ui/screens/VisitScreen : 90
+  ir/atiran/vizitor/sqldirect/VisitViewModel : 18
+  ir/atiran/vizitor/sqldirect/MaSqlEngine : 29
+  ir/atiran/vizitor/sqldirect/MaMapping : 5
+  ir/atiran/vizitor/sqldirect/MaSectionStore : 4
+  ir/atiran/vizitor/ui/screens/manager/MaManagerScreen : 178
+  ir/atiran/vizitor/ui/screens/manager/MReportHome : 165
+
+--- رشته‌های فارسی بخش «گزارش مدیریت» و خانهٔ «M•A Report» در DEX ---
+  گزارش مدیریت : 3
+  اتصال جداول : 7
+  عیب‌یابی اتصال : 4
+  برترین‌ها : 4
+  فقط-خواندنی : 3
+  لمس برای انتخاب جدول : 1
+  نبض کسب‌وکار : 1
+  پرونده مشتریان : 1
+  خزانه : 2
+  اعلان‌ها : 1
+  M•A Report : 3
