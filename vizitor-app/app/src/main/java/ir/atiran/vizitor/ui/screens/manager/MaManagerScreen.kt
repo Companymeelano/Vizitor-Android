@@ -405,10 +405,6 @@ fun MaManagerScreen(onBack: () -> Unit) {
                                 subtitle = st.activeDb.ifBlank { "دیتابیس فعال" },
                                 tint = MaGreen,
                                 onClick = { scope.launch { studioTest(st) } }
-                                            .onFailure { st.msgOk = false; st.msg = MaSqlEngine.friendly(it) }
-                                        st.busy = false
-                                    }
-                                }
                             )
                         }
                         Box(Modifier.weight(1f)) {
@@ -418,17 +414,7 @@ fun MaManagerScreen(onBack: () -> Unit) {
                                 icon = Icons.Filled.BugReport,
                                 subtitle = "TCP · TDS · TLS · ورود",
                                 tint = MaAmber,
-                                onClick = {
-                                    scope.launch {
-                                        val cfg = buildCfg(st) ?: return@launch
-                                        st.diagBusy = true
-                                        st.msg = null
-                                        st.diag = runCatching { MaSqlEngine.diagnose(cfg) }.getOrElse {
-                                            listOf(MaDiagStep(false, "عیب‌یابی ناموفق", MaSqlEngine.friendly(it)))
-                                        }
-                                        st.diagBusy = false
-                                    }
-                                }
+                                onClick = { scope.launch { studioDiagnose(st) } }
                             )
                         }
                     }
