@@ -1,6 +1,6 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- *  گزارشات مدیر — «M•A Report» | خانهٔ نسخهٔ انحصاری (v2.22.0)
+ *  گزارشات مدیر — «M•A Report» | خانهٔ نسخهٔ انحصاری (v2.23.0)
  *  Developed by Meelano Studio Design — Milad Yaghoobi
  *  ─────────────────────────────────────────────────────────────────────────
  *  این فایل، خانهٔ برنامهٔ انحصاری را **کاملاً مشابه** برنامهٔ مرجع
@@ -16,7 +16,8 @@
  *      M•A Report است» + «MEELANO STUDIO DESIGN» + «برنامه‌نویس • میلاد یعقوبی».
  *
  *  ── تنها بخش‌هایی که واقعاً «راه افتاده‌اند» (خواستهٔ کاربر) ────────────────
- *    • اتصال به دیتابیس: از راه «تنظیم اتصال» (همان موتور چهارحالته).
+ *    • اتصال به دیتابیس: کاملاً خودکار و بی‌کلیک — در همین صفحه، با پروفایل
+ *      مخفی سرور (`MaServerProfile`) و تشخیص هوشمند شبکه (داخلی/بیرونی).
  *    • فراخوانی اطلاعات: شمار رکوردها، مجموع مبلغ‌ها، برترین‌ها، آخرین
  *      رکوردها و روند ماهانه — همه با کوئری فقط-خواندنی از جدول‌های نگاشت‌شده.
  *
@@ -98,14 +99,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.atiran.vizitor.sqldirect.MaMapping
 import ir.atiran.vizitor.sqldirect.MaNetKind
-import ir.atiran.vizitor.sqldirect.MaServerProfile
-import ir.atiran.vizitor.sqldirect.MeelanoDataSource
-import ir.atiran.vizitor.sqldirect.SqlConnectionManager
 import ir.atiran.vizitor.sqldirect.MaPage
 import ir.atiran.vizitor.sqldirect.MaSectionMap
 import ir.atiran.vizitor.sqldirect.MaSectionStore
+import ir.atiran.vizitor.sqldirect.MaServerProfile
 import ir.atiran.vizitor.sqldirect.MaSqlEngine
 import ir.atiran.vizitor.sqldirect.MaTableRoles
+import ir.atiran.vizitor.sqldirect.MeelanoDataSource
+import ir.atiran.vizitor.sqldirect.SecureDbStore
+import ir.atiran.vizitor.sqldirect.SqlConnectionManager
+import kotlinx.coroutines.launch
 import ir.atiran.vizitor.ui.components.LineTrendChart
 import ir.atiran.vizitor.ui.components.Lux3DBarChart
 import ir.atiran.vizitor.ui.components.Lux3DDonut
