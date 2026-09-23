@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Developed by Milano Technical Team, Milad Yaghoobi -->
+<paths>
+    <cache-path name="shared" path="shared/" />
+</paths>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Developed by Milano Technical Team, Milad Yaghoobi -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="vizitor.db" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="vizitor.db" />
+    </device-transfer>
+</data-extraction-rules>

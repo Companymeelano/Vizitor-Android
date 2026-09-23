@@ -1,0 +1,45 @@
+# Verified columns of database Meelano - from the live server audit output
+# format: table<TAB>column1,column2,...   (nothing here is guessed)
+dbo.inventory	shka,naka,coka,group_rdf,vahsanj,mohvah,mojkavah,mojkajoz,reopoint,bastebandi,tedbastebandi,vahwe,vahsp,visper,active,pure_buy_price,buy_price,inventory_price,MODPAR,buyjoz,sharh,min_sef,ted_f_ja,ted_ja,shka_ja,barbari_vahed,ptax,inventory_price_tax,maxtafnaghd,black_list,backfine,ExpirationDate,FinalSalePrice,PAvarez,ImPureBuyPrice,MaxJozForosh,PerPos,GoodsKindID,InventoryTypeID,WithProductionSerial,ActiveOnlineSales,ActiveCapillarySales,reducePrizeFromSales,siteId,nakaEN,isCustomerClub,MandatoryRoleCode,TransferCode
+dbo.forosh_price	shka,forosh1,mp1,pv1,forosh2,mp2,pv2,forosh3,mp3,pv3,forosh4,mp4,pv4,forosh5,mp5,pv5,naka,group_rdf,active,MinPrice,MaxPrice
+dbo.custgroup	group_name,group_rdf,stdate,price,ted_rooz,AccType,MoeinID,Active,PerGain
+dbo.CUSTOMERS	SHMO,MONAME,code,SHHES,BANKNAME,bankshobe,addre,tell1,tell2,cell,active,cred,man,peygham1,special,rdf_city,rdf_region,group_rdf,date,sh_i_m,sharh,vis_rdf,user_d,shomare_masir,defi_vis,hesab_status,maxopen_time,check_eteb,just_naghdi,black_list,result_m,c_egh,c_mel,c_pos,kind,IsEmp,MaxManFactor,RDF_masir,Lat,Lng,TafsilCode,Ecode_Vis,PersonalityType,EtehadieID,Shenaseh_Egh,TafsilID,Username,Password,PriceCheck,CheckDateDay,ShmoMoaref,RoleCode,TransferCode
+dbo.inventory_anbars	rdf_anbars,shka,mojkavah,mojkajoz,name,tedbastebandi
+dbo.anbars	rdf_anbar,name,addre,start_date,tell1,tell2,anbardar,Active,Base,UserID
+dbo.kagroup	group_rdf,group_name,stdate,CanNegative,ParentGroupRdf,GroupLevel,hasPic,Active,siteId
+dbo.sys_cus	rdf,SysID,Shmo,UserID
+dbo.sys_vis	rdf,SysID,shvis,UserID
+dbo.visitors	vis_rdf,vis_name,vis_addre,vis_tell1,vis_tell2,vis_cell,vis_man,VIs_region,viss_date,active,vis_city,h_sabet,image,is_supervisor,supervisor_rdf,supervisor_per,dar_z,eteb,per_p_d_naghd,per_p_d_check,per_jar_bch,kind,tedad_fmmt,mab_fmmt,rdf_device,TedadFactorMojazMande,MablaghMojazMandeJahatFactorha,Type1,Type2,Username,Password,UserID,rdf_device_distribution
+dbo.sys_users	user_id,user_password,user_name,user_lname,user_fname,role_id,skin_id,user_pic,IsLocked,IsLoggedIn,TafsilCow,TafsilID,phone,email,nationalCode,address,active,shmo,BackGroundAddress,IsNotePade,SysuserTransferCode
+dbo.Roles	id,name,SubSystemId
+dbo.osystems	rdf_system,name_System,Address,tel1,tel2,fax,sh_sabt,c_egh,c_pos,kind_f,arm_,eteb,Active,AnbarRdf,LevelIdFive,LevelIdSix,LineTransferCode
+dbo.masir	rdf_masir,rdf_region,shomare_masir,name,vis_rdf
+dbo.MasirDay	ID,Date_,VisRdf,CityRdf,RegionRdf,MasirRdf
+dbo.cust_act	rdf_,shmo,date,act_bes,act_bed,act_dis,act_id,ghno,done_date,t_time,ShowInReport,DocNumber,MoghayeratDiscription,sysid,isActive,fk_id,Rdf_ForDar,GhestPriceTemp,AccDocNumber,UserID
+sailfact_pish	rdf__,shfacfo,USER__,date,shmo,barbari,shfacthand,vis_rdf,sumlineall,all,gainall,tafif,jamtakhgh,done_date,panevis,isret,ismodify,active,modpar,rdf_sarbarg,rdf_tahbarg,nah_par,mod_darsad_vis,nah_d_text,man_gh,sh_f,user_f,date_f,ted_rooz,taeed,taeedUser,sysid,TaedHesabdari,TaedForush,UserTaedHesabdari,DateTaedHesabdari,UserTaedForush,DateTaedForush,VisitID,Stamp,Rejected,RejectedUser,RejectedDate,RejectedComment,taraz_kh_pish,DateRecive,TimeRecive,tax,avarez,MpKol,MpIsAuto,Promotion
+subsailfact_pish	rdf__,shfacfo,SHKA,rdf_anbar,TEDVAH,TEDJOZ,VAHPRICE,JOZPRICE,BASTEBANDI,TEDBASTEBANDI,LINESUM,LINEGAIN,ISRET,PERTAFIF,RDF,jozgain,PERVIS,litakhma,active,amani,Pavarez,Avarez,Ptax,Tax,Mp
+sailfact	rdf__,shfacfo,date,shmo,barbari,description,vis_rdf,sumlineall,all,tafif,SumTafifAghlam,done_date,panevis,ismodify,active,modpar,rdf_tahbarg,nah_par,nah_d_text,man_gh,t_date,tasvieh,driver_name,rdf_driver,mamorp_name,rdf_mamorp,bamandeh,sh_taraz_kh,time_,shpish,ba_tarikh,chap_f,chap_h,tax,moname,nahve_namayesh_daryaft,vazn,sysid,avarez,Status,TaeedDate,TaeedUser,sumlineall_fel,all_fel,SumTafifAghlam_fel,tax_fel,avarez_fel,userid,taffif_fel,MabDaryaftFactor,tdf,ShSanadFerestande,ExternalCosts,HajmiOverall,ChapWithTasvieh,ChapWhitMande,TaeedWarehous,TaeedWarehousUserId,TaeedWarehousDate
+subsailfact	rdf__,shfacfo,SHKA,rdf_anbar,TEDVAH,TEDJOZ,VAHPRICE,JOZPRICE,BASTEBANDI,TEDBASTEBANDI,LINESUM,PERTAFIF,TafifAghlam,RDF,PERVIS,litakhma,active,naka,ptax,tax,avarez,pavarez,tedjoz_fel,tedvah_fel,tedbastebandi_fel,linesum_fel,litakhma_fel,tax_fel,avarez_fel,Gift,TafifLine,PerPromotion,PromotionValue,TafifLineFel,ProductionSeriesID,TEDVAHMain,TEDJOZMain
+dbo.sys_kal	rdf,sysid,shka,UserID
+dbo.sys_anb	rdf,SysID,shanb,UserID
+dbo.sys_use	rdf,SysID,shuse,UserID
+dbo.sys_wor	rdf,SysID,shwor,UserID
+dbo.systems	rdf,name,active
+dbo.AnbarDifferent	RowID,Shka,SanadNo,Kind,AnbarID,JozPrice,TedVahOld,TedJozOld,TedVahCounted,TedJozCounted,Active
+dbo.NCustomers	RowID,NShmo,NMan,NDate,BlackList
+security.ConfirmUser	RowID,RealUserID,RealUserName,FakeUserID,FakeUserName,P,SumMab,SumPos,SumCheck,Shmo,Moname,RealPlusFake,Ghno
+security.LoginDetails	RowID,UserID,DateClient,DateServer,ComputerIP,ComputerName
+EMS.user	UserID,AtiranUserID,Username,Tell,Cellphone,Address,NationalCode,Email,PersonalID
+dbo.sal_mali	sal_maliID,rdf,name,nam_db,StartDate,EndDate,Current
+
+dbo.VW_InventoryAnbars	shka,rdf_anbars,name,tedbastebandi,mojkavah,mojkajoz,MojodiPish_vah,MojodiPish_joz
+dbo.subsailtemp_pish	shfacfo,shka,rdf_anbar,tedvah,tedjoz,vahprice,jozprice,bastebandi,tedbastebandi,linesum,isret,pertafif,rdf,pervis,litakhma,mohvah,modpar,mod,rdf__,active,date,done_date,sahm_mod_par,naka,ted_kol,vah_nam,amani,invepgh,time_,Pavarez,Avarez,Ptax,Tax,PerPromotion
+# PROVENANCE: dbo.subsailtemp_pish above is not from a column dump - it is the exact set of
+# columns that the enabled trigger dbo.trig_sst_pish reads from `inserted` and the set its
+# INSERT into dbo.subsailfact_pish names (docs/audit-runs/out_13_trigger_bodies.txt, 2026-09-18).
+# Types and defaults still to be confirmed by script 'rah 9'.
+# PROVENANCE WARNING: the rows for dbo.subsailtemp_pish (34 columns), dbo.subsailfact_pish,
+# sailfact, sailfact_pish and subsailfact came from the operator's paste of 2026-09-18 while
+# SSMS was connected to DATABASE Atiran14050603 (its own db column says so). They are ERP
+# truth for that database - and MUST be re-checked against Meelano before the app relies on
+# them, because AddInvoice on the two databases is not even the same length (6408 vs 5850).

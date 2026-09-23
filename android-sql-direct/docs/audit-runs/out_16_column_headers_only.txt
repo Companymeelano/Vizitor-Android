@@ -1,0 +1,25 @@
+# راه ۱۳ (ناقص) -- کاربر دو کوئری نمونهٔ پیش‌فاکتور را زد؛ خروجی فقط «سرستون» بود
+## یعنی هر دو جدول خالی برگشتند (۰ سطر) و هیچ داده‌ای برای خواندن نبود.
+## این بار هم ستون db فرستاده نشد، پس نام دیتابیسی که کوئری روی آن اجرا شده معلوم نیست.
+
+### گرید ۱ -- سرستون‌های sailfact_pish (۵۲ ستون)
+
+rdf__ shfacfo USER__ date shmo barbari shfacthand vis_rdf sumlineall all gainall tafif
+jamtakhgh done_date panevis isret ismodify active modpar rdf_sarbarg rdf_tahbarg nah_par
+mod_darsad_vis nah_d_text man_gh sh_f user_f date_f ted_rooz taeed taeedUser sysid TaedHesabdari
+TaedForush UserTaedHesabdari DateTaedHesabdari UserTaedForush DateTaedForush VisitID Stamp
+Rejected RejectedUser RejectedDate RejectedComment taraz_kh_pish DateRecive TimeRecive tax avarez
+MpKol MpIsAuto Promotion
+
+### گرید ۲ -- سرستون‌های subsailfact_pish (۲۶ ستون، شامل PerPromotion)
+
+rdf__ shfacfo SHKA rdf_anbar TEDVAH TEDJOZ VAHPRICE JOZPRICE BASTEBANDI
+TEDBASTEBANDI LINESUM LINEGAIN ISRET PERTAFIF RDF jozgain PERVIS litakhma active amani
+Pavarez Avarez Ptax Tax Mp PerPromotion
+
+### یادداشت
+* گرید ۲ با نسخهٔ Atiran14050603 (۲۶ ستون شامل PerPromotion) یکسان است؛ فرق مهمی با ردیفِ
+  ۲۵ستونیِ TSV ما دارد. یعنی یا کوئری روی همان دیتابیس اجرا شده، یا Meelano هم PerPromotion
+  دارد. با یک ستون db در کوئری بعدی قطعی می‌شود.
+* چیزی که «مانع» است: هیچ سطر داده‌ای وجود ندارد → پنج مقدار سربرگ (ted_rooz, ph_kh,
+  mod_darsad_vis, rdf_sarbarg, gainall) هنوز خوانده نشده و مسیر نوشتن فعال نشده است.

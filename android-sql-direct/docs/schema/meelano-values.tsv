@@ -1,0 +1,12 @@
+# Verified constant values read from the live database (audit parts 1/5).
+# format: <table>.<column><TAB><value><TAB><note>
+# The guard tools/check_sql_columns.py compares these with the constants that
+# the Kotlin data layer declares as:  const val NAME = X   // value: <key>
+dbo.inventory.active	t	char(1) boolean used by this ERP: 't' = active, 'f' = inactive
+dbo.CUSTOMERS.active	t	char(1)
+dbo.forosh_price.active	t	char(1)
+dbo.visitors.active	t	char(1)
+dbo.kagroup.Active	1	bit
+dbo.anbars.Active	1	bit
+dbo.custgroup.Active	1	bit
+dbo.sys_users.active	1	bit

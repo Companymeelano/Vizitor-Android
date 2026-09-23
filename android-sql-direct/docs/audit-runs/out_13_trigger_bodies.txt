@@ -1,0 +1,1035 @@
+# راه ۸ -- تریگرها + متن هشت ماژول کلیدی (paste کاربر، 2026-09-18)
+
+یادداشت کاربر: اسم دیتابیس Meelano هست.  (تأیید دوبارهٔ نام دیتابیس)
+
+## بخش الف -- sys.triggers: هر تریگر روی کدام جدول است
+
+name	on_table	is_disabled	is_instead_of_trigger
+
+InvoiceTrigger	subsailtemp	0	1
+
+trig_sst_pish	subsailtemp_pish	0	1
+
+## بخش ب -- sys.sql_modules.definition (هشت ماژول)
+
+### CalcDetailsPishfactor
+
+CREATE FUNCTION [dbo].[CalcDetailsPishfactor]
+(
+	@shfacfo int
+)
+RETURNS int
+AS
+BEGIN
+
+	declare @result int = (select count(dbo.subsailfact_pish.rdf__) from subsailfact_pish where shfacfo = @shfacfo and active = 't')
+	return @result
+
+END
+
+### InvoiceTrigger
+
+CREATE TRIGGER [dbo].[InvoiceTrigger] ON [dbo].[subsailtemp]
+        instead of  INSERT
+            AS
+            begin
+            --Help:
+            --Step 1 : Insert In To SubSailFact
+            --Step 2 : Insert In To ka_act
+            declare @rdf__ int=(select rdf__ from inserted) -- تعداد دفعات اصلاح فاكتور
+            declare @shfacfo bigint=(select shfacfo from inserted)
+            declare @shka bigint=(select shka from inserted)
+            declare @rdf_anbar int =(select rdf_anbar from inserted)
+            declare @TEDVAH decimal(18,3)=(select tedvah from inserted)
+            declare @TEDJOZ int=(select tedjoz from inserted)
+            declare @VAHPRICE money=(select vahprice from inserted)
+            declare @JOZPRICE money=(select jozprice from inserted)
+            declare @BASTEBANDI nvarchar(max)=(select bastebandi from inserted)
+            declare @TEDBASTEBANDI decimal(18,3)=(select tedbastebandi from inserted)
+            declare @LINESUM money=(select linesum from inserted)
+            declare @PERTAFIF decimal(18,2)=(select pertafif from inserted)
+            declare @RDF int =(select RDF from inserted) -- رديف قلم در فاكتور
+            declare @PERVIS decimal(18,2)=(select pervis from inserted)
+            declare @litakhma money=(select litakhma from inserted)
+            declare @active char(1)=(select active from inserted)
+            declare @naka nvarchar(max)=(select naka from inserted)
+            declare @ptax decimal(18,2)=(select ptax from inserted)
+            declare @tax money=(select tax from inserted)
+            declare @avarez money=(select avarez from inserted)
+            declare @pavarez decimal(18,3)=(select PAvarez from inserted)
+            declare @tedjoz_fel int =(select tedjoz from inserted)
+            declare @tedvah_fel decimal(18,3)=(select tedvah from inserted)
+            declare @tedbastebandi_fel decimal(18,3)=(select tedbastebandi from inserted)
+            declare @linesum_fel money=(select linesum from inserted)
+            declare @litakhma_fel money=(select litakhma from inserted)
+            declare @tax_fel money=(select tax from inserted)
+            declare @avarez_fel money=(select avarez from inserted)
+            declare @Gift bit=(select gift from inserted)
+            declare @date nvarchar(10) =(select date from inserted)
+            declare @ActDis nvarchar(max)='فروش فاكتور شماره '+convert(varchar(10),@shfacfo)+' - '+(select moname from sailfact where shfacfo=@shfacfo and active='t')
+            declare @DoneDate nvarchar(10)=(select done_date from inserted)
+            declare @UserID nvarchar(500)=(select UserID from inserted)
+            declare @invepgh money=0
+            declare @VisRdf int =(select vis_rdf from inserted)
+            declare @sysid int=(select sysid from inserted)
+            declare @tafifAghlam money=(select tafifAghlam from inserted)
+            declare @Gain money
+            declare @mohvah bigint=(select mohvah from inventory where shka=@shka)
+            declare @tedad decimal(18,3)=(@tedvah*@mohvah)+@tedjoz
+            declare @TafifLine money=(select TafifLine from inserted)
+            declare @ProductionSeriesID bigint=(select ProductionSeriesID from inserted)
+            declare @TEDVAHMain decimal(18,3)=(select TEDVAHMain from inserted)
+            declare @TEDJOZMain int=(select TEDJOZMain from inserted)
+            declare @PerPromotion decimal(18,3) = isnull((select PerPromotion from inserted),0)
+            declare @PromotionValue decimal(18,0) = isnull((select PromotionValue from inserted),0)
+            declare @shmo int=(select shmo from sailfact where shfacfo=@shfacfo and active='t')
+            declare @MultiPishfactor bit = (select MultiPishFactor from  inserted)
+
+            declare @TafifPos decimal(18,3)=(select TafifPos from inserted)
+            declare @TafifNaghd decimal(18,3)=(select TafifNaghd from inserted)
+            declare @VariteyID int =(select VarietyID from inserted)
+
+            if(@MultiPishfactor=0)
+            begin
+            if((select shpish from sailfact where active='t' and shfacfo=@shfacfo)>0 and (select COUNT(*) from sailfact where shfacfo=@shfacfo)=1)
+            begin
+                declare @Setting97 int = (select  value from overal_setting where id=97) -- تاريخ فاكتورهايي كه از پيش فاكتور مي‌آيند چند روز به جلو برود؟
+                        if(@Setting97>0)
+                            begin
+                    set @date=(select dbo.what_date(@date,@setting97))
+                            end
+            end
+            end
+            --Step 1
+            insert into subsailfact (rdf__, shfacfo, SHKA, rdf_anbar, TEDVAH, TEDJOZ, VAHPRICE, JOZPRICE, BASTEBANDI, TEDBASTEBANDI, LINESUM, PERTAFIF, TafifAghlam,RDF, PERVIS, litakhma, active, naka, ptax, tax, avarez, pavarez, tedjoz_fel, tedvah_fel, tedbastebandi_fel, linesum_fel, litakhma_fel, tax_fel, avarez_fel, Gift,TafifLine,PerPromotion,PromotionValue,TafifLineFel,ProductionSeriesID,TEDVAHMain,TEDJOZMain,TafifPos,TafifNaghd,VarietyID)
+            values(@rdf__, @shfacfo, @SHKA, @rdf_anbar, @TEDVAH, @TEDJOZ, @VAHPRICE, @JOZPRICE, @BASTEBANDI, @TEDBASTEBANDI, @LINESUM, @PERTAFIF,@tafifAghlam, @RDF, @PERVIS, @litakhma, @active, @naka, @ptax, @tax, @avarez, @pavarez, @tedjoz_fel, @tedvah_fel, @tedbastebandi_fel, @linesum_fel, @litakhma_fel, @tax_fel, @avarez_fel, @Gift,@TafifLine,@PerPromotion,@PromotionValue,@TafifLine,@ProductionSeriesID,@TEDVAHMain,@TEDJOZMain,@TafifPos,@TafifNaghd,@VariteyID)
+
+            --End Step 1
+            --Step 2
+
+            if @ProductionSeriesID is not null
+            begin
+                    set @invepgh = (select PriceEnd from produce.ProductionSeries where ID=@ProductionSeriesID)
+                end
+            else
+                begin
+                    set @invepgh = (select inventory_price from inventory where shka=@shka)
+                end
+
+            set @Gain=dbo.cal_gain(1,@tedad,@JOZPRICE,@invepgh,@litakhma,@pervis)
+            insert into ka_act(shka, act_id, shfac, rdf__, act_dis, act_date, done_date, [UserID], tedvah, tedjoz, tedbastebandi, active, price, invepgh, invep, gain, rdf_kh,  ptax, tax, vis_rdf, pertaf, pervis, litakhma, HAct_id, ghno, sysid, pavarez, avarez, Gift,RdfAnbar,shmo,PerPromotion,TafifHajmi1,ProductionSeriesID, TamamJoz,VarietyID)
+            values(@shka,20,@shfacfo,@rdf__,@ActDis,@date,@DoneDate,@UserID,@TEDVAH,@TEDJOZ,@TEDBASTEBANDI,@active,@JOZPRICE,@invepgh,@invepgh,@Gain,@RDF,@ptax,@tax,@VisRdf,@PERTAFIF,@PERVIS,@litakhma,20,@shfacfo,@sysid,@pavarez,@avarez,@Gift,@rdf_anbar,@shmo,@PerPromotion,@TafifLine,@ProductionSeriesID, FLOOR(@JOZPRICE - (@litakhma/@tedad)),@VariteyID)
+            --End Step 2
+            print('')
+            end
+
+### ListPishFactor
+
+CREATE proc [dbo].[ListPishFactor] @mydate char(10),
+            @Mod int as begin declare @TableTemp table(
+                rdf__ int,
+                shfacfo bigint,
+                USER__ nvarchar(300),
+                date char(10),
+                shmo int,
+                barbari money,
+                shfacthand nvarchar(500),
+                vis_rdf int,
+                sumlineall money,
+                [all] money,
+                gainall money,
+                tafif money,
+                jamtakhgh money,
+                done_date char(10),
+                panevis varchar(80),
+                isret char(1),
+                ismodify char(1),
+                active char(1),
+                modpar int,
+                rdf_sarbarg int,
+                rdf_tahbarg int,
+                nah_par int,
+                mod_darsad_vis int,
+                nah_d_text text,
+                man_gh money,
+                man money,
+                sh_f bigint,
+                user_f varchar(30),
+                date_f char(10),
+                ted_rooz int,
+                taeed int,
+                taeedUser varchar(300),
+                sysid int,
+                TaedHesabdari bit,
+                TaedForush bit,
+                UserTaedHesabdari nvarchar(300),
+                DateTaedHesabdari nvarchar(10),
+                UserTaedForush nvarchar(300),
+                DateTaedForush nvarchar(10),
+                VisitID bigint,
+                Stamp nvarchar(50),
+                Rejected bit,
+                RejectedUser nvarchar(300),
+                RejectedDate nvarchar(10),
+                RejectedComment nvarchar(1000),
+                taraz_kh_pish int,
+                DateRecive varchar(10),
+                TimeRecive varchar(20),
+                tax money,
+                avarez money,
+                MONAME nvarchar(500),
+                code nvarchar(500),
+                vis_rdfVisitor int,
+                vis_name nvarchar(500),
+                addre nvarchar(500),
+                name_region nvarchar(500),
+                name nvarchar(500),
+                QuarterName nvarchar(500),
+                c_mel nvarchar(100),
+                c_egh nvarchar(100),
+                c_pos nvarchar(100),
+                promotion money,
+                Weight decimal(18, 2)
+            ) if(@Mod = 1) begin
+                insert into
+                    @TableTemp
+                select
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    isnull(visitors.vis_rdf, 0) as 'vis_rdfVisitor',
+                    isnull(visitors.vis_name, '--') as 'vis_name',
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name as QuarterName,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion,
+                    CAST(
+                        SUM(
+                            (inventory.vahwe / inventory.mohvah) * (
+                                (subsailfact_pish.TEDVAH * inventory.mohvah) + subsailfact_pish.TEDJOZ
+                            )
+                        ) AS DECIMAL(18, 2)
+                    ) AS Weight
+                from
+                    sailfact_pish
+                    inner join CUSTOMERS on CUSTOMERS.SHMO = sailfact_pish.shmo
+                    inner join masir m on CUSTOMERS.RDF_masir=m.rdf_masir
+                    inner join [Quarter] q on m.QuarterID=q.ID
+                    inner join regions r on q.RegionId = r.rdf_region
+                    inner join CITYS c on r.rdf_city = c.RDF
+                    left join visitors on sailfact_pish.vis_rdf = visitors.vis_rdf
+                    INNER JOIN subsailfact_pish ON sailfact_pish.shfacfo = subsailfact_pish.shfacfo
+                    INNER JOIN inventory ON subsailfact_pish.SHKA = inventory.shka
+                where
+                    TaedForush = 1
+                    and TaedHesabdari = 1
+                    and Rejected = 0
+                    and sailfact_pish.active = 't'
+                    and sh_f = 0
+                    and subsailfact_pish.active = 't'
+                GROUP BY
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    ISNULL(visitors.vis_rdf, 0),
+                    ISNULL(visitors.vis_name, '--'),
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion
+                select
+                    *
+                from
+                    @TableTemp
+                where
+                    dbo.dif_date(date, @mydate) <= ted_rooz
+                end if(@Mod = 2) begin
+                insert into
+                    @TableTemp
+                select
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    isnull(visitors.vis_rdf, 0) as 'vis_rdfVisitor',
+                    isnull(visitors.vis_name, '--') as 'vis_name',
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name as QuarterName,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion,
+                    CAST(
+                        SUM(
+                            (inventory.vahwe / inventory.mohvah) * (
+                                (subsailfact_pish.TEDVAH * inventory.mohvah) + subsailfact_pish.TEDJOZ
+                            )
+                        ) AS DECIMAL(18, 2)
+                    ) AS Weight
+                from
+                    sailfact_pish
+                    inner join CUSTOMERS on CUSTOMERS.SHMO = sailfact_pish.shmo
+                    inner join masir m on CUSTOMERS.RDF_masir=m.rdf_masir
+                    inner join [Quarter] q on m.QuarterID=q.ID
+                    inner join regions r on q.RegionId = r.rdf_region
+                    inner join CITYS c on r.rdf_city = c.RDF
+                    left join visitors on sailfact_pish.vis_rdf = visitors.vis_rdf
+                    INNER JOIN subsailfact_pish ON sailfact_pish.shfacfo = subsailfact_pish.shfacfo
+                    INNER JOIN inventory ON subsailfact_pish.SHKA = inventory.shka
+                where
+                    TaedForush = 1
+                    and TaedHesabdari = 1
+                    and Rejected = 0
+                    and sailfact_pish.active = 't'
+                    and sh_f = 0
+                    and subsailfact_pish.active = 't'
+                GROUP BY
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    ISNULL(visitors.vis_rdf, 0),
+                    ISNULL(visitors.vis_name, '--'),
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion
+                select
+                    *
+                from
+                    @TableTemp
+                where
+                    dbo.dif_date(date, @mydate) > ted_rooz
+                end if(@Mod = 3) begin
+                select
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    isnull(visitors.vis_rdf, 0) as 'vis_rdfVisitor',
+                    isnull(visitors.vis_name, '--') as 'vis_name',
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name as QuarterName,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion,
+                    CAST(
+                        SUM(
+                            (inventory.vahwe / inventory.mohvah) * (
+                                (subsailfact_pish.TEDVAH * inventory.mohvah) + subsailfact_pish.TEDJOZ
+                            )
+                        ) AS DECIMAL(18, 2)
+                    ) AS Weight
+                from
+                    sailfact_pish
+                    inner join CUSTOMERS on CUSTOMERS.SHMO = sailfact_pish.shmo
+                    inner join masir m on CUSTOMERS.RDF_masir=m.rdf_masir
+                    inner join [Quarter] q on m.QuarterID=q.ID
+                    inner join regions r on q.RegionId = r.rdf_region
+                    inner join CITYS c on r.rdf_city = c.RDF
+                    left join visitors on sailfact_pish.vis_rdf = visitors.vis_rdf
+                    INNER JOIN subsailfact_pish ON sailfact_pish.shfacfo = subsailfact_pish.shfacfo
+                    INNER JOIN inventory ON subsailfact_pish.SHKA = inventory.shka
+                where
+                    sailfact_pish.sh_f <> 0
+                    and TaedForush = 1
+                    and TaedHesabdari = 1
+                    and Rejected = 0
+                    and sailfact_pish.active = 't'
+                    and subsailfact_pish.active = 't'
+                GROUP BY
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    ISNULL(visitors.vis_rdf, 0),
+                    ISNULL(visitors.vis_name, '--'),
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion;
+                end if(@Mod = 4) begin
+                select
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    isnull(visitors.vis_rdf, 0) as 'vis_rdfVisitor',
+                    isnull(visitors.vis_name, '--') as 'vis_name',
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name as QuarterName,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion,
+                    CAST(
+                        SUM(
+                            (inventory.vahwe / inventory.mohvah) * (
+                                (subsailfact_pish.TEDVAH * inventory.mohvah) + subsailfact_pish.TEDJOZ
+                            )
+                        ) AS DECIMAL(18, 2)
+                    ) AS Weight
+                from
+                    sailfact_pish
+                    inner join CUSTOMERS on CUSTOMERS.SHMO = sailfact_pish.shmo
+                    inner join masir m on CUSTOMERS.RDF_masir=m.rdf_masir
+                    inner join [Quarter] q on m.QuarterID=q.ID
+                    inner join regions r on q.RegionId = r.rdf_region
+                    inner join CITYS c on r.rdf_city = c.RDF
+                    left join visitors on sailfact_pish.vis_rdf = visitors.vis_rdf
+                    INNER JOIN subsailfact_pish ON sailfact_pish.shfacfo = subsailfact_pish.shfacfo
+                    INNER JOIN inventory ON subsailfact_pish.SHKA = inventory.shka
+                where
+                    TaedForush = 1
+                    and TaedHesabdari = 1
+                    and Rejected = 0
+                    and sailfact_pish.active = 't'
+                    and subsailfact_pish.active = 't'
+                GROUP BY
+                    sailfact_pish.rdf__,
+                    sailfact_pish.shfacfo,
+                    sailfact_pish.USER__,
+                    sailfact_pish.date,
+                    sailfact_pish.shmo,
+                    sailfact_pish.barbari,
+                    sailfact_pish.shfacthand,
+                    sailfact_pish.vis_rdf,
+                    sailfact_pish.sumlineall,
+                    sailfact_pish.[all],
+                    sailfact_pish.gainall,
+                    sailfact_pish.tafif,
+                    sailfact_pish.jamtakhgh,
+                    sailfact_pish.done_date,
+                    sailfact_pish.panevis,
+                    sailfact_pish.isret,
+                    sailfact_pish.ismodify,
+                    sailfact_pish.active,
+                    sailfact_pish.modpar,
+                    sailfact_pish.rdf_sarbarg,
+                    sailfact_pish.rdf_tahbarg,
+                    sailfact_pish.nah_par,
+                    sailfact_pish.mod_darsad_vis,
+                    sailfact_pish.nah_d_text,
+                    sailfact_pish.man_gh,
+                    CUSTOMERS.man,
+                    sailfact_pish.sh_f,
+                    sailfact_pish.user_f,
+                    sailfact_pish.date_f,
+                    sailfact_pish.ted_rooz,
+                    sailfact_pish.taeed,
+                    sailfact_pish.taeedUser,
+                    sailfact_pish.sysid,
+                    sailfact_pish.TaedHesabdari,
+                    sailfact_pish.TaedForush,
+                    sailfact_pish.UserTaedHesabdari,
+                    sailfact_pish.DateTaedHesabdari,
+                    sailfact_pish.UserTaedForush,
+                    sailfact_pish.DateTaedForush,
+                    sailfact_pish.VisitID,
+                    sailfact_pish.Stamp,
+                    sailfact_pish.Rejected,
+                    sailfact_pish.RejectedUser,
+                    sailfact_pish.RejectedDate,
+                    sailfact_pish.RejectedComment,
+                    sailfact_pish.taraz_kh_pish,
+                    sailfact_pish.DateRecive,
+                    sailfact_pish.TimeRecive,
+                    sailfact_pish.tax,
+                    sailfact_pish.avarez,
+                    CUSTOMERS.MONAME,
+                    CUSTOMERS.code,
+                    ISNULL(visitors.vis_rdf, 0),
+                    ISNULL(visitors.vis_name, '--'),
+                    CUSTOMERS.addre,
+                    r.name_region,
+                    c.name,
+                    q.Name,
+                    c_mel,
+                    c_egh,
+                    c_pos,
+                    sailfact_pish.Promotion;
+
+                end
+                end
+
+### pishfactor_body
+
+create VIEW [dbo].[pishfactor_body]
+AS
+SELECT  dbo.inventory.naka, dbo.inventory.vahsanj, dbo.inventory.mohvah as moh, dbo.sailfact_pish.sh_f, dbo.inventory.shka, dbo.subsailfact_pish.TEDVAH as tedvah, dbo.subsailfact_pish.TEDJOZ,                        dbo.subsailfact_pish.rdf_anbar, CONVERT(decimal(18, 0), dbo.subsailfact_pish.JOZPRICE) AS jozprice, CONVERT(decimal(18, 0), dbo.subsailfact_pish.LINESUM) AS linesum,
+        CAST(dbo.subsailfact_pish.PERTAFIF AS decimal) AS PERTAFIF, CAST(dbo.subsailfact_pish.PerPromotion AS decimal) AS PerPromotion,
+        CAST(dbo.subsailfact_pish.PERVIS AS decimal) AS PERVIS, CAST(dbo.subsailfact_pish.Ptax AS decimal) AS pTax, CAST(dbo.subsailfact_pish.Pavarez AS decimal) AS pAvarez, CONVERT(decimal(18, 0),
+        dbo.subsailfact_pish.litakhma) AS litakhma, dbo.sailfact_pish.shfacfo, dbo.sailfact_pish.ted_rooz, dbo.sailfact_pish.date, dbo.anbars.rdf_anbar AS Expr1, dbo.anbars.name, ISNULL                             (dbo.subsailfact_pish.Tax, 0) AS Tax, ISNULL(dbo.subsailfact_pish.Avarez, 0) AS Avarez,dbo.subsailfact_pish.RDF,
+	  CONVERT(decimal(18, 0),((dbo.subsailfact_pish.LINESUM)-(dbo.subsailfact_pish.litakhma)) + ((dbo.subsailfact_pish.Avarez)+(dbo.subsailfact_pish.Tax))) AS LineSum_Takhfif_Tax
+
+FROM dbo.inventory INNER JOIN dbo.subsailfact_pish ON dbo.inventory.shka = dbo.subsailfact_pish.SHKA
+                   INNER JOIN dbo.sailfact_pish ON dbo.subsailfact_pish.rdf__ = dbo.sailfact_pish.rdf__ AND dbo.subsailfact_pish.shfacfo = dbo.sailfact_pish.shfacfo
+				   INNER JOIN dbo.anbars ON dbo.subsailfact_pish.rdf_anbar = dbo.anbars.rdf_anbar
+WHERE (dbo.sailfact_pish.active = 't')
+
+### subsailFactPish
+
+CREATE view [dbo].[subsailFactPish] as
+select inventory.naka,subsailfact_pish.shfacfo,subsailfact_pish.TEDVAH,subsailfact_pish.TEDJOZ,subsailfact_pish.LINESUM,subsailfact_pish.litakhma,subsailfact_pish.LINESUM-subsailfact_pish.litakhma as 'kol',subsailfact_pish.active
+
+from subsailfact_pish inner join inventory on subsailfact_pish.SHKA=inventory.shka
+
+### trig_sst_pish
+
+        CREATE TRIGGER [dbo].[trig_sst_pish] ON [dbo].[subsailtemp_pish] instead of
+            INSERT
+                AS begin declare @mod int
+            set
+                @mod =(
+                    select
+                        mod
+                    from
+                        inserted
+                ) declare @shfacfo bigint
+            set
+                @shfacfo =(
+                    select
+                        shfacfo
+                    from
+                        inserted
+                ) begin transaction forosh if (@mod = 0) begin
+            insert into
+                subsailfact_pish (
+                    rdf__,
+                    shfacfo,
+                    shka,
+                    rdf_anbar,
+                    tedvah,
+                    tedjoz,
+                    vahprice,
+                    jozprice,
+                    bastebandi,
+                    tedbastebandi,
+                    linesum,
+                    linegain,
+                    isret,
+                    pertafif,
+                    rdf,
+                    jozgain,
+                    pervis,
+                    litakhma,
+                    active,
+                    amani,
+                    Pavarez,
+                    Avarez,
+                    Ptax,
+                    Tax,
+                    PerPromotion,
+                    Mp
+                )
+            select
+                rdf__,
+                shfacfo,
+                shka,
+                rdf_anbar,
+                tedvah,
+                tedjoz,
+                vahprice,
+                jozprice,
+                bastebandi,
+                tedbastebandi,
+                linesum,
+                0,
+                isret,
+                pertafif,
+                rdf,
+                0,
+                pervis,
+                litakhma,
+                active,
+                amani,
+                Pavarez,
+                Avarez,
+                Ptax,
+                Tax,
+                PerPromotion,
+                modpar
+            from
+                inserted
+            end if(@mod = 1) begin declare @rdf__ int
+            set
+                @rdf__ =(
+                    select
+                        max(rdf__)
+                    from
+                        sailfact_pish
+                    where
+                        shfacfo = @shfacfo
+                )
+            insert into
+                subsailfact_pish (
+                    rdf__,
+                    shfacfo,
+                    shka,
+                    rdf_anbar,
+                    tedvah,
+                    tedjoz,
+                    vahprice,
+                    jozprice,
+                    bastebandi,
+                    tedbastebandi,
+                    linesum,
+                    linegain,
+                    isret,
+                    pertafif,
+                    rdf,
+                    jozgain,
+                    pervis,
+                    litakhma,
+                    active,
+                    amani,
+                    Pavarez,
+                    Avarez,
+                    Ptax,
+                    Tax,
+                    PerPromotion,
+                    Mp
+                )
+            select
+                @rdf__,
+                shfacfo,
+                shka,
+                rdf_anbar,
+                tedvah,
+                tedjoz,
+                vahprice,
+                jozprice,
+                bastebandi,
+                tedbastebandi,
+                linesum,
+                0,
+                isret,
+                pertafif,
+                rdf,
+                0,
+                pervis,
+                litakhma,
+                't',
+                amani,
+                Pavarez,
+                Avarez,
+                Ptax,
+                Tax,
+                PerPromotion,
+                modpar
+            from
+                inserted
+            end commit transaction forosh
+            end
+
+### VW_Taraz_pish
+
+CREATE VIEW [dbo].[VW_Taraz_pish]
+AS
+SELECT sailfact_pish.shfacfo
+,sailfact_pish.[date]
+,Sub.TEDVAH
+,Sub.TEDJOZ
+,Sub.litakhma
+,sailfact_pish.[all]
+,CUSTOMERS.moname
+,customers.shmo
+,customers.group_rdf as RdfGroupCust
+,CUSTOMERS.RDF_masir
+,sailfact_pish.vis_rdf
+,sailfact_pish.user__ as [user]
+,sailfact_pish.sysid
+,Sub.JOZPRICE
+,Sub.VAHPRICE
+,inventory.naka
+,inventory.shka
+,customers.tell1
+,customers.tell2
+,customers.man
+,customers.addre
+,inventory.mohvah
+,isnull(sailfact_pish.taraz_kh_pish,0) as taraz_kh_pish
+,Sub.rdf_anbar
+,anbars.name as name
+,cast(inventory.vahwe as decimal) as 'vahwe'
+,sailfact_pish.TaedForush
+,sailfact_pish.TaedHesabdari
+FROM            sailfact_pish inner join
+				subsailfact_pish Sub on sailfact_pish.shfacfo=Sub.shfacfo inner join
+				customers on customers.shmo=sailfact_pish.shmo inner join
+				inventory on Sub.shka=inventory.shka inner join
+				anbars on anbars.rdf_anbar=Sub.rdf_anbar
+WHERE        (sailfact_pish.sh_f=0) and (sailfact_pish.active='t')
+
+--, dbo.sailfact.active AS [sailfact.active]
+
+### VWDeatailspishFactorForush
+
+create VIEW [dbo].[VWDeatailspishFactorForush]
+AS
+SELECT        dbo.subsailfact_pish.shfacfo, dbo.inventory.naka, dbo.inventory.vahsanj, dbo.subsailfact_pish.TEDVAH, dbo.subsailfact_pish.TEDJOZ, dbo.subsailfact_pish.JOZPRICE,
+                         dbo.subsailfact_pish.BASTEBANDI, dbo.subsailfact_pish.TEDBASTEBANDI, CAST(dbo.subsailfact_pish.LINESUM AS decimal) AS LINESUM
+FROM            dbo.inventory INNER JOIN
+                         dbo.subsailfact_pish ON dbo.inventory.shka = dbo.subsailfact_pish.SHKA
+WHERE        (dbo.subsailfact_pish.active = 't')

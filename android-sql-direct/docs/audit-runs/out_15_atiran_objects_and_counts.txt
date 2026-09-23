@@ -1,0 +1,30 @@
+# راه ۱۰ -- شناسه‌های اشیا + شمارش جدول‌ها + ستون‌ها (paste کاربر، 2026-09-18)
+## نکته: کوئری ۱ (فهرست دیتابیس‌ها) در این paste نیامده و کوئری‌های ۲ تا ۴
+## همه با db = Atiran14050603 برگشتند، یعنی هنوز نوار ابزار SSMS روی همان دیتابیس است.
+
+### بخش ۱ -- OBJECT_ID اشیای کلیدی (هر عدد = شیء وجود دارد، NULL = ندارد)
+
+db	staging_pish	lines_pish	trg_pish	staging_invoice	trg_invoice	add_sail_pish	add_invoice	edit_sail_pish
+
+Atiran14050603	1514488474	1242487505	264386940	613017365	815340898	585768073	1403866997	633768244
+
+### بخش ۲ -- شمارش سطرها در همین دیتابیس
+
+db	name	rows_count
+
+Atiran14050603	CUSTOMERS	1219
+Atiran14050603	inventory	2197
+Atiran14050603	sailfact	243
+Atiran14050603	sailfact_pish	0
+Atiran14050603	sal_mali	1
+Atiran14050603	subsailfact	1696
+Atiran14050603	subsailfact_pish	0
+Atiran14050603	subsailtemp	0
+Atiran14050603	subsailtemp_pish	0
+Atiran14050603	sys_users	4
+Atiran14050603	visitors	1
+
+### بخش ۳ -- ستون‌های دو جدول اقلام
+
+(عیناً همان ۲۶ + ۳۴ ستون paste قبلی؛ اینجا تکرار نشده - در out_14_columns_and_samples.txt کامل است.
+ این بار هم db = Atiran14050603.)

@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+data/
+
+# پوشهٔ کد Kotlin به نام data در پروژهٔ اندروید نباید نادیده گرفته شود
+!android-app/**/data/
+!android-app/**/data/**
+/android-app/build.log
+
+# گزارش‌های آزمون CI (توسط خودِ ورک‌فلو ساخته و ثبت می‌شوند)
+/android-app/sql-test.log
+/android-app/sql-connection-report.txt
+
+# گزارش‌های بررسی CI (توسط خودِ ورک‌فلو ساخته و با add -f ثبت می‌شوند)
+/android-app/server-setup-report.txt
+/installer/exe-build-report.txt
+
+# کلید امضا و فایل‌های بیلد محلی
+vizitor-app/keystore.properties
+vizitor-app/*.jks
+vizitor-app/build.log
+vizitor-app/app/build/
+vizitor-app/build/
+vizitor-app/dist/
+vizitor-app/.gradle/
+!vizitor-app/app/src/main/java/ir/atiran/vizitor/data/

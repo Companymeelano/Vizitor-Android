@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Developed by Milano Technical Team, Milad Yaghoobi -->
+<resources>
+    <style name="Theme.Vizitor" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/dark_slate</item>
+        <item name="android:statusBarColor">@color/dark_slate</item>
+        <item name="android:navigationBarColor">@color/dark_slate</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- اسپلش‌اسکرین لاکچری: پس‌زمینه اسلیت + آیکون M طلایی -->
+    <style name="Theme.Vizitor.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/dark_slate</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Vizitor</item>
+    </style>
+</resources>

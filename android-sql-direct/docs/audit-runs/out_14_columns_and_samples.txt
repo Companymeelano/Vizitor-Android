@@ -1,0 +1,197 @@
+# راه ۹ -- ستون‌ها + نمونهٔ دادهٔ واقعی + ماژول‌های ساخت فاکتور (paste کاربر، 2026-09-18)
+
+## !! مهم -- ستون db همهٔ سه خروجی = Atiran14050603، نه Meelano
+## یعنی این سه جواب از دیتابیس Atiran14050603 آمده‌اند (نوار ابزار SSMS روی آن بوده).
+
+### بخش ۱ -- INFORMATION_SCHEMA.COLUMNS
+
+db	TABLE_NAME	ORDINAL_POSITION	COLUMN_NAME	DATA_TYPE	len	pr	sc	IS_NULLABLE	COLUMN_DEFAULT
+
+Atiran14050603	subsailfact_pish	1	rdf__	int	NULL	10	0	NO	NULL
+
+Atiran14050603	subsailfact_pish	2	shfacfo	bigint	NULL	19	0	NO	NULL
+
+Atiran14050603	subsailfact_pish	3	SHKA	bigint	NULL	19	0	NO	NULL
+
+Atiran14050603	subsailfact_pish	4	rdf_anbar	int	NULL	10	0	NO	NULL
+
+Atiran14050603	subsailfact_pish	5	TEDVAH	decimal	NULL	18	3	NO	NULL
+
+Atiran14050603	subsailfact_pish	6	TEDJOZ	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailfact_pish	7	VAHPRICE	money	NULL	19	4	NO	NULL
+
+Atiran14050603	subsailfact_pish	8	JOZPRICE	money	NULL	19	4	NO	NULL
+
+Atiran14050603	subsailfact_pish	9	BASTEBANDI	varchar	25	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailfact_pish	10	TEDBASTEBANDI	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailfact_pish	11	LINESUM	money	NULL	19	4	NO	NULL
+
+Atiran14050603	subsailfact_pish	12	LINEGAIN	money	NULL	19	4	NO	NULL
+
+Atiran14050603	subsailfact_pish	13	ISRET	char	1	NULL	NULL	NO	NULL
+
+Atiran14050603	subsailfact_pish	14	PERTAFIF	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailfact_pish	15	RDF	int	NULL	10	0	NO	NULL
+
+Atiran14050603	subsailfact_pish	16	jozgain	money	NULL	19	4	NO	NULL
+
+Atiran14050603	subsailfact_pish	17	PERVIS	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailfact_pish	18	litakhma	money	NULL	19	4	NO	NULL
+
+Atiran14050603	subsailfact_pish	19	active	char	1	NULL	NULL	NO	NULL
+
+Atiran14050603	subsailfact_pish	20	amani	bit	NULL	NULL	NULL	YES	(0)
+
+Atiran14050603	subsailfact_pish	21	Pavarez	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailfact_pish	22	Avarez	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailfact_pish	23	Ptax	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailfact_pish	24	Tax	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailfact_pish	25	Mp	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailfact_pish	26	PerPromotion	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailtemp_pish	1	shfacfo	bigint	NULL	19	0	NO	NULL
+
+Atiran14050603	subsailtemp_pish	2	shka	bigint	NULL	19	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	3	rdf_anbar	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	4	tedvah	decimal	NULL	18	3	YES	NULL
+
+Atiran14050603	subsailtemp_pish	5	tedjoz	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	6	vahprice	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	7	jozprice	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	8	bastebandi	varchar	25	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	9	tedbastebandi	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	10	linesum	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	11	isret	char	1	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	12	pertafif	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailtemp_pish	13	rdf	int	NULL	10	0	NO	NULL
+
+Atiran14050603	subsailtemp_pish	14	pervis	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailtemp_pish	15	litakhma	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	16	mohvah	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	17	modpar	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	18	mod	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	19	rdf__	int	NULL	10	0	NO	NULL
+
+Atiran14050603	subsailtemp_pish	20	active	char	1	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	21	date	char	10	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	22	done_date	char	10	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	23	sahm_mod_par	decimal	NULL	18	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	24	naka	nvarchar	500	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	25	ted_kol	decimal	NULL	18	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	26	vah_nam	varchar	30	NULL	NULL	YES	NULL
+
+Atiran14050603	subsailtemp_pish	27	amani	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	28	invepgh	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	29	time_	int	NULL	10	0	YES	NULL
+
+Atiran14050603	subsailtemp_pish	30	Pavarez	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailtemp_pish	31	Avarez	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	32	Ptax	decimal	NULL	18	2	YES	NULL
+
+Atiran14050603	subsailtemp_pish	33	Tax	money	NULL	19	4	YES	NULL
+
+Atiran14050603	subsailtemp_pish	34	PerPromotion	decimal	NULL	18	2	YES	NULL
+
+### بخش ۲ -- نمونهٔ واقعی: سه فاکتور آخر sailfact (فقط ستون‌های دارای مقدار مهم فهرست شده در گردآوری زیر)
+
+سه سطر sailfact (shfacfo = 215, 214, 213) -- همه: rdf__=1، date=1405/06/03، barbari=0.00،
+vis_rdf=1، sumlineall=all، tafif=0.00، SumTafifAghlam=0.00، ismodify=f، active=t، modpar=0،
+rdf_tahbarg=2، nah_par=1، done_date=1405/06/03، sh_taraz_kh=0، shpish=(خالی/0)، ba_tarikh=0،
+chap_f=1، chap_h=0، tax=0.00، avarez=0.00، sysid=1، Status=1، TaeedUser=Admin، userid=2، isSync=1
+
+| shfacfo | shmo | sumlineall = all | vazn | time_ | man_gh | bamandeh | t_date | TaeedDate | nah_d_text | moname |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 215 | 42 | 32450000.00 | 6.00 | 21:50 | 0.00 | 0 | 1405/06/03 | 1405/06/08 | تعداد 1 پوز به مبلغ 32,450,000 | مشتري محترم |
+| 214 | 1219 | 50000000.00 | 10.00 | 21:42 | 0.00 | 0 | 1405/06/03 | 1405/06/08 | تعداد 1 پوز به مبلغ 50,000,000 | اقاي ذوافقار قلندر |
+| 213 | 42 | 64510000.00 | 218.00 | 21:13 | 0.00 | 0 | 1405/06/03 | 1405/06/08 | تعداد 1 پوز به مبلغ 64,510,000 | مشتري محترم |
+
+panevis (هر سه): متن تبلیغاتی «اميدواريم اين سفارش تنها آغاز يك همكاري ماندگار باشد ...»
+
+### بخش ۳ -- اقلام همان فاکتورها (subsailfact)
+
+ستون‌های پر: rdf__=1، rdf_anbar=1، TEDJOZ=0، PERTAFIF=0.00، TafifAghlam=0.00، PERVIS=0.00،
+litakhma=0.00، active=t، ptax=0.00، tax=0.00، avarez=0.00، pavarez=0.00، tedjoz_fel=0،
+tedbastebandi_fel=0.000، linesum_fel=LINESUM، litakhma_fel=0.00، tax_fel=0.00، avarez_fel=0.00،
+Gift=0، TafifLine=0.00، PerPromotion=0.000، PromotionValue=0، TafifLineFel=0، ProductionSeriesID=NULL،
+TEDJOZMain=0، TafifPos=0.00، TafifNaghd=0.00، VarietyID=SHKA، TEDVAHMain=TEDVAH، TEDBASTEBANDI=0.000،
+BASTEBANDI='--' (یک سطر خالی)
+
+| shfacfo | RDF | SHKA | naka | TEDVAH | VAHPRICE=JOZPRICE | LINESUM |
+|---|---|---|---|---|---|---|
+| 213 | 0 | 430 | قمقمه اسپرت نايك و اديداس 2 | 24.000 | 530000.00 | 12720000.00 |
+| 213 | 1 | 433 | قمقمه اسپرت سايز 4 | 24.000 | 560000.00 | 13440000.00 |
+| 213 | 2 | 1002 | پنكه جعبه اي | 24.000 | 550000.00 | 13200000.00 |
+| 213 | 3 | 1008 | توپ استخري 50 عددي بزرگ | 2.000 | 2750000.00 | 5500000.00 |
+| 213 | 4 | 1909 | بوق زباني | 100.000 | 30000.00 | 3000000.00 |
+| 213 | 5 | 1929 | كش نواري رنگي | 20.000 | 165000.00 | 3300000.00 |
+| 213 | 6 | 2138 | كش بافتي | 10.000 | 160000.00 | 1600000.00 |
+| 213 | 7 | 244 | منچ پارچه اي | 1.000 | 1450000.00 | 1450000.00 |
+| 213 | 8 | 1368 | بادكنك پيچي | 1.000 | 1500000.00 | 1500000.00 |
+| 213 | 9 | 1369 | بادكنك بالني | 1.000 | 2800000.00 | 2800000.00 |
+| 213 | 10 | 726 | تل چراغ دار | 12.000 | 500000.00 | 6000000.00 |
+| 214 | 0 | 577 | راك تراك | 2.000 | 11000000.00 | 22000000.00 |
+| 214 | 1 | 628 | لودر تويكو | 1.000 | 6370000.00 | 6370000.00 |
+| 214 | 2 | 1369 | بادكنك بالني | 1.000 | 2500000.00 | 2500000.00 |
+| 214 | 3 | 1368 | بادكنك پيچي | 1.000 | 1200000.00 | 1200000.00 |
+| 214 | 4 | 1915 | اسپينر بزرگ | 4.000 | 950000.00 | 3800000.00 |
+| 214 | 5 | 2143 | موتور هوندا سامان | 1.000 | 14130000.00 | 14130000.00 |
+| 215 | 0 | 1059 | سوپر هامر صندلي دار | 3.000 | 4950000.00 | 14850000.00 |
+| 215 | 1 | 1088 | تراكتور مزرعه درج | 2.000 | 6600000.00 | 13200000.00 |
+| 215 | 2 | 2110 | تراكتور قدرتي وكيوم 1080 | 1.000 | 4400000.00 | 4400000.00 |
+
+قاعده‌های مشاهده‌شده: LINESUM = TEDVAH × VAHPRICE (وقتی TEDJOZ=0 و VAHPRICE=JOZPRICE)؛
+RDF = شمارهٔ سطر از 0؛ VarietyID = SHKA در این داده؛ TEDVAHMain = TEDVAH.
+
+### بخش ۴ -- ماژول‌هایی که shpish دارند یا داخل sailfact درج می‌کنند
+
+db	name	type_desc	len
+
+Atiran14050603	AddInvoice	SQL_STORED_PROCEDURE	6408
+
+Atiran14050603	AddInvoiceShFacManual	SQL_STORED_PROCEDURE	5627
+
+Atiran14050603	AddInvoiceShSanadFerestande	SQL_STORED_PROCEDURE	5620
+
+Atiran14050603	EditInvoice	SQL_STORED_PROCEDURE	17046
+
+Atiran14050603	InvoiceTrigger	SQL_TRIGGER	6847
+
+Atiran14050603	PR_UntransferdFactors	SQL_STORED_PROCEDURE	1948
+
+یادداشت: AddInvoice در این دیتابیس 6408 کاراکتر است، در حالی که همان پروسیجر روی Meelano
+(خروجی راه ۳، بخش ۶) 5850 کاراکتر بود -- یعنی این دو دیتابیس دو نسخهٔ متفاوت از ERP هستند.

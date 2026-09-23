@@ -1,0 +1,212 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  آزمون واقعی اتصال: یک SQL Server واقعی بالا می‌آید، اسکیمای آزمون ساخته می‌شود
+#  و خودِ کد برنامهٔ اندروید (لایهٔ داده) با کاربر محدود db_datareader به آن وصل
+#  می‌شود. هدف: اثبات این‌که «اتصال بدون مشکل» برقرار می‌شود و T-SQL کوئری‌ها روی
+#  یک SQL Server واقعی اجرا می‌شوند.
+# ═══════════════════════════════════════════════════════════════════════════
+name: Verify SQL connection (server + Android data layer)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/01a0a7c6-vizitor]
+    paths:
+      - "android-app/**"
+      - "api/provision_android_sql.py"
+      - "api/sql_admin_tools.py"
+      - "install.ps1"
+      - ".github/workflows/verify-sql-connection.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verify-sql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sql-connection:
+    runs-on: ubuntu-latest
+
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Vizitor!Pass123"
+          MSSQL_PID: "Developer"
+        ports:
+          - 1433:1433
+
+    env:
+      SA_PASSWORD: "Vizitor!Pass123"
+      VIZ_TEST_SQL_HOST: "127.0.0.1"
+      VIZ_TEST_SQL_PORT: "1433"
+      VIZ_TEST_SQL_DB: "Meelano"
+      VIZ_TEST_SQL_USER: "vizitor_android"
+      VIZ_TEST_SQL_PASS: "Viz!tor-Android-2026"
+
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: یافتن کانتینر SQL Server و sqlcmd
+        id: sql
+        run: |
+          CID=$(docker ps --filter "ancestor=mcr.microsoft.com/mssql/server:2019-latest" --format '{{.ID}}' | head -1)
+          if [ -z "$CID" ]; then CID=$(docker ps --format '{{.ID}} {{.Image}}' | grep mssql | awk '{print $1}' | head -1); fi
+          echo "container=$CID"
+          if docker exec "$CID" test -x /opt/mssql-tools18/bin/sqlcmd; then SQLCMD=/opt/mssql-tools18/bin/sqlcmd; EXTRA=-C;
+          elif docker exec "$CID" test -x /opt/mssql-tools/bin/sqlcmd; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; EXTRA="";
+          else SQLCMD=""; EXTRA=""; fi
+          echo "sqlcmd=$SQLCMD extra=$EXTRA"
+          echo "cid=$CID" >> "$GITHUB_OUTPUT"
+          echo "sqlcmd=$SQLCMD" >> "$GITHUB_OUTPUT"
+          echo "extra=$EXTRA" >> "$GITHUB_OUTPUT"
+
+      - name: انتظار برای آماده شدن SQL Server
+        run: |
+          CID="${{ steps.sql.outputs.cid }}"
+          SQLCMD="${{ steps.sql.outputs.sqlcmd }}"
+          EXTRA="${{ steps.sql.outputs.extra }}"
+          for i in $(seq 1 60); do
+            if docker exec "$CID" "$SQLCMD" -S localhost -U sa -P "$SA_PASSWORD" $EXTRA -b -Q "SELECT 1" >/dev/null 2>&1; then
+              echo "SQL Server آماده است (تلاش $i)"; exit 0
+            fi
+            echo "در انتظار SQL Server... ($i)"; sleep 5
+          done
+          echo "::error::SQL Server بالا نیامد"; docker logs "$CID" | tail -30; exit 1
+
+      - name: ساختهٔ اسکیمای آزمون + کاربر محدود (همان دسترسی‌های نصب‌کننده)
+        run: |
+          CID="${{ steps.sql.outputs.cid }}"
+          SQLCMD="${{ steps.sql.outputs.sqlcmd }}"
+          EXTRA="${{ steps.sql.outputs.extra }}"
+          docker cp android-app/tools/seed-test-sql.sql "$CID":/tmp/seed.sql
+          docker exec "$CID" "$SQLCMD" -S localhost -U sa -P "$SA_PASSWORD" $EXTRA -b -i /tmp/seed.sql 2>&1 | tee /tmp/seed.log
+          echo "### وضعیت پس از ساخت اسکیمای آزمون" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -25 /tmp/seed.log >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: آزمون اتصال از بیرون کانتینر (مثل گوشی روی شبکه)
+        run: |
+          # پورت ۱۴۳۳ روی میزبان رانر باز است؛ همان مسیری که گوشی طی می‌کند
+          python3 - <<'PY' 2>&1 | tee /tmp/outside.log
+          import socket
+          s = socket.create_connection(("127.0.0.1", 1433), timeout=10)
+          s.close()
+          print("TCP 127.0.0.1:1433 از بیرون کانتینر باز است ✓ — همان مسیر گوشی → سرور")
+          PY
+
+      - name: اجرای آزمون‌های اتصال با کد خودِ برنامه
+        working-directory: android-app
+        run: |
+          chmod +x gradlew
+          set +e
+          ./gradlew --no-daemon testDebugUnitTest --tests '*RealSqlConnectionTest*' 2>&1 | tee sql-test.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" != "0" ]; then
+            # شواهد شکست را در مخزن نگه داریم (لاگ سرور CI از این‌جا قابل خواندن نیست)
+            {
+              echo "لاگ شکست آزمون‌های اتصال — $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+              echo "=================================================================="
+              grep -aE "FAILED|AssertionError|Exception|expected|actual|> Task|BUILD" sql-test.log | tail -60
+              echo ""
+              echo "--- ۸۰ خط آخر لاگ ---"
+              tail -80 sql-test.log
+            } > sql-test-failure.log
+            cat sql-test-failure.log
+          fi
+          echo "### نتیجهٔ آزمون اتصال" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -E "\[(driver|list|jtds|info|login|identity|customers|groups|products|price|stock|health|deny|perm|write)\]|PASSED|FAILED|BUILD" sql-test.log | tail -60 >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      - name: ثبت گزارش آزمون در مخزن
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          R=android-app/sql-connection-report.txt
+          {
+            echo "گزارش آزمون اتصال به SQL Server — ویزیتور مستقیم (پورت ۱۴۳۳)"
+            echo "تاریخ: $(date -u '+%Y-%m-%d %H:%M:%S UTC')   کامیت: ${GITHUB_SHA}"
+            echo "SQL Server: mcr.microsoft.com/mssql/server:2019-latest (کانتینر CI، شبیه‌سازی مسیر گوشی→سرور)"
+            echo "=================================================================================="
+            echo ""
+            echo "--- ۱) اتصال از بیرون کانتینر (مسیر واقعی گوشی → سرور) ---"
+            cut -c1-160 /tmp/outside.log 2>/dev/null
+            echo ""
+            echo "--- ۲) اسکیمای آزمون و کاربر محدود ساخته شد ---"
+            grep -aE "what|sys_users|CUSTOMERS|inventory|customer of|Online|TSQL|ProductVersion" /tmp/seed.log 2>/dev/null | cut -c1-140 | head -25
+            echo ""
+            echo "--- ۳) نتیجهٔ تک‌تک آزمون‌ها (فایل XML گِریدل = مرجع) ---"
+          python3 - <<'PY' 2>/dev/null
+          import glob, xml.etree.ElementTree as ET
+          t = f = e = s = 0
+          for p in sorted(glob.glob("android-app/vizitor-direct/build/test-results/testDebugUnitTest/*.xml")):
+              r = ET.parse(p).getroot()
+              t += int(r.get("tests", 0)); f += int(r.get("failures", 0))
+              e += int(r.get("errors", 0)); s += int(r.get("skipped", 0))
+              for c in r.iter("testcase"):
+                  st = "موفق"
+                  if c.find("failure") is not None: st = "ناموفق"
+                  elif c.find("skipped") is not None: st = "پرش‌داده‌شده"
+                  print("  [" + st + "] " + str(c.get("name")))
+          print("  ── جمع: %d آزمون، %d ناکام، %d خطا، %d پرش" % (t, f, e, s))
+          ok = t > 0 and not (f or e or s)
+          print("  ── نتیجه: " + ("همهٔ آزمون‌ها موفق ✓" if ok else "نیازمند بررسی ✗"))
+          PY
+            echo ""
+            echo "--- ۴) خروجی آزمون‌ها (کد خود برنامه روی SQL Server واقعی) ---"
+            grep -aE "\[(driver|list|jtds|info|login|identity|customers|groups|products|price|stock|health|deny|perm|write)\]|PASSED|FAILED|BUILD SUCCESSFUL|BUILD FAILED" android-app/sql-test.log 2>/dev/null | tail -60
+            echo ""
+            echo "--- ۵) اگر آزمونی رد شد: پیام خطاها ---"
+            if [ -f android-app/sql-test-failure.log ]; then
+              head -40 android-app/sql-test-failure.log
+            else
+              echo "  (همهٔ آزمون‌ها موفق بودند یا لاگ شکست ساخته نشد)"
+            fi
+          } > "$R"
+          git config user.name "vizitor-ci"
+          git config user.email "ci@vizitor.local"
+          rm -rf /tmp/cargo && mkdir -p /tmp/cargo
+          for f in "$R" android-app/sql-test-failure.log; do
+            [ -f "$f" ] && cp "$f" /tmp/cargo/$(basename "$f")
+          done
+          URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          pushed=0
+          for try in 1 2 3; do
+            git fetch -q "$URL" "${GITHUB_REF_NAME}"
+            git reset --hard "FETCH_HEAD"
+            for f in "$R" android-app/sql-test-failure.log; do
+              [ -f "/tmp/cargo/$(basename "$f")" ] && cp "/tmp/cargo/$(basename "$f")" "$f"
+            done
+            for f in "$R" android-app/sql-test-failure.log; do
+              [ -f "$f" ] && git add -f "$f"
+            done
+            git diff --cached --quiet && { echo "چیزی برای ثبت نبود"; pushed=1; break; }
+            git commit -q -m "chore(ci): SQL connection report [skip ci]"
+            if git push "$URL" "HEAD:${GITHUB_REF_NAME}"; then pushed=1; break; fi
+            echo "پوش رد شد (تلاش $try) — همگام‌سازی با نوک شاخه و تلاش دوباره"
+            sleep 4
+          done
+          [ "$pushed" = "1" ] && echo "گزارش در مخزن ثبت شد ✓" || echo "::warning::گزارش ثبت نشد (پوش رد شد)"
+
+      - name: اعلام نتیجهٔ آزمون‌ها
+        if: always()
+        run: |
+          if [ -f android-app/sql-test-failure.log ]; then
+            echo "::error::آزمون‌های اتصال رد شدند — جزئیات در android-app/sql-test-failure.log"
+            exit 1
+          fi
+          echo "آزمون‌های اتصال همه موفق بودند ✓"

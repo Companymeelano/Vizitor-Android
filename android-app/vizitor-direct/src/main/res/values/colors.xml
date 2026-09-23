@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="viz_navy">#FF0B2138</color>
+    <color name="viz_navy_dark">#FF07182A</color>
+    <color name="viz_band">#FF102A45</color>
+    <color name="viz_raised">#FF143254</color>
+    <color name="viz_gold">#FFE3B967</color>
+    <color name="viz_text">#FFEAF1F8</color>
+    <color name="viz_muted">#FFA9BED4</color>
+    <color name="viz_ok">#FF7EE0A8</color>
+    <color name="viz_err">#FFF08C7A</color>
+</resources>

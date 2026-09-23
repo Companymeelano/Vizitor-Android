@@ -1,0 +1,77 @@
+# Verified column TYPES read from the live database (audit parts 2, 5, 6 - 2026-09-18)
+# format: <table><TAB><column><TAB><type>[<TAB><note>]
+dbo.AnbarDifferent	RowID	int
+dbo.AnbarDifferent	Shka	bigint
+dbo.AnbarDifferent	SanadNo	int
+dbo.AnbarDifferent	Kind	int
+dbo.AnbarDifferent	AnbarID	int
+dbo.AnbarDifferent	JozPrice	decimal
+dbo.AnbarDifferent	TedVahOld	decimal
+dbo.AnbarDifferent	TedJozOld	decimal
+dbo.AnbarDifferent	TedVahCounted	decimal
+dbo.AnbarDifferent	TedJozCounted	decimal
+dbo.AnbarDifferent	Active	bit
+dbo.NCustomers	RowID	bigint
+dbo.NCustomers	NShmo	int
+dbo.NCustomers	NMan	money
+dbo.NCustomers	NDate	nvarchar
+dbo.NCustomers	BlackList	bit
+dbo.systems	rdf	int
+dbo.systems	name	varchar
+dbo.systems	active	int
+dbo.sys_anb	rdf	int
+dbo.sys_anb	SysID	int
+dbo.sys_anb	shanb	int
+dbo.sys_anb	UserID	int
+dbo.sys_cus	rdf	int
+dbo.sys_cus	SysID	int
+dbo.sys_cus	Shmo	int
+dbo.sys_cus	UserID	int
+dbo.sys_kal	rdf	int
+dbo.sys_kal	sysid	int
+dbo.sys_kal	shka	bigint
+dbo.sys_kal	UserID	int
+dbo.sys_use	rdf	int
+dbo.sys_use	SysID	int
+dbo.sys_use	shuse	int
+dbo.sys_use	UserID	int
+dbo.sys_vis	rdf	int
+dbo.sys_vis	SysID	int
+dbo.sys_vis	shvis	int
+dbo.sys_vis	UserID	int
+dbo.sys_wor	rdf	int
+dbo.sys_wor	SysID	int
+dbo.sys_wor	shwor	int
+dbo.sys_wor	UserID	int
+dbo.sys_users	user_password	varbinary(50)	plain text inside varbinary (DATALENGTH=1, hex 31)
+dbo.sys_users	IsLocked	bit NULL	NULL for both users - only =1 means locked
+dbo.CUSTOMERS	Password	nvarchar(1000)	customer portal - the app never reads/writes it
+dbo.visitors	Password	nvarchar(200)	no values on this server
+security.ConfirmUser	RowID	bigint
+security.ConfirmUser	RealUserID	int
+security.ConfirmUser	RealUserName	nvarchar
+security.ConfirmUser	FakeUserID	int
+security.ConfirmUser	FakeUserName	nchar
+security.ConfirmUser	P	bit	NOT a password - a bit flag (audit part 6, L3)
+security.ConfirmUser	SumMab	money
+security.ConfirmUser	SumPos	money
+security.ConfirmUser	SumCheck	money
+security.ConfirmUser	Shmo	bigint
+security.ConfirmUser	Moname	nvarchar
+security.ConfirmUser	RealPlusFake	nvarchar
+security.ConfirmUser	Ghno	int
+security.LoginDetails	RowID	bigint
+security.LoginDetails	UserID	int
+security.LoginDetails	DateClient	nvarchar
+security.LoginDetails	DateServer	nvarchar
+security.LoginDetails	ComputerIP	nvarchar
+security.LoginDetails	ComputerName	nvarchar
+EMS.user	UserID	int
+EMS.user	AtiranUserID	int
+EMS.user	Username	nvarchar
+EMS.user	Tell	nvarchar
+EMS.user	Cellphone	nvarchar
+EMS.user	Address	nvarchar
+EMS.user	NationalCode	nvarchar
+EMS.user	Email	nvarchar
+EMS.user	PersonalID	int

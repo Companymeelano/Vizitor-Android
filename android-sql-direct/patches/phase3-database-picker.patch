@@ -1,0 +1,629 @@
+diff --git a/android-sql-direct/SecureDbStore.kt b/android-sql-direct/SecureDbStore.kt
+index 35bac85..11f04b1 100644
+--- a/android-sql-direct/SecureDbStore.kt
++++ b/android-sql-direct/SecureDbStore.kt
+@@ -1,7 +1,7 @@
+ /*
+  * ═══════════════════════════════════════════════════════════════════════════
+  *  Vizitor — آتیران ویزیتور | ذخیرهٔ امن اطلاعات اتصال دیتابیس
+- *  Developed by Milano Technical Team, Milad Yaghoobi
++ *  Developed by Milad Yaghoobi — Meelano Studio Design
+  *  ─────────────────────────────────────────────────────────────────────────
+  *  اطلاعات اتصال SQL Server (شامل رمز) هرگز به‌صورت متن در SharedPreferences
+  *  یا DataStore نگه نمی‌دارند؛ یک بلوک JSON با AES-GCM و کلید غیرخارج‌شدنی
+@@ -48,23 +48,65 @@ object SecureDbStore {
+         prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+     }
+ 
+-    /** ذخیرهٔ تنظیمات (کل بلوک، از جمله رمز، رمزنگاری می‌شود). */
++    /**
++     * ذخیرهٔ تنظیمات (کل بلوک، از جمله رمز، رمزنگاری می‌شود).
++     *
++     * دو نشانی سرور هم همراه همان بلوک نگه داشته می‌شوند تا برنامه بداند کاربر
++     * از «آی‌پی اختصاصی/اینترنتی» وصل شده یا از «آی‌پی داخلی شبکه».
++     */
+     fun save(settings: DbSettings) {
+-        val json = JSONObject().apply {
+-            put("host", settings.host)
+-            put("port", settings.port)
+-            put("database", settings.database)
+-            put("username", settings.username)
+-            put("password", settings.password)
+-            put("useEncryption", settings.useEncryption)
+-            put("trustServerCert", settings.trustServerCert)
+-            put("connectTimeoutSec", settings.connectTimeoutSec)
+-            put("queryTimeoutSec", settings.queryTimeoutSec)
+-        }.toString()
++        val o = currentJson() ?: JSONObject()
++        o.put("host", settings.host)
++        o.put("port", settings.port)
++        o.put("database", settings.database)
++        o.put("username", settings.username)
++        o.put("password", settings.password)
++        o.put("useEncryption", settings.useEncryption)
++        o.put("trustServerCert", settings.trustServerCert)
++        o.put("connectTimeoutSec", settings.connectTimeoutSec)
++        o.put("queryTimeoutSec", settings.queryTimeoutSec)
++        writeJson(o)
++    }
++
++    /** نگه‌داشتن هر دو نشانی سرور و این‌که کدام‌یک فعال است. */
++    fun saveAddresses(hostExternal: String, hostLocal: String, useExternal: Boolean) {
++        val o = currentJson() ?: JSONObject()
++        o.put("hostExternal", hostExternal.trim())
++        o.put("hostLocal", hostLocal.trim())
++        o.put("useExternal", useExternal)
++        writeJson(o)
++    }
++
++    /** هر دو نشانی سرور + نشانی فعال، بدون ذخیره‌سازی دوباره. */
++    fun loadAddresses(): Triple<String, String, Boolean> {
++        val o = currentJson() ?: return Triple("", "", false)
++        return Triple(
++            o.optString("hostExternal", ""),
++            o.optString("hostLocal", o.optString("host", "")),
++            o.optBoolean("useExternal", false)
++        )
++    }
++
++    private fun currentJson(): JSONObject? {
++        if (!this::appContext.isInitialized) return null
++        val blob = prefs.getString(KEY_BLOB, null) ?: return null
++        return try {
++            val raw = Base64.decode(blob, Base64.NO_WRAP)
++            val iv = raw.copyOfRange(0, GCM_IV_LENGTH)
++            val ct = raw.copyOfRange(GCM_IV_LENGTH, raw.size)
++            val cipher = Cipher.getInstance(TRANSFORMATION)
++            cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(GCM_TAG_LENGTH, iv))
++            JSONObject(String(cipher.doFinal(ct), Charsets.UTF_8))
++        } catch (_: Exception) {
++            null
++        }
++    }
++
++    private fun writeJson(o: JSONObject) {
+         val cipher = Cipher.getInstance(TRANSFORMATION)
+         cipher.init(Cipher.ENCRYPT_MODE, key())
+         val iv = cipher.iv
+-        val enc = cipher.doFinal(json.toByteArray(Charsets.UTF_8))
++        val enc = cipher.doFinal(o.toString().toByteArray(Charsets.UTF_8))
+         // IV + ciphertext در یک رشته Base64
+         val blob = Base64.encodeToString(iv + enc, Base64.NO_WRAP)
+         prefs.edit().putString(KEY_BLOB, blob).apply()
+@@ -72,22 +114,14 @@ object SecureDbStore {
+ 
+     /** خواندن تنظیمات؛ اگر چیزی ذخیره نشده یا خطا بود → null. */
+     fun load(): DbSettings? {
+-        if (!this::appContext.isInitialized) return null
+-        val blob = prefs.getString(KEY_BLOB, null) ?: return null
++        val o = currentJson() ?: return null
+         return try {
+-            val raw = Base64.decode(blob, Base64.NO_WRAP)
+-            val iv = raw.copyOfRange(0, GCM_IV_LENGTH)
+-            val ct = raw.copyOfRange(GCM_IV_LENGTH, raw.size)
+-            val cipher = Cipher.getInstance(TRANSFORMATION)
+-            cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(GCM_TAG_LENGTH, iv))
+-            val json = String(cipher.doFinal(ct), Charsets.UTF_8)
+-            val o = JSONObject(json)
+             DbSettings(
+-                host = o.getString("host"),
++                host = o.optString("host", ""),
+                 port = o.optInt("port", 1433),
+-                database = o.getString("database"),
+-                username = o.getString("username"),
+-                password = o.getString("password"),
++                database = o.optString("database", ""),
++                username = o.optString("username", ""),
++                password = o.optString("password", ""),
+                 useEncryption = o.optBoolean("useEncryption", true),
+                 trustServerCert = o.optBoolean("trustServerCert", true),
+                 connectTimeoutSec = o.optInt("connectTimeoutSec", 10),
+diff --git a/android-sql-direct/SettingsScreen.kt b/android-sql-direct/SettingsScreen.kt
+index fc58a54..502d1b1 100644
+--- a/android-sql-direct/SettingsScreen.kt
++++ b/android-sql-direct/SettingsScreen.kt
+@@ -1,7 +1,7 @@
+ /*
+  * ═══════════════════════════════════════════════════════════════════════════
+  *  Vizitor — آتیران ویزیتور | تب ۶: تنظیمات (Settings)
+- *  Developed by Milano Technical Team, Milad Yaghoobi
++ *  Developed by Milad Yaghoobi — Meelano Studio Design
+  *  ─────────────────────────────────────────────────────────────────────────
+  *  انتخاب تم اپلیکیشن + پیکربندی سرور آتیران (IP/پورت/مسیر/کلید) +
+  *  کارت وضعیت سلامت سرور (تست دقیق اتصال) + مدیریت همگام‌سازی
+@@ -10,6 +10,7 @@
+ package ir.atiran.vizitor.ui.screens
+ 
+ import androidx.compose.foundation.border
++import androidx.compose.foundation.BorderStroke
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+@@ -49,6 +50,8 @@ import androidx.compose.material3.IconButton
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.material.icons.filled.CloudSync
+ import androidx.compose.material.icons.filled.Dns
++import androidx.compose.material.icons.filled.Language
++import androidx.compose.material.icons.filled.Router
+ import androidx.compose.material.icons.filled.History
+ import androidx.compose.material.icons.filled.Info
+ import androidx.compose.material.icons.filled.Smartphone
+@@ -135,13 +138,33 @@ fun SettingsScreen(viewModel: VizitorViewModel) {
+     var useHttps by remember(config.useHttps) { mutableStateOf(config.useHttps) }
+     var workerUrl by remember(config.workerUrl) { mutableStateOf(config.workerUrl) }
+ 
+-    // فرم اتصال مستقیم SQL Server — مقادیر پیش‌فرض از ممیزی واقعی سرور گرفته شده‌اند
+-    var dbHost by remember(savedDb) { mutableStateOf(savedDb?.host ?: "192.168.1.150") }
++    // فرم اتصال مستقیم SQL Server — دو نشانی: آی‌پی اختصاصی (بیرون شبکه) و آی‌پی داخلی
++    val savedExtHost by viewModel.dbHostExternal.collectAsState()
++    val savedLanHost by viewModel.dbHostLocal.collectAsState()
++    val useExternal by viewModel.dbUseExternal.collectAsState()
++
++    var dbHostExternal by remember(savedExtHost) { mutableStateOf(savedExtHost) }
++    var dbHostLocal by remember(savedLanHost) { mutableStateOf(savedLanHost) }
+     var dbPortText by remember(savedDb) { mutableStateOf((savedDb?.port ?: 1433).toString()) }
+-    var dbName by remember(savedDb) { mutableStateOf(savedDb?.database ?: "Meelano") }
+-    var dbUser by remember(savedDb) { mutableStateOf(savedDb?.username ?: "vizitor_android") }
++    var dbName by remember(savedDb) { mutableStateOf(savedDb?.database ?: "") }
++    var dbUser by remember(savedDb) { mutableStateOf(savedDb?.username ?: "") }
+     var dbPass by remember { mutableStateOf("") }
+ 
++    /** نشانی فعال بر اساس انتخاب کاربر (پیش‌فرض: آی‌پی اختصاصی اگر وارد شده باشد). */
++    fun activeHost(): String {
++        val ext = dbHostExternal.trim()
++        val loc = dbHostLocal.trim()
++        return if (useExternal) ext.ifBlank { loc } else loc.ifBlank { ext }
++    }
++
++    fun currentSettings(database: String) = DbSettings(
++        host = activeHost(),
++        port = dbPortText.toIntOrNull() ?: 1433,
++        database = database,
++        username = dbUser.trim(),
++        password = dbPass
++    )
++
+     val fieldColors = OutlinedTextFieldDefaults.colors(
+         focusedBorderColor = NeonPurple,
+         unfocusedBorderColor = Color(0x33FFFFFF),
+@@ -187,18 +210,69 @@ fun SettingsScreen(viewModel: VizitorViewModel) {
+             }
+         }
+ 
+-        // ── اتصال مستقیم SQL Server (لایهٔ دادهٔ جدید) ───────────────────────
++        // ── اتصال مستقیم SQL Server (لایهٔ دادهٔ اصلی برنامه) ──────────────
+         item { SectionTitle(text = "اتصال مستقیم SQL Server", icon = Icons.Filled.Storage) }
+ 
+         item {
+             GlassCard(modifier = Modifier.fillMaxWidth()) {
+                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
++
++                    // ── ۱) روش اتصال: آی‌پی اختصاصی (بیرون شبکه) یا آی‌پی داخلی ──
++                    Text(
++                        "۱) روش اتصال را انتخاب کنید:",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = palette.textPrimary
++                    )
++                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
++                        ModeChip(
++                            label = "از اینترنت (آی‌پی اختصاصی)",
++                            icon = Icons.Filled.Language,
++                            selected = useExternal,
++                            modifier = Modifier.weight(1f),
++                            onClick = {
++                                viewModel.setDbAddresses(dbHostExternal, dbHostLocal, true)
++                            }
++                        )
++                        ModeChip(
++                            label = "شبکهٔ داخلی (مثلاً 192.168.x.x)",
++                            icon = Icons.Filled.Router,
++                            selected = !useExternal,
++                            modifier = Modifier.weight(1f),
++                            onClick = {
++                                viewModel.setDbAddresses(dbHostExternal, dbHostLocal, false)
++                            }
++                        )
++                    }
++
++                    OutlinedTextField(
++                        value = dbHostExternal,
++                        onValueChange = {
++                            dbHostExternal = it
++                            viewModel.setDbAddresses(it, dbHostLocal, useExternal)
++                        },
++                        label = { Text("آی‌پی اختصاصی سرور SQL (بیرون شبکه)") },
++                        placeholder = { Text("مثلاً 37.143.147.19") },
++                        singleLine = true, colors = fieldColors,
++                        modifier = Modifier.fillMaxWidth()
++                    )
+                     OutlinedTextField(
+-                        value = dbHost, onValueChange = { dbHost = it },
+-                        label = { Text("آدرس سرور SQL") },
++                        value = dbHostLocal,
++                        onValueChange = {
++                            dbHostLocal = it
++                            viewModel.setDbAddresses(dbHostExternal, it, useExternal)
++                        },
++                        label = { Text("آی‌پی داخلی سرور SQL (داخل شبکهٔ فروشگاه)") },
++                        placeholder = { Text("مثلاً 192.168.1.150") },
+                         singleLine = true, colors = fieldColors,
+                         modifier = Modifier.fillMaxWidth()
+                     )
++
++                    // ── ۲) پورت و کاربر/رمز ورود به SQL ─────────────────────────
++                    Text(
++                        "۲) پورت (پیش‌فرض ۱۴۳۳) و نام کاربری و کلمهٔ عبور SQL Server:",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = palette.textPrimary
++                    )
+                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                         OutlinedTextField(
+                             value = dbPortText,
+@@ -209,40 +283,41 @@ fun SettingsScreen(viewModel: VizitorViewModel) {
+                             modifier = Modifier.weight(1f)
+                         )
+                         OutlinedTextField(
+-                            value = dbName, onValueChange = { dbName = it },
+-                            label = { Text("نام دیتابیس") },
++                            value = dbUser, onValueChange = { dbUser = it },
++                            label = { Text("نام کاربری SQL") },
+                             singleLine = true, colors = fieldColors,
+                             modifier = Modifier.weight(2f)
+                         )
+                     }
++                    OutlinedTextField(
++                        value = dbPass, onValueChange = { dbPass = it },
++                        label = { Text("کلمهٔ عبور SQL") },
++                        singleLine = true, colors = fieldColors,
++                        visualTransformation = PasswordVisualTransformation(),
++                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
++                        modifier = Modifier.fillMaxWidth()
++                    )
+ 
+-                    // ── انتخاب دیتابیس از لیست خود سرور (مرحلهٔ نصب) ─────────
+-                    Row(verticalAlignment = Alignment.CenterVertically) {
+-                        NeonPurpleButton(
+-                            text = if (dbListLoading) "در حال گرفتن لیست…" else "دریافت لیست دیتابیس‌ها",
+-                            icon = Icons.Filled.Storage,
+-                            enabled = !dbListLoading && dbHost.isNotBlank() && dbUser.isNotBlank(),
+-                            onClick = {
+-                                viewModel.loadDatabases(
+-                                    DbSettings(
+-                                        host = dbHost.trim(),
+-                                        port = dbPortText.toIntOrNull() ?: 1433,
+-                                        database = dbName.trim().ifBlank { "master" },
+-                                        username = dbUser.trim(),
+-                                        password = dbPass
+-                                    )
+-                                )
+-                            },
+-                            modifier = Modifier.weight(1f)
+-                        )
+-                    }
++                    // ── ۳) تأیید و گرفتن لیست دیتابیس‌ها ────────────────────────
++                    Text(
++                        "۳) دکمهٔ زیر را بزنید؛ اگر سرور/کاربر/رمز درست باشد، لیست دیتابیس‌های همان سرور می‌آید:",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = palette.textPrimary
++                    )
++                    NeonPurpleButton(
++                        text = if (dbListLoading) "در حال گرفتن لیست…" else "تأیید و دریافت لیست دیتابیس‌ها",
++                        icon = Icons.Filled.Storage,
++                        enabled = !dbListLoading && activeHost().isNotBlank() && dbUser.isNotBlank(),
++                        onClick = { viewModel.loadDatabases(currentSettings("master")) },
++                        modifier = Modifier.fillMaxWidth()
++                    )
+                     if (dbOptions.isNotEmpty()) {
+                         Text(
+-                            "دیتابیس حسابداری را انتخاب کنید:",
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = palette.textSecondary
++                            "۴) دیتابیس برنامه را انتخاب کنید:",
++                            style = MaterialTheme.typography.bodyMedium,
++                            color = palette.textPrimary
+                         )
+-                        dbOptions.chunked(3).forEach { rowItems ->
++                        dbOptions.chunked(2).forEach { rowItems ->
+                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                 rowItems.forEach { name ->
+                                     val selected = name == dbName
+@@ -264,29 +339,37 @@ fun SettingsScreen(viewModel: VizitorViewModel) {
+                                         )
+                                     }
+                                 }
+-                                repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
++                                repeat(2 - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                             }
+                         }
+-                        Text(
+-                            "همین دیتابیس، دیتابیس حسابداریِ برنامه است (مثل Meelano).",
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = palette.textSecondary
+-                        )
+                     }
+                     OutlinedTextField(
+-                        value = dbUser, onValueChange = { dbUser = it },
+-                        label = { Text("نام کاربری SQL") },
++                        value = dbName, onValueChange = { dbName = it },
++                        label = { Text("نام دیتابیس انتخاب‌شده") },
+                         singleLine = true, colors = fieldColors,
+                         modifier = Modifier.fillMaxWidth()
+                     )
+-                    OutlinedTextField(
+-                        value = dbPass, onValueChange = { dbPass = it },
+-                        label = { Text("رمز عبور SQL") },
+-                        singleLine = true, colors = fieldColors,
+-                        visualTransformation = PasswordVisualTransformation(),
+-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+-                        modifier = Modifier.fillMaxWidth()
+-                    )
++
++                    // ── ۵) اعمال تنظیمات و تست اتصال ────────────────────────────
++                    Row {
++                        NeonGreenButton(
++                            text = if (dbTesting) "در حال تست…" else "اعمال تنظیمات و تست اتصال",
++                            icon = Icons.Filled.CloudDone,
++                            enabled = !dbTesting && activeHost().isNotBlank() &&
++                                    dbName.isNotBlank() && dbUser.isNotBlank() && dbPass.isNotEmpty(),
++                            onClick = {
++                                viewModel.setDbAddresses(dbHostExternal, dbHostLocal, useExternal)
++                                viewModel.testDbConnection(currentSettings(dbName.trim()))
++                            },
++                            modifier = Modifier.weight(1f)
++                        )
++                        Spacer(Modifier.width(8.dp))
++                        NeonPurpleButton(
++                            text = "قطع اتصال",
++                            enabled = dbState is ConnectionState.Ready,
++                            onClick = { viewModel.disconnectDb() }
++                        )
++                    }
+ 
+                     // ── وضعیت زندهٔ اتصال ───────────────────────────────────────
+                     val statusText = when (val st = dbState) {
+@@ -314,44 +397,97 @@ fun SettingsScreen(viewModel: VizitorViewModel) {
+                             modifier = Modifier.size(16.dp)
+                         )
+                         Spacer(Modifier.width(6.dp))
+-                        Text(
+-                            statusText,
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = statusColor
+-                        )
++                        Text(statusText, style = MaterialTheme.typography.bodySmall, color = statusColor)
+                     }
+ 
+-                    Row {
+-                        NeonGreenButton(
+-                            text = if (dbTesting) "در حال تست…" else "تست اتصال SQL",
+-                            icon = Icons.Filled.CloudDone,
+-                            enabled = !dbTesting &&
+-                                    dbHost.isNotBlank() && dbName.isNotBlank() &&
+-                                    dbUser.isNotBlank() && dbPass.isNotEmpty(),
+-                            onClick = {
+-                                viewModel.testDbConnection(
+-                                    DbSettings(
+-                                        host = dbHost.trim(),
+-                                        port = dbPortText.toIntOrNull() ?: 1433,
+-                                        database = dbName.trim(),
+-                                        username = dbUser.trim(),
+-                                        password = dbPass
+-                                    )
+-                                )
+-                            },
+-                            modifier = Modifier.weight(1f)
+-                        )
+-                        Spacer(Modifier.width(8.dp))
+-                        NeonPurpleButton(
+-                            text = "قطع اتصال",
+-                            enabled = dbState is ConnectionState.Ready,
+-                            onClick = { viewModel.disconnectDb() }
++                    Text(
++                        "آی‌پی اختصاصی برای زمانی است که گوشی بیرون از شبکهٔ فروشگاه باشد (پورت ۱۴۳۳ باید " +
++                                "از بیرون باز/فوروارد شده باشد). داخل فروشگاه همان آی‌پی داخلی کافی است. " +
++                                "رمز فقط رمزنگاری‌شده (Android Keystore) روی همین دستگاه ذخیره می‌شود؛ " +
++                                "نه در سرور، نه در فایل پیکربندی و نه در هیچ Log.",
++                        style = MaterialTheme.typography.bodySmall,
++                        color = palette.textSecondary
++                    )
++                }
++            }
++        }
++
++        // ── شناسنامهٔ سامانه و سازنده (کارت برجسته با نور و لبه) ───────────
++        item { SectionTitle(text = "دربارهٔ سامانه", icon = Icons.Filled.MilitaryTech) }
++
++        item {
++            Box(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .clip(RoundedCornerShape(20.dp))
++                    .background(
++                        Brush.verticalGradient(
++                            listOf(
++                                NeonPurple.copy(alpha = 0.22f),
++                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
++                                MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
++                            )
+                         )
++                    )
++                    .border(
++                        BorderStroke(1.dp, NeonPurple.copy(alpha = 0.45f)),
++                        RoundedCornerShape(20.dp)
++                    )
++                    .padding(18.dp)
++            ) {
++                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
++                    Row(verticalAlignment = Alignment.CenterVertically) {
++                        Box(
++                            modifier = Modifier
++                                .size(52.dp)
++                                .clip(CircleShape)
++                                .background(
++                                    Brush.linearGradient(
++                                        listOf(NeonPurple, NeonPurple.copy(alpha = 0.25f))
++                                    )
++                                ),
++                            contentAlignment = Alignment.Center
++                        ) {
++                            Icon(
++                                imageVector = Icons.Filled.MilitaryTech,
++                                contentDescription = null,
++                                tint = palette.textPrimary,
++                                modifier = Modifier.size(30.dp)
++                            )
++                        }
++                        Spacer(Modifier.width(12.dp))
++                        Column {
++                            Text(
++                                "سامانهٔ ویزیتور — نسخهٔ ۱.۳",
++                                style = MaterialTheme.typography.titleMedium,
++                                color = palette.textPrimary
++                            )
++                            Text(
++                                "اتصال مستقیم و امن به SQL Server (پورت ۱۴۳۳)",
++                                style = MaterialTheme.typography.bodySmall,
++                                color = palette.textSecondary
++                            )
++                        }
+                     }
+-
++                    Box(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .height(1.dp)
++                            .background(Brush.horizontalGradient(listOf(NeonPurple, Color.Transparent)))
++                    )
+                     Text(
+-                        "رمز عبور فقط به‌صورت رمزنگاری‌شده (Android Keystore) روی همین دستگاه ذخیره می‌شود؛ " +
+-                                "نه در سرور، نه در فایل پیکربندی و نه در هیچ Log.",
++                        "طراحی و برنامه‌نویسی:  میلاد یقوبی  (Milad Yaghoobi)",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = NeonPurple
++                    )
++                    Text(
++                        "گروه نرم‌افزاری:  Meelano Studio Design",
++                        style = MaterialTheme.typography.bodyMedium,
++                        color = NeonPurple
++                    )
++                    Text(
++                        "بدون IIS و بدون API میانی؛ رمزها فقط رمزنگاری‌شده (Android Keystore) " +
++                                "روی همین دستگاه می‌مانند و هیچ‌وقت در لاگ یا گزارش چاپ نمی‌شوند.",
+                         style = MaterialTheme.typography.bodySmall,
+                         color = palette.textSecondary
+                     )
+@@ -815,3 +951,41 @@ private fun HealthRow(ok: Boolean, label: String, value: String?) {
+ 
+ 
+ /** یک ردیف انتخاب تم: سواچ سه‌رنگ (پس‌زمینه/اصلی/طلایی) + نام + نشان انتخاب. */
++
++// ═══════════════════ چیپ انتخاب روش اتصال (اینترنتی / داخلی) ═══════════════════
++@Composable
++private fun ModeChip(
++    label: String,
++    icon: androidx.compose.ui.graphics.vector.ImageVector,
++    selected: Boolean,
++    modifier: Modifier = Modifier,
++    onClick: () -> Unit,
++) {
++    Surface(
++        shape = MaterialTheme.shapes.small,
++        color = if (selected) NeonPurple.copy(alpha = 0.22f)
++                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.40f),
++        border = if (selected) BorderStroke(1.dp, NeonPurple) else null,
++        modifier = modifier.clickable { onClick() }
++    ) {
++        Row(
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.Center,
++            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)
++        ) {
++            Icon(
++                imageVector = icon,
++                contentDescription = null,
++                tint = if (selected) NeonPurple else vizitorPalette.textSecondary,
++                modifier = Modifier.size(16.dp)
++            )
++            Spacer(Modifier.width(6.dp))
++            Text(
++                label,
++                style = MaterialTheme.typography.bodySmall,
++                maxLines = 2,
++                color = if (selected) NeonPurple else vizitorPalette.textSecondary
++            )
++        }
++    }
++}
+diff --git a/android-sql-direct/SqlConnectionManager.kt b/android-sql-direct/SqlConnectionManager.kt
+index b075606..a575198 100644
+--- a/android-sql-direct/SqlConnectionManager.kt
++++ b/android-sql-direct/SqlConnectionManager.kt
+@@ -1,7 +1,7 @@
+ /*
+  * ═══════════════════════════════════════════════════════════════════════════
+  *  Vizitor — آتیران ویزیتور | مدیریت اتصال مستقیم SQL Server (TDS 1433)
+- *  Developed by Milano Technical Team, Milad Yaghoobi
++ *  Developed by Milad Yaghoobi — Meelano Studio Design
+  *  ─────────────────────────────────────────────────────────────────────────
+  *  معماری:  UI → ViewModel → Repository → DataSource → این Manager → SQL:1433
+  *
+diff --git a/android-sql-direct/VizitorViewModel.kt b/android-sql-direct/VizitorViewModel.kt
+index 37583f8..63e5d36 100644
+--- a/android-sql-direct/VizitorViewModel.kt
++++ b/android-sql-direct/VizitorViewModel.kt
+@@ -1,7 +1,7 @@
+ /*
+  * ═══════════════════════════════════════════════════════════════════════════
+  *  Vizitor — آتیران ویزیتور | ویومدیل مرکزی اپلیکیشن
+- *  Developed by Milano Technical Team, Milad Yaghoobi
++ *  Developed by Milad Yaghoobi — Meelano Studio Design
+  * ═══════════════════════════════════════════════════════════════════════════
+  */
+ package ir.atiran.vizitor
+@@ -306,6 +306,38 @@ class VizitorViewModel(app: Application) : AndroidViewModel(app) {
+         }
+     }
+ 
++    // ── دو نشانی سرور: آی‌پی اختصاصی (بیرون شبکه) و آی‌پی داخلی شبکه ──────────
++    private val savedAddresses = SecureDbStore.loadAddresses()
++
++    private val _dbHostExternal = MutableStateFlow(savedAddresses.first)
++    val dbHostExternal: StateFlow<String> = _dbHostExternal.asStateFlow()
++
++    private val _dbHostLocal = MutableStateFlow(savedAddresses.second)
++    val dbHostLocal: StateFlow<String> = _dbHostLocal.asStateFlow()
++
++    /** true = اتصال از بیرون شبکه با آی‌پی اختصاصی، false = آی‌پی داخلی شبکه. */
++    private val _dbUseExternal = MutableStateFlow(savedAddresses.third)
++    val dbUseExternal: StateFlow<Boolean> = _dbUseExternal.asStateFlow()
++
++    /** نشانی فعال بر اساس انتخاب کاربر (پیش‌فرض: بیرون شبکه اگر آی‌پی اختصاصی پر باشد). */
++    fun activeDbHost(): String {
++        val ext = _dbHostExternal.value.trim()
++        val loc = _dbHostLocal.value.trim()
++        return if (_dbUseExternal.value) ext.ifBlank { loc } else loc.ifBlank { ext }
++    }
++
++    fun setDbAddresses(hostExternal: String, hostLocal: String, useExternal: Boolean) {
++        _dbHostExternal.value = hostExternal.trim()
++        _dbHostLocal.value = hostLocal.trim()
++        _dbUseExternal.value = useExternal
++        SecureDbStore.saveAddresses(hostExternal, hostLocal, useExternal)
++    }
++
++    fun setDbUseExternal(useExternal: Boolean) {
++        _dbUseExternal.value = useExternal
++        SecureDbStore.saveAddresses(_dbHostExternal.value, _dbHostLocal.value, useExternal)
++    }
++
+     // ── لیست دیتابیس‌های سرور (مرحلهٔ انتخاب دیتابیس حسابداری) ───────────────
+     private val _dbOptions = MutableStateFlow<List<String>>(emptyList())
+     val dbOptions: StateFlow<List<String>> = _dbOptions.asStateFlow()
+@@ -315,6 +347,7 @@ class VizitorViewModel(app: Application) : AndroidViewModel(app) {
+ 
+     /** لیست دیتابیس‌ها را با همان کاربر/رمزِ واردشده می‌گیرد (فقط خواندن). */
+     fun loadDatabases(settings: DbSettings) = viewModelScope.launch {
++        // لیست با همان کاربر/رمزِ واردشده گرفته می‌شود؛ رمز جایی log نمی‌شود.
+         if (_dbListLoading.value) return@launch
+         _dbListLoading.value = true
+         try {
