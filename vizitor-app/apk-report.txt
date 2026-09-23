@@ -1,19 +1,19 @@
 گزارش ساخت APK برنامهٔ آتیران ویزیتور با اتصال مستقیم SQL Server (پورت ۱۴۳۳)
-تاریخ: 2026-09-23 08:29:20 UTC   کامیت: 554f345b72c7b3ec0a633fdba0c8ca3a5653e6eb
+تاریخ: 2026-09-23 08:40:42 UTC   کامیت: d8eab0d329e7b72be5026ee39658b1877148a5cc
 ==================================================================================
 
 --- خروجی بیلد (Gradle) ---
+  double max;
 }`
 
 > Task :app:compileMreportReleaseArtProfile
-> Task :app:lintVitalAnalyzeMreportRelease
 > Task :app:packageMreportRelease
 > Task :app:createMreportReleaseApkListingFileRedirect
 > Task :app:lintVitalReportMreportRelease
 > Task :app:lintVitalMreportRelease
 > Task :app:assembleMreportRelease
 
-BUILD SUCCESSFUL in 7m 37s
+BUILD SUCCESSFUL in 8m
 144 actionable tasks: 131 executed, 13 from cache
 
 ### اثر انگشت گواهی امضا (ثابت بین بیلدها)
@@ -23,7 +23,7 @@ Valid from: Sat Sep 19 12:14:00 UTC 2026 until: Mon Sep 11 12:14:00 UTC 2056
 
 ### MReport-2.21.0-direct.apk
 حجم: 42092198 بایت
-vizitor-app/dist/MReport-2.21.0-direct.apk.sha256:41dc8d9af8b5afa970003146ca2865a9bd9e80df093d84fbe8ec2c1541ef91b4  MReport-2.21.0-direct.apk
+vizitor-app/dist/MReport-2.21.0-direct.apk.sha256:248ffda5b9402b6c03c459a104c3bb1c0897ffceee253f6841842ad219e86cee  MReport-2.21.0-direct.apk
 
 --- مشخصات نسخه و پکیج (aapt2) ---
 package: name='ir.atiran.mreport' versionCode='21817' versionName='2.21.0-report' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
@@ -96,14 +96,14 @@ Verified using v4 scheme (APK Signature Scheme v4): false
 Verified for SourceStamp: false
 Number of signers: 1
 V2 Signer: certificate DN: C=US, O=Android, CN=Android Debug
-V2 Signer: certificate SHA-256 digest: e926a5298c000da69972629d10586016c2f098b83dd9c4b28736efb0a3ea6dfb
-V2 Signer: certificate SHA-1 digest: 13014ec64fb692465404f94e31d73fded531f169
-V2 Signer: certificate MD5 digest: 75183c90815931f542943aae5388a7bc
+V2 Signer: certificate SHA-256 digest: d4c65db3a884671366f09810ffb98893fe9c740b1bf3553de2dccbe250a2b918
+V2 Signer: certificate SHA-1 digest: 6ef53d7c5853909fcde1fbed06c815c5c357f37e
+V2 Signer: certificate MD5 digest: e84dcba43b21f948276ae6be5e83ed45
 V2 Signer: key algorithm: RSA
 V2 Signer: key size (bits): 2048
-V2 Signer: public key SHA-256 digest: 20f63f0bbf31b92852ee101b93287389e5ef4839dc03322e48bffc23ed5ad27b
-V2 Signer: public key SHA-1 digest: 53aaa4de988b511e67f5727d2aa26a62cf85769e
-V2 Signer: public key MD5 digest: d80e866c513f2185d1d779ed493d66ee
+V2 Signer: public key SHA-256 digest: 4a2ecdd8b73982f1610355329fd72a852dfdab57933ff40f17c56703827ed3dc
+V2 Signer: public key SHA-1 digest: a4bacb0afb3c0b592ca7c71b5185364abc0af9b4
+V2 Signer: public key MD5 digest: e4bf3d877c52d6f884814fad4507c2a8
 
 --- تعداد dex و حضور درایورهای SQL ---
 16
@@ -132,7 +132,7 @@ V2 Signer: public key MD5 digest: d80e866c513f2185d1d779ed493d66ee
   لمس برای انتخاب جدول : 1
 ### Vizitor-2.21.0-direct.apk
 حجم: 42092198 بایت
-vizitor-app/dist/Vizitor-2.21.0-direct.apk.sha256:766b8c5122a58cb3b72f3c459633fb6f6fb474c22798c20a3f2ec40317e893d5  Vizitor-2.21.0-direct.apk
+vizitor-app/dist/Vizitor-2.21.0-direct.apk.sha256:89c377e4821b73dd8f8c82155f7e58bace502e6ea34113e193114ef84c4ea2ea  Vizitor-2.21.0-direct.apk
 
 --- مشخصات نسخه و پکیج (aapt2) ---
 package: name='ir.atiran.vizitor' versionCode='21817' versionName='2.21.0-direct' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
