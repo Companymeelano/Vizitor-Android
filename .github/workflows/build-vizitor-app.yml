@@ -295,6 +295,10 @@ jobs:
           cp /tmp/cargo3/sha "$R2"
           cp /tmp/cargo3/sums "$R4"
           cp /tmp/cargo3/info "$R3"
+          # v2.21.0: نسخهٔ آزمون (debug) هم باید در dist بماند؛ ریلیز به آن نیاز دارد
+          if [ -f "$DBG" ]; then
+            cp "$DBG" "vizitor-app/dist/Vizitor-$APP_VERSION-direct-debug.apk"
+          fi
           ls -l vizitor-app/dist/
           echo "sha ثبت‌شده: $HASH"
 
@@ -487,3 +491,34 @@ jobs:
           files: |
             vizitor-app/dist/MReport-${{ env.APP_VERSION }}-direct.apk
             vizitor-app/dist/MReport-${{ env.APP_VERSION }}-direct.apk.sha256
+
+      # ── v2.21.0: بارگذاری قطعی فایل‌های APK روی ریلیزها ────────────────────
+      # اگر مرحلهٔ انتشار (action) نتوانسته باشد فایل‌ها را ضمیمه کند، این گام
+      # با gh CLI آن‌ها را صریح و با --clobber می‌چسباند و نتیجه را گزارش می‌کند.
+      - name: ضمیمهٔ قطعی فایل‌های APK روی ریلیزها
+        if: success()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          for i in 1 2 3; do
+            ok=1
+            for f in "vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk" \
+                     "vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk.sha256" \
+                     "vizitor-app/dist/SHA256SUMS.txt" \
+                     "vizitor-app/dist/Vizitor-$APP_VERSION-direct-debug.apk"; do
+              [ -f "$f" ] || { echo "::warning::فایل $f موجود نیست"; continue; }
+              gh release upload "vizitor-app-direct-$APP_VERSION" "$f" --clobber || ok=0
+            done
+            for f in "vizitor-app/dist/MReport-$APP_VERSION-direct.apk" \
+                     "vizitor-app/dist/MReport-$APP_VERSION-direct.apk.sha256"; do
+              [ -f "$f" ] || { echo "::warning::فایل $f موجود نیست"; continue; }
+              gh release upload "manager-reports-$APP_VERSION" "$f" --clobber || ok=0
+            done
+            [ "$ok" = "1" ] && { echo "همهٔ فایل‌ها ضمیمه شدند ✓"; break; }
+            echo "تلاش $i ناموفق — تلاش دوباره"; sleep 5
+          done
+          echo "--- وضعیت نهایی ریلیزها ---"
+          gh release view "vizitor-app-direct-$APP_VERSION" --json assets -q '.assets[].name' || true
+          gh release view "manager-reports-$APP_VERSION" --json assets -q '.assets[].name' || true
