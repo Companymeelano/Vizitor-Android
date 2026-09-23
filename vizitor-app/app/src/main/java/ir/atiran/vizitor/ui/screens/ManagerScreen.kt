@@ -567,14 +567,16 @@ fun ManagerScreen(
         }
 
         item {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "Meelano Studio Design • Milad Yaghoobi — پنل مدیریت آتیران ویزیتور",
-                style = MaterialTheme.typography.labelSmall,
-                color = p.gold,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+            Column {
+              Spacer(Modifier.height(4.dp))
+              Text(
+                  "Meelano Studio Design • Milad Yaghoobi — پنل مدیریت آتیران ویزیتور",
+                  style = MaterialTheme.typography.labelSmall,
+                  color = p.gold,
+                  modifier = Modifier.fillMaxWidth(),
+                  textAlign = androidx.compose.ui.text.style.TextAlign.Center
+              )
+            }
         }
     }
 }

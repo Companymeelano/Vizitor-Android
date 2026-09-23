@@ -110,6 +110,7 @@ import ir.atiran.vizitor.ui.screens.ChatScreen
 import ir.atiran.vizitor.ui.screens.CustomersScreen
 import ir.atiran.vizitor.ui.screens.DashboardScreen
 import ir.atiran.vizitor.ui.screens.DirectSqlScreen
+import ir.atiran.vizitor.ui.screens.MaConnectScreen
 import ir.atiran.vizitor.ui.screens.ManagerScreen
 import ir.atiran.vizitor.ui.screens.ReportsScreen
 import ir.atiran.vizitor.ui.screens.ScannerScreen
@@ -422,7 +423,18 @@ fun VizitorRoot(
                     }
                 )
             }
-            composable(Routes.CART) { CartScreen(viewModel) }
+            composable(Routes.CART) {
+                CartScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        if (navController.previousBackStackEntry != null) navController.popBackStack()
+                        else navController.navigate(Routes.DASHBOARD)
+                    },
+                    onOpenCatalog = { navController.navigate(Routes.CATALOG) },
+                    onOpenCustomers = { navController.navigate(Routes.CUSTOMERS) },
+                    onOpenReports = { navController.navigate(Routes.REPORTS) },
+                )
+            }
             composable(Routes.CUSTOMERS) { CustomersScreen(viewModel) }
             composable(Routes.REPORTS) { ReportsScreen(viewModel) }
             // ── پنل مدیریت (نمودارها و جدول‌های گزارش کامل) — v2.16.0 ──
@@ -454,10 +466,17 @@ fun VizitorRoot(
             // صفحهٔ «تنظیمات ورود» — سه گام اتصال/سرور/ورود با طراحی لاکچری
             // (همان پیاده‌سازی صفحهٔ اتصال؛ یک منبع، دو مسیر ورودی)
             composable(Routes.WELCOME) {
-                DirectSqlScreen(
+                MaConnectScreen(
                     viewModel = sqlViewModel,
                     onBack = settingsBack,
                     onEnterPanel = enterAfterLogin,
+                    onOpenAdvanced = { navController.navigate(Routes.DIRECT_SQL) },
+                    onOpenHome = { navController.navigate(Routes.DASHBOARD) },
+                    onOpenCatalog = { navController.navigate(Routes.CATALOG) },
+                    onOpenCart = { navController.navigate(Routes.CART) },
+                    onOpenCustomers = { navController.navigate(Routes.CUSTOMERS) },
+                    onOpenReports = { navController.navigate(Routes.REPORTS) },
+                    onOpenActivities = { navController.navigate(Routes.ACTIVITIES) },
                 )
             }
             // اتصال مستقیم به SQL Server روی پورت ۱۴۳۳ (بدون API/IIS)
