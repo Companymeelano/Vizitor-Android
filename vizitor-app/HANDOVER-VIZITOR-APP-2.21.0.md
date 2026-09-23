@@ -1,28 +1,35 @@
 # تحویل نسخهٔ ۲٫۲۱٫۰ — «گزارشات مدیر» (نسخهٔ انحصاری) + نسخهٔ کامل ویزیتور
 
-> **وضعیت:** در حال ساخت (اعداد نهایی پس از پایان CI در همین فایل ثبت می‌شود)
+> **وضعیت:** ساخته و منتشر شد ✓ — CI اجرای `35839763913` روی کامیت `98d2202`
 
 | مورد | نسخهٔ انحصاری | نسخهٔ کامل |
 |---|---|---|
 | بسته | `ir.atiran.mreport` | `ir.atiran.vizitor` |
-| نسخه | `2.21.0-report` | `2.21.0-direct` |
-| شمارهٔ ساخت | ۲۱۹۱۷ | ۲۱۹۱۷ |
-| فایل | `MReport-2.21.0-direct.apk` | `Vizitor-2.21.0-direct.apk` |
-| حجم / SHA-256 | — | — |
-| ریلیز | `manager-reports-2.21.0` | `vizitor-app-direct-2.21.0` |
+| نام نمایشی | گزارشات مدیر | آتیران ویزیتور |
+| نسخه / شمارهٔ ساخت | `2.21.0-report` / ۲۱۹۱۷ | `2.21.0-direct` / ۲۱۹۱۷ |
+| فایل انتشار | `MReport-2.21.0-direct.apk` | `Vizitor-2.21.0-direct.apk` |
+| حجم | ۴۲٬۰۹۲٬۱۹۸ بایت | ۴۲٬۰۹۲٬۱۹۸ بایت |
+| SHA-256 | `ebfe0781bf311a4284e5606bfb2d9449cf6d3816c19f82299cde0fee3e949b17` | `634d4471091ee7ebab4b6b4feb27f490b19915cb5542bf0f6b723ae21fa36499` |
+| ریلیز | `manager-reports-2.21.0` | `vizitor-app-direct-2.21.0` (جایگاه Latest) |
 
-## دانلود (پس از ساخت)
+نسخهٔ آزمون نسخهٔ کامل: `Vizitor-2.21.0-direct-debug.apk` — ۵۳٬۳۲۹٬۵۶۴ بایت ·
+sha256 `49d717f87a75bef4a0c2701aab242931f60d390492b6a75a932e721a8fe57d4b`
+
+## دانلود
 
 ```
-نسخهٔ انحصاری: https://github.com/Companymeelano/Vizitor-Android/releases/download/manager-reports-2.21.0/MReport-2.21.0-direct.apk
-نسخهٔ کامل:    https://github.com/Companymeelano/Vizitor-Android/releases/download/vizitor-app-direct-2.21.0/Vizitor-2.21.0-direct.apk
+نسخهٔ انحصاری (گزارشات مدیر):
+https://github.com/Companymeelano/Vizitor-Android/releases/download/manager-reports-2.21.0/MReport-2.21.0-direct.apk
+
+نسخهٔ کامل (آتیران ویزیتور):
+https://github.com/Companymeelano/Vizitor-Android/releases/download/vizitor-app-direct-2.21.0/Vizitor-2.21.0-direct.apk
 ```
 
 ## تفاوت دو برنامه (خلاصه)
 
 * **گزارشات مدیر (انحصاری):** فقط اتصال دقیق چهارحالته + پنج برگهٔ گزارش؛ بدون ویترین،
   سبد خرید، ثبت ویزیت، چت و همگام‌سازی پس‌زمینه؛ اولین اجرا مستقیم روی «تنظیم اتصال»
-  با پیش‌فرض‌های مرجع.
+  با پیش‌فرض‌های مرجع (`37.143.147.19` · `1433` · `Atiran2` · `AdminAn`).
 * **آتیران ویزیتور (کامل):** همان برنامهٔ همیشگی با همهٔ امکانات ویزیتور، به‌علاوهٔ
   بخش «گزارش مدیریت (M•REPORT)».
 
@@ -34,6 +41,16 @@
 ۲. برگهٔ «تنظیم اتصال»: پیش‌فرض‌ها آماده است؛ رمز را وارد کنید و «اتصال به سرور» را بزنید
    (اگر وصل نشد: «عیب‌یابی اتصال» گام‌به‌گام می‌گوید مشکل کجاست).
 ۳. «اتصال جداول» → «تشخیص خودکار جداول» → «نمای کلی» و «گزارش‌ها».
+
+## راستی‌آزمایی
+
+* `sha256sum -c --ignore-missing SHA256SUMS.txt` روی `vizitor-app/dist/` → **OK** برای هر دو APK
+  (نسخهٔ آزمون فقط روی ریلیز است و در مخزن نگه‌داری نمی‌شود).
+* «مشخصات نسخه و پکیج (aapt2)» داخل `vizitor-app/apk-report.txt`:
+  `package=ir.atiran.mreport` · `versionCode=21817` · `versionName=2.21.0-report` ·
+  `application-label='گزارشات مدیر'` · چهار معماری.
+* دارایی‌های هر دو ریلیز (شاهد ثبت‌شده توسط CI): `vizitor-app/release-assets.txt` —
+  چهار فایل روی ریلیز ویزیتور، دو فایل روی ریلیز گزارشات مدیر.
 
 مستندات مرتبط: `TAHLIL-KOD-BE-KOD-VIZITOR-2.21.0.md` · `refs/app-debug-40/TAHLIL-APK-MARJA.md` ·
 `TAHLIL-KOD-BE-KOD-VIZITOR-2.20.0.md` (بخش گزارش مدیریت در نسخهٔ کامل).
