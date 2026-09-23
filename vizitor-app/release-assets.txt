@@ -1,12 +1,12 @@
-فهرست دارایی‌های ریلیزها — نسخه 2.22.0
-تاریخ: 2026-09-23 10:13:37 UTC
+فهرست دارایی‌های ریلیزها — نسخه 2.23.0
+تاریخ: 2026-09-23 14:54:14 UTC
 
-## ریلیز آتیران ویزیتور (vizitor-app-direct-2.22.0)
+## ریلیز آتیران ویزیتور (vizitor-app-direct-2.23.0)
   SHA256SUMS.txt — 282 بایت
-  Vizitor-2.22.0-direct-debug.apk — 53411484 بایت
-  Vizitor-2.22.0-direct.apk — 42141346 بایت
-  Vizitor-2.22.0-direct.apk.sha256 — 92 بایت
+  Vizitor-2.23.0-direct-debug.apk — 53411484 بایت
+  Vizitor-2.23.0-direct.apk — 42141346 بایت
+  Vizitor-2.23.0-direct.apk.sha256 — 92 بایت
 
-## ریلیز گزارشات مدیر (manager-reports-2.22.0)
-  MReport-2.22.0-direct.apk — 42141350 بایت
-  MReport-2.22.0-direct.apk.sha256 — 92 بایت
+## ریلیز گزارشات مدیر (manager-reports-2.23.0)
+  MReport-2.23.0-direct.apk — 42141350 بایت
+  MReport-2.23.0-direct.apk.sha256 — 92 بایت
