@@ -13,7 +13,7 @@ name: Build Vizitor Android app (direct SQL)
 
 env:
   # نام نسخهٔ برنامه — همهٔ نام فایل‌ها/تگ ریلیز از همین یک مقدار ساخته می‌شوند
-  APP_VERSION: "2.20.0"
+  APP_VERSION: "2.21.0"
 
 on:
   workflow_dispatch:
@@ -92,7 +92,9 @@ jobs:
         run: |
           chmod +x gradlew
           set +e
-          ./gradlew --no-daemon --stacktrace :app:assembleDebug :app:assembleRelease 2>&1 | tee build.log
+          # دو طعم ساخت با یک سورس: vizitor (کامل) و mreport (انحصاری گزارشات مدیر)
+          ./gradlew --no-daemon --stacktrace :app:assembleVizitorRelease :app:assembleVizitorDebug \
+            :app:assembleMreportRelease 2>&1 | tee build.log
           rc=${PIPESTATUS[0]}
           if [ "$rc" -ne 0 ]; then
             echo "::error::ساخت APK شکست خورد — لاگ کامل در vizitor-app/build.log ثبت می‌شود"
@@ -140,10 +142,15 @@ jobs:
         run: |
           set -e
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Vizitor-$APP_VERSION-direct.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/Vizitor-$APP_VERSION-direct-debug.apk"
+          VREL=app/build/outputs/apk/vizitor/release/app-vizitor-release.apk
+          VDBG=app/build/outputs/apk/vizitor/debug/app-vizitor-debug.apk
+          MREL=app/build/outputs/apk/mreport/release/app-mreport-release.apk
+          cp "$VREL" "dist/Vizitor-$APP_VERSION-direct.apk"
+          cp "$VDBG" "dist/Vizitor-$APP_VERSION-direct-debug.apk"
+          cp "$MREL" "dist/MReport-$APP_VERSION-direct.apk"
           # فقط سطر نسخهٔ اصلی در فایل .sha256 (نام فایل با نام همان APK یکی است)
           cd dist && sha256sum "Vizitor-$APP_VERSION-direct.apk" > "Vizitor-$APP_VERSION-direct.apk.sha256" \
+                    && sha256sum "MReport-$APP_VERSION-direct.apk" > "MReport-$APP_VERSION-direct.apk.sha256" \
                     && sha256sum *.apk > SHA256SUMS.txt
           ls -l
 
@@ -228,8 +235,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
-          REL=vizitor-app/app/build/outputs/apk/release/app-release.apk
-          DBG=vizitor-app/app/build/outputs/apk/debug/app-debug.apk
+          REL=vizitor-app/app/build/outputs/apk/vizitor/release/app-vizitor-release.apk
+          DBG=vizitor-app/app/build/outputs/apk/vizitor/debug/app-vizitor-debug.apk
+          MREL=vizitor-app/app/build/outputs/apk/mreport/release/app-mreport-release.apk
           R1=vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk
           R2=vizitor-app/dist/Vizitor-$APP_VERSION-direct.apk.sha256
           R3=vizitor-app/dist/BUILD-INFO.txt
@@ -243,6 +251,13 @@ jobs:
             printf '%s  Vizitor-%s-direct-debug.apk\n' "$(sha256sum "$DBG" | cut -d' ' -f1)" "$APP_VERSION" >> /tmp/cargo3/sums
           fi
           printf '%s  Vizitor-%s-direct.apk\n' "$HASH" "$APP_VERSION" >> /tmp/cargo3/sums
+          MHASH=""
+          if [ -f "$MREL" ]; then
+            MHASH=$(sha256sum "$MREL" | cut -d' ' -f1)
+            printf '%s  MReport-%s-direct.apk\n' "$MHASH" "$APP_VERSION" >> /tmp/cargo3/sums
+            printf '%s  MReport-%s-direct.apk\n' "$MHASH" "$APP_VERSION" > /tmp/cargo3/msha
+            cp "$MREL" /tmp/cargo3/mapk
+          fi
           {
             echo "Vizitor-$APP_VERSION-direct.apk  (آتیران ویزیتور — نسخه $APP_VERSION با اتصال مستقیم SQL)"
             echo "تاریخ ساخت: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -260,6 +275,12 @@ jobs:
             cp /tmp/cargo3/sha "$R2"
             cp /tmp/cargo3/sums "$R4"
             cp /tmp/cargo3/info "$R3"
+            if [ -f /tmp/cargo3/mapk ]; then
+              cp /tmp/cargo3/mapk "vizitor-app/dist/MReport-$APP_VERSION-direct.apk"
+              cp /tmp/cargo3/msha "vizitor-app/dist/MReport-$APP_VERSION-direct.apk.sha256"
+              git add -f "vizitor-app/dist/MReport-$APP_VERSION-direct.apk" \
+                         "vizitor-app/dist/MReport-$APP_VERSION-direct.apk.sha256"
+            fi
             git add -f "$R1" "$R2" "$R3" "$R4"
             git diff --cached --quiet && { echo "APK از قبل ثبت شده بود"; break; }
             git config user.name "vizitor-ci"
@@ -289,17 +310,34 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: vizitor-app-direct-${{ env.APP_VERSION }}
-          name: "آتیران ویزیتور — نسخه ${{ env.APP_VERSION }} (بخش «گزارش مدیریت» به سبک M•REPORT با اتصال کاملاً دقیق چهارحالته) + اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
+          name: "آتیران ویزیتور — نسخه ${{ env.APP_VERSION }} (نسخهٔ کامل ویزیتور + بخش «گزارش مدیریت» M•REPORT) با اتصال مستقیم SQL Server (پورت ۱۴۳۳)"
           body: |
             برنامهٔ اندروید **آتیران ویزیتور** با اتصال **مستقیم** به SQL Server روی پورت
             **۱۴۳۳** — بدون IIS و بدون API میانی، هماهنگ با نصب‌کنندهٔ ویندوز.
 
             | فایل | توضیح |
             |---|---|
-            | `Vizitor-${{ env.APP_VERSION }}-direct.apk` | نسخهٔ امضاشده (این را روی گوشی‌ها نصب کنید) — شناخته‌شده به `${{ env.APP_VERSION }}-direct` (شمارهٔ ساخت ۲۱۹۱۶) |
+            | `Vizitor-${{ env.APP_VERSION }}-direct.apk` | نسخهٔ امضاشده (این را روی گوشی‌ها نصب کنید) — شناخته‌شده به `${{ env.APP_VERSION }}-direct` (شمارهٔ ساخت ۲۱۹۱۷) |
             | `Vizitor-${{ env.APP_VERSION }}-direct-debug.apk` | نسخهٔ آزمون (در کنار نسخهٔ اصلی نصب می‌شود) |
 
-            **تازه در نسخهٔ ۲٫۲۰٫۰ — «گزارش مدیریت» هم‌شکل برنامهٔ مرجع + اتصال کاملاً دقیق**
+            **تازه در نسخهٔ ۲٫۲۱٫۰ — «نسخهٔ انحصاری گزارشات مدیر» در کنار نسخهٔ کامل (دو برنامهٔ جدا)**
+            * **دو برنامه از یک سورس:** علاوه بر برنامهٔ کامل «آتیران ویزیتور»، از همین نسخه
+              یک **برنامهٔ جداگانهٔ سبک با نام «گزارشات مدیر»** (بستهٔ `ir.atiran.mreport`)
+              منتشر می‌شود که فقط اتاق فرمان گزارش‌هاست — کنار برنامهٔ اصلی روی گوشی
+              نصب می‌شود و روی هم نمی‌افتند. ریلیز جداگانه:
+              `manager-reports-${{ env.APP_VERSION }}`.
+            * **ورود مستقیم به گزارش‌ها:** نسخهٔ انحصاری بدون ویترین، سبد خرید، ثبت ویزیت،
+              چت و همگام‌سازی پس‌زمینه بالا می‌آید؛ اولین اجرا مستقیماً روی برگهٔ
+              «تنظیم اتصال» باز می‌شود و پیش‌فرض‌های همان برنامهٔ مرجع را از قبل دارد
+              (`37.143.147.19` · پورت `1433` · دیتابیس `Atiran2` · کاربر `AdminAn`) — فقط
+              رمز را وارد می‌کنید و «اتصال به سرور» را می‌زنید.
+            * **سبک‌تر و ساده‌تر:** در نسخهٔ انحصاری دادهٔ نمونه، چت ویزیتور، چک‌ها و
+              کارهای زمان‌بندی‌شدهٔ پس‌زمینه اجرا نمی‌شوند؛ فقط اتصال دقیق و پنج برگهٔ
+              گزارش (نمای کلی، مرور داده‌ها، اتصال جداول، تنظیم اتصال، گزارش‌ها).
+            * **همان کلید امضا:** هر دو برنامه با کلید همیشگی امضا می‌شوند، پس نسخه‌های
+              بعدی هر کدام درجای خودشان به‌روزرسانی می‌شوند.
+
+            **نمای کلی نسخهٔ ۲٫۲۰٫۰ — «گزارش مدیریت» هم‌شکل برنامهٔ مرجع + اتصال کاملاً دقیق**
             * **موتور اتصال دقیقاً مثل نسخهٔ مرجع (app-debug-40):** چهار حالت اتصال
               (Microsoft+TLS، Microsoft بدون TLS، jTDS، jTDS+TLS) که هر کدام جواب بدهد همان
               برنده است؛ پارس هوشمند هدف (`IP`، `SERVER\INSTANCE`، `IP:PORT`،
@@ -405,3 +443,47 @@ jobs:
             vizitor-app/dist/Vizitor-${{ env.APP_VERSION }}-direct.apk.sha256
             vizitor-app/dist/SHA256SUMS.txt
             vizitor-app/dist/Vizitor-${{ env.APP_VERSION }}-direct-debug.apk
+
+      # ── v2.20.0 — ریلیز جداگانهٔ «نسخهٔ انحصاری گزارشات مدیر» ────────────────
+      - name: انتشار ریلیز «گزارشات مدیر» (نسخهٔ انحصاری)
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: manager-reports-${{ env.APP_VERSION }}
+          name: "گزارشات مدیر — نسخه ${{ env.APP_VERSION }} (نسخهٔ انحصاری M•REPORT با اتصال کاملاً دقیق چهارحالته)"
+          # ریلیز اصلی (آتیران ویزیتور) در جایگاه «Latest» می‌ماند
+          make_latest: "false"
+          body: |
+            **نسخهٔ انحصاری «گزارشات مدیر»** — برنامهٔ جداگانه و سبک، فقط برای گزارش‌های
+            مدیریت؛ بر پایهٔ تحلیل کد‌به‌کد برنامهٔ مرجع پیوست (`app-debug-40.apk`).
+
+            | فایل | توضیح |
+            |---|---|
+            | `MReport-${{ env.APP_VERSION }}-direct.apk` | نسخهٔ امضاشده — بستهٔ `ir.atiran.mreport` (شمارهٔ ساخت ۲۱۹۱۷) |
+            | `MReport-${{ env.APP_VERSION }}-direct.apk.sha256` | اثر انگشت SHA-256 |
+
+            **چه چیزی در این برنامه هست؟**
+            * **اتصال کاملاً دقیق** مثل برنامهٔ مرجع: چهار حالت اتصال
+              (Microsoft+TLS، Microsoft بدون TLS، jTDS، jTDS+TLS)، پارس هدف
+              (`IP`، `SERVER\INSTANCE`، `IP:PORT`، `IP\INSTANCE:PORT`)، کاوش خام TCP،
+              کاوش PRELOGIN واقعی TDS، کاوش TLS (1.3→1.0)، پیدا کردن پورت نمونه از
+              سرویس SQL Browser روی UDP 1434 و «عیب‌یابی اتصال» گام‌به‌گام فارسی.
+            * **پنج برگهٔ گزارش:** نمای کلی (فهرست جدول‌ها + شمار رکورد + حجم دیتابیس)،
+              مرور داده‌ها (صفحه‌بندی + جست‌وجوی زنده + جزئیات رکورد)، اتصال جداول
+              (نگاشت پنج بخش با «تشخیص خودکار جداول»)، تنظیم اتصال (دو نشانی داخلی/اینترنت)
+              و گزارش‌ها (مجموع ستون مبلغ، برترین‌ها با نمودار سه‌بعدی، آخرین رکوردها،
+              اشتراک‌گذاری و کپی متن گزارش).
+            * **پیش‌فرض‌های آمادهٔ مرجع** در اولین اجرا: `37.143.147.19` · `1433` ·
+              `Atiran2` · کاربر `AdminAn` (رمز را خودتان وارد می‌کنید) و برنامه مستقیماً
+              روی برگهٔ «تنظیم اتصال» باز می‌شود.
+            * **سبک و بدون شلوغی:** بدون ویترین، سبد خرید، ثبت ویزیت، چت و همگام‌سازی
+              پس‌زمینه؛ فقط اتصال و گزارش‌ها (همین باعث می‌شود سبک‌تر و ساده‌تر باشد).
+            * **بستهٔ جدا:** این برنامه کنار «آتیران ویزیتور» نصب می‌شود (روی هم نمی‌افتند)
+              و با همان کلید امضای همیشگی امضا شده است، پس نسخه‌های بعدی خودش درجا
+              به‌روزرسانی می‌شوند.
+            * **فقط-خواندنی:** هیچ داده‌ای روی سرور تغییر نمی‌کند (قاعدهٔ خود مرجع).
+
+            طراحی و برنامه‌نویسی: **میلاد یقوبی** — گروه نرم‌افزاری **Meelano Studio Design**.
+          files: |
+            vizitor-app/dist/MReport-${{ env.APP_VERSION }}-direct.apk
+            vizitor-app/dist/MReport-${{ env.APP_VERSION }}-direct.apk.sha256

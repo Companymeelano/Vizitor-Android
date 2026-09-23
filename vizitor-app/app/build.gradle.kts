@@ -38,9 +38,31 @@ android {
         //           پالت تازه (گزارش طلایی/شامپاین روشن)، کارت‌های فلزی، کاشی‌های شاخص،
         //           نمودار ستونی استوانه‌ای با بازتاب، نمودار روند دوسری، حلقهٔ سه‌بعدی
         //           درخشان، جدول «نبض کسب‌وکار»، کاشی‌های ابزار و فوتر برند MEELANO
-        versionCode = 21816
-        versionName = "2.20.0-direct"
+        versionCode = 21817
+        versionName = "2.21.0-direct"
         vectorDrawables { useSupportLibrary = true }
+    }
+
+    // ───────────────────────────────────────────────────────────────────────
+    //  دو طعم ساخت از یک سورس (v2.20.0):
+    //    • vizitor  → برنامهٔ کامل «آتیران ویزیتور»  (ir.atiran.vizitor)
+    //    • mreport  → نسخهٔ انحصاری «گزارشات مدیر»  (ir.atiran.mreport)
+    //      فقط اتاق فرمان گزارش‌ها: اتصال دقیق چهارحالته + جدول‌ها + گزارش‌ها.
+    //      بستهٔ جداست، پس هر دو برنامه کنار هم روی گوشی نصب می‌شوند.
+    // ───────────────────────────────────────────────────────────────────────
+    flavorDimensions += "edition"
+    productFlavors {
+        create("vizitor") {
+            dimension = "edition"
+            applicationId = "ir.atiran.vizitor"
+            buildConfigField("boolean", "MR_EDITION", "false")
+        }
+        create("mreport") {
+            dimension = "edition"
+            applicationId = "ir.atiran.mreport"
+            versionName = "2.21.0-report"
+            buildConfigField("boolean", "MR_EDITION", "true")
+        }
     }
 
     // امضای نسخهٔ نهایی: فایل keystore.properties کنار ریشهٔ پروژه (در گیت نیست)

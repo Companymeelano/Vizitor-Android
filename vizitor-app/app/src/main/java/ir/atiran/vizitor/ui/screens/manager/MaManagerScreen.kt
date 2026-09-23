@@ -198,11 +198,15 @@ private const val READ_ONLY_NOTE =
 // ═══════════════════════════ صفحهٔ اصلی ═══════════════════════════
 
 /**
- * «گزارش مدیریت» — تمام‌صفحه، مشابه بخش مدیریت برنامهٔ مرجع.
+ * «گزارش مدیریت» — تمام‌صفحه، مشابه بخش مدیریت برنامهٔ مرجع (M•REPORT).
+ *
  * @param onBack بازگشت به صفحهٔ قبل.
+ * @param exclusive در نسخهٔ انحصاری «گزارشات مدیر» (بستهٔ `ir.atiran.mreport`) روشن
+ *   می‌شود: پیش‌فرض‌های همان برنامهٔ مرجع پر می‌شوند و اگر اتصالی برقرار نباشد،
+ *   برنامه مستقیماً روی برگهٔ «تنظیم اتصال» باز می‌شود (حس صفحهٔ ورود مرجع).
  */
 @Composable
-fun MaManagerScreen(onBack: () -> Unit) {
+fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
     val p = vizitorPalette
     val st = remember { MaStudioState() }
     val scope = rememberCoroutineScope()
@@ -231,11 +235,22 @@ fun MaManagerScreen(onBack: () -> Unit) {
             st.hostExternal = n
             st.useExternal = useNet
         }
+        if (exclusive) {
+            // پیش‌فرض‌های همان برنامهٔ مرجع (app-debug-40) تا اتصال یک‌کلیکی شود
+            if (st.hostExternal.isBlank()) st.hostExternal = "37.143.147.19"
+            if (st.hostLocal.isBlank()) st.hostLocal = "192.168.1.10"
+            if (st.port.isBlank() || st.port == "0") st.port = "1433"
+            if (st.database.isBlank()) st.database = "Atiran2"
+            if (st.user.isBlank()) st.user = "AdminAn"
+        }
         if (MaSqlEngine.isConnected) {
             st.connected = true
             st.modeLabel = MaSqlEngine.modeLabel
             st.targetLabel = MaSqlEngine.targetLabel
             studioOverview(st)
+        } else if (exclusive) {
+            // نسخهٔ انحصاری صفحهٔ دیگری ندارد: مستقیم روی «تنظیم اتصال» باز می‌شود
+            st.tab = "conn"
         }
     }
 
@@ -253,7 +268,7 @@ fun MaManagerScreen(onBack: () -> Unit) {
             .dashboardBackdrop()
     ) {
         MaTopBar(
-            title = "گزارش مدیریت",
+            title = if (exclusive) "گزارشات مدیر" else "گزارش مدیریت",
             eyebrow = "M•REPORT — اتاق فرمان مدیر",
             onBack = onBack,
             chip = if (st.connected) "متصل — ${st.modeLabel}" else "وصل نشده — از «اتصال جداول»",

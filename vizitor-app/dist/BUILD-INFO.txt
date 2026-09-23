@@ -1,6 +1,0 @@
-Vizitor-2.20.0-direct.apk  (آتیران ویزیتور — نسخه 2.20.0 با اتصال مستقیم SQL)
-تاریخ ساخت: 2026-09-23 07:57:58 UTC
-کامیت: 8ef2898122476902bb52b2d072be996018dec349
-حجم: 42092194 بایت
-sha256: 0f461b38369e5a4a12bfef77f16f81756dab9af823f9e6fbccf4637e4ef5d6b3
-امضا: بررسی‌شده با apksigner — جزئیات در vizitor-app/apk-report.txt

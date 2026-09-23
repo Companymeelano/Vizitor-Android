@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.view.WindowCompat
 import ir.atiran.vizitor.ui.navigation.VizitorRoot
+import ir.atiran.vizitor.ui.screens.manager.MReportRoot
 import ir.atiran.vizitor.ui.theme.ThemeManager
 import ir.atiran.vizitor.ui.theme.VizitorTheme
 import ir.atiran.vizitor.ui.theme.paletteById
@@ -60,7 +61,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        VizitorRoot()
+                        // v2.20.0: نسخهٔ انحصاری «گزارشات مدیر» مستقیم به اتاق فرمان
+                        // گزارش‌ها می‌رود؛ نسخهٔ کامل همان ناوبری همیشگی را دارد.
+                        if (BuildConfig.MR_EDITION) MReportRoot() else VizitorRoot()
                     }
                 }
             }
