@@ -265,6 +265,9 @@ jobs:
             echo "حجم: $(stat -c %s /tmp/cargo3/apk) بایت"
             echo "sha256: ${HASH}"
             echo "امضا: بررسی‌شده با apksigner — جزئیات در vizitor-app/apk-report.txt"
+            echo "بررسی صحت فایل‌های همین پوشه: sha256sum -c --ignore-missing SHA256SUMS.txt"
+            echo "توجه: نسخهٔ آزمون (debug) فقط به ریلیز ضمیمه می‌شود و در مخزن نگه‌داری نمی‌شود؛"
+            echo "      برای بررسی محلی از کلید --ignore-missing استفاده کنید."
           } > /tmp/cargo3/info
           URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           for try in 1 2 3; do
