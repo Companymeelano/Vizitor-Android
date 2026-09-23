@@ -142,6 +142,10 @@ private data class MaBlock(
 private class MaStudioState {
     // ── ناوبری
     var tab by mutableStateOf("overview")
+    /** در نسخهٔ انحصاری: خانهٔ «M•A Report» ↔ صفحه‌های کاری موتور گزارش. */
+    var hub by mutableStateOf(false)
+    /** با هر بازگشت از صفحه‌های کاری یک واحد زیاد می‌شود تا داده تازه خوانده شود. */
+    var homeRefresh by mutableStateOf(0)
     var busy by mutableStateOf(false)
     var msg by mutableStateOf<String?>(null)
     var msgOk by mutableStateOf(true)
@@ -262,6 +266,23 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
         }
     }
 
+    // بازگشت در نسخهٔ انحصاری: از صفحهٔ کاری به خانهٔ «M•A Report» برمی‌گردیم
+    val hubBack: () -> Unit = {
+        st.hub = false
+        st.homeRefresh += 1
+    }
+
+    // ── خانهٔ «M•A Report» (کاملاً مشابه app-debug-40) برای نسخهٔ انحصاری
+    if (exclusive && !st.hub) {
+        MReportHome(
+            onExit = onBack,
+            onOpen = { key ->
+                st.tab = key
+                st.hub = true
+            },
+            refreshSignal = st.homeRefresh,
+        )
+    } else {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -270,7 +291,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
         MaTopBar(
             title = if (exclusive) "گزارشات مدیر" else "گزارش مدیریت",
             eyebrow = "M•REPORT — اتاق فرمان مدیر",
-            onBack = onBack,
+            onBack = if (exclusive) hubBack else onBack,
             chip = if (st.connected) "متصل — ${st.modeLabel}" else "وصل نشده — از «اتصال جداول»",
             chipColor = if (st.connected) MaGreen else MaAmber,
         )
@@ -1054,6 +1075,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
             },
             onClose = { st.diag = null },
         )
+    }
     }
 }
 
