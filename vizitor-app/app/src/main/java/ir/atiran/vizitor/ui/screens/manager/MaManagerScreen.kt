@@ -900,7 +900,7 @@ fun MaManagerScreen(onBack: () -> Unit, exclusive: Boolean = false) {
                         icon = Icons.Filled.Link,
                         enabled = !st.busy && MaMapping.split(st.manualRef) != null,
                         onClick = {
-                            val (schema, table) = MaMapping.split(st.manualRef) ?: return@MaGoldCta
+                            val (schema, table) = MaMapping.split(st.manualRef) ?: return@Lux3DButton
                             st.manualRef = "$schema.$table"
                             scope.launch {
                                 st.busy = true

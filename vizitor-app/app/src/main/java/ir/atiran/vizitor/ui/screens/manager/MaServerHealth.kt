@@ -380,15 +380,15 @@ object MaServerHealth {
             // ── ۵) نمرهٔ سلامت ────────────────────────────────────────────
             val weights = groups.flatMap { g -> g.items.map { it.level } }
             val maxScore = weights.size * 100
-            val gotScore = weights.sumOf {
-                when (it) {
+            val gotScore: Int = weights.map { lv ->
+                when (lv) {
                     Lux3DLevel.OK -> 100
                     Lux3DLevel.WARN -> 60
                     Lux3DLevel.IDLE -> 70
                     Lux3DLevel.RUN -> 50
                     Lux3DLevel.BAD -> 0
                 }
-            }
+            }.sum()
             val score = if (maxScore == 0) 0 else (gotScore * 100 / maxScore)
             val headline = when {
                 score >= 90 -> "سرور سالم و آماده است ✓"
