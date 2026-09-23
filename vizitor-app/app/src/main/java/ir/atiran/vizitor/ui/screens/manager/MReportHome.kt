@@ -325,7 +325,6 @@ fun MReportHome(
 
 // ═══════════════════════════ برگهٔ «نمای کلی» ═══════════════════════════
 
-@Composable
 private fun LazyListScope.homeOverview(
     st: MaHomeState,
     onOpen: (String) -> Unit,
@@ -561,7 +560,6 @@ private fun mdIntelligenceCard(st: MaHomeState) {
 
 // ═══════════════════════════ برگهٔ «مشتریان» ═══════════════════════════
 
-@Composable
 private fun LazyListScope.homeCustomers(
     st: MaHomeState,
     onOpen: (String) -> Unit,
@@ -655,7 +653,6 @@ private fun LazyListScope.homeCustomers(
 
 // ═══════════════════════════ برگهٔ «کالاها» ═══════════════════════════
 
-@Composable
 private fun LazyListScope.homeProducts(
     st: MaHomeState,
     onOpen: (String) -> Unit,
@@ -734,7 +731,6 @@ private fun LazyListScope.homeProducts(
 
 // ═══════════════════════════ برگهٔ «خزانه» ═══════════════════════════
 
-@Composable
 private fun LazyListScope.homeTreasury(
     st: MaHomeState,
     onOpen: (String) -> Unit,
@@ -824,7 +820,6 @@ private fun LazyListScope.homeTreasury(
 
 // ═══════════════════════════ برگهٔ «گزارش‌ها» ═══════════════════════════
 
-@Composable
 private fun LazyListScope.homeReports(
     st: MaHomeState,
     ctx: Context,
@@ -877,7 +872,6 @@ private fun LazyListScope.homeReports(
 
 // ═══════════════════════════ برگهٔ «اعلان‌ها» ═══════════════════════════
 
-@Composable
 private fun LazyListScope.homeAlerts(
     st: MaHomeState,
     alerts: List<Pair<String, String>>,
@@ -938,7 +932,7 @@ private fun LazyListScope.homeAlerts(
     item {
         Lux3DNote(
             "اعلان واقعی‌ای نیست — ردیف‌های سرور و یادآورهای خودتان اینجا می‌آیند.",
-            tone = p.gold,
+            tone = MaAmber,
         )
     }
     item { Lux3DNote(DEMO_NOTE) }
